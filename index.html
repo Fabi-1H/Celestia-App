@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <link rel="manifest" href="manifest.json">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Celestia</title>
@@ -814,6 +813,69 @@ function lsGet(key, fallback){
 function lsSet(key, value){
   try{ localStorage.setItem(key, JSON.stringify(value)); }catch(e){}
 }
+
+/* ---- IndexedDB: guarda los archivos de audio reales para no tener que re-importarlos ---- */
+const CELESTIA_DB_NAME = 'celestia-db';
+const CELESTIA_DB_STORE = 'tracks';
+function idbOpen(){
+  return new Promise((resolve, reject)=>{
+    const req = indexedDB.open(CELESTIA_DB_NAME, 1);
+    req.onupgradeneeded = ()=>{
+      const db = req.result;
+      if(!db.objectStoreNames.contains(CELESTIA_DB_STORE)){
+        db.createObjectStore(CELESTIA_DB_STORE, {keyPath:'id'});
+      }
+    };
+    req.onsuccess = ()=> resolve(req.result);
+    req.onerror = ()=> reject(req.error);
+  });
+}
+async function idbPutTrack(record){
+  try{
+    const db = await idbOpen();
+    return new Promise((resolve,reject)=>{
+      const tx = db.transaction(CELESTIA_DB_STORE, 'readwrite');
+      tx.objectStore(CELESTIA_DB_STORE).put(record);
+      tx.oncomplete = ()=> resolve();
+      tx.onerror = ()=> reject(tx.error);
+    });
+  }catch(e){}
+}
+async function idbGetAllTracks(){
+  try{
+    const db = await idbOpen();
+    return new Promise((resolve,reject)=>{
+      const tx = db.transaction(CELESTIA_DB_STORE, 'readonly');
+      const req = tx.objectStore(CELESTIA_DB_STORE).getAll();
+      req.onsuccess = ()=> resolve(req.result || []);
+      req.onerror = ()=> reject(req.error);
+    });
+  }catch(e){ return []; }
+}
+async function idbDeleteTrack(id){
+  try{
+    const db = await idbOpen();
+    return new Promise((resolve,reject)=>{
+      const tx = db.transaction(CELESTIA_DB_STORE, 'readwrite');
+      tx.objectStore(CELESTIA_DB_STORE).delete(id);
+      tx.oncomplete = ()=> resolve();
+      tx.onerror = ()=> reject(tx.error);
+    });
+  }catch(e){}
+}
+async function idbUpdateTrackFields(id, patch){
+  try{
+    const db = await idbOpen();
+    const tx = db.transaction(CELESTIA_DB_STORE, 'readwrite');
+    const store = tx.objectStore(CELESTIA_DB_STORE);
+    const getReq = store.get(id);
+    getReq.onsuccess = ()=>{
+      const rec = getReq.result;
+      if(rec){ Object.assign(rec, patch); store.put(rec); }
+    };
+  }catch(e){}
+}
+
 async function loadState(){
   metaOverrides = lsGet('miku:meta-overrides', {});
   playlists = lsGet('miku:playlists', []);
@@ -821,6 +883,17 @@ async function loadState(){
   eqState = lsGet('miku:eq', eqState);
   profile = lsGet('miku:profile', profile);
   crossfadeState = lsGet('celestia:crossfade', crossfadeState);
+
+  const savedTracks = await idbGetAllTracks();
+  for(const rec of savedTracks){
+    const url = URL.createObjectURL(rec.blob);
+    tracks.push({
+      id: rec.id, file: null, name: rec.name, url,
+      title: rec.title, artist: rec.artist, album: rec.album,
+      cover: rec.cover, duration: rec.duration || 0,
+      liked: !!rec.liked, lyrics: rec.lyrics || '', isPodcast: !!rec.isPodcast
+    });
+  }
 }
 async function saveProfileState(){ lsSet('miku:profile', profile); }
 async function saveOverrides(){ lsSet('miku:meta-overrides', metaOverrides); }
@@ -855,8 +928,9 @@ function guessFromFilename(name){
 function addTrackFromFile(file){
   return new Promise((resolve)=>{
     const id = 't_'+file.name+'_'+file.size;
+    if(tracks.some(t=>t.id===id)){ resolve(); return; } // ya importada anteriormente
     const url = URL.createObjectURL(file);
-    const base = { id, file, url, title:null, artist:null, album:null, cover:null, duration:0, liked:false, lyrics:'', isPodcast:false };
+    const base = { id, file, name: file.name, url, title:null, artist:null, album:null, cover:null, duration:0, liked:false, lyrics:'', isPodcast:false };
 
     const finish = (tag)=>{
       const guess = guessFromFilename(file.name);
@@ -873,9 +947,17 @@ function addTrackFromFile(file){
         base.cover = `data:${format};base64,${btoa(bstr)}`;
       }
       tracks.push(base);
+      idbPutTrack({
+        id: base.id, blob: file, name: base.name, title: base.title, artist: base.artist,
+        album: base.album, cover: base.cover, lyrics: base.lyrics,
+        isPodcast: base.isPodcast, liked: base.liked, duration: 0
+      });
       const probe = new Audio();
       probe.preload = 'metadata';
-      probe.addEventListener('loadedmetadata', ()=>{ base.duration = probe.duration || 0; }, {once:true});
+      probe.addEventListener('loadedmetadata', ()=>{
+        base.duration = probe.duration || 0;
+        idbUpdateTrackFields(base.id, {duration: base.duration});
+      }, {once:true});
       probe.src = url;
       resolve();
     };
@@ -1824,7 +1906,7 @@ function toggleRepeat(){
   });
   const b=document.getElementById('queuePillRepeat'); if(b) b.classList.toggle('on',repeatMode===1);
 }
-function toggleLike(){ if(!currentTrack) return; currentTrack.liked=!currentTrack.liked; updatePlayIcons(); }
+function toggleLike(){ if(!currentTrack) return; currentTrack.liked=!currentTrack.liked; idbUpdateTrackFields(currentTrack.id, {liked: currentTrack.liked}); updatePlayIcons(); }
 
 function updatePlayIcons(){
   const svgPause = `<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>`;
@@ -1885,9 +1967,10 @@ async function toggleClassifyPodcast(id){
   const t = tracks.find(x=>x.id===id);
   if(!t) return;
   t.isPodcast = !t.isPodcast;
-  const fname = t.file.name;
+  const fname = t.name;
   metaOverrides[fname] = {...(metaOverrides[fname]||{}), isPodcast: t.isPodcast};
   await saveOverrides();
+  idbUpdateTrackFields(t.id, {isPodcast: t.isPodcast});
   if(t.isPodcast){
     playlists.forEach(p=>{ p.trackIds = p.trackIds.filter(tid=>tid!==id); });
     await savePlaylists();
@@ -1909,6 +1992,7 @@ async function excludeTrack(id){
   if(!t) return;
   try{ URL.revokeObjectURL(t.url); }catch(e){}
   tracks = tracks.filter(x=>x.id!==id);
+  idbDeleteTrack(id);
   playlists.forEach(p=>{ p.trackIds = p.trackIds.filter(tid=>tid!==id); });
   await savePlaylists();
   historyWeeks.forEach(w=>{
@@ -1965,9 +2049,10 @@ async function saveEdit(){
   editingTrack.title = document.getElementById('editTitle').value.trim() || editingTrack.title;
   editingTrack.artist = document.getElementById('editArtist').value.trim() || editingTrack.artist;
   editingTrack.album = document.getElementById('editAlbum').value.trim() || editingTrack.album;
-  const fname = editingTrack.file.name;
+  const fname = editingTrack.name;
   metaOverrides[fname] = {...(metaOverrides[fname]||{}), title:editingTrack.title, artist:editingTrack.artist, album:editingTrack.album};
   await saveOverrides();
+  idbUpdateTrackFields(editingTrack.id, {title:editingTrack.title, artist:editingTrack.artist, album:editingTrack.album});
   closeOverlay('overlayEdit');
   renderAll(); updatePlayerUI();
   showToast('Información actualizada');
@@ -2001,9 +2086,10 @@ function toggleLyricsEditMode(){
 }
 async function saveLyrics(){
   currentTrack.lyrics = document.getElementById('lyricsText').value;
-  const fname = currentTrack.file.name;
+  const fname = currentTrack.name;
   metaOverrides[fname] = {...(metaOverrides[fname]||{}), lyrics: currentTrack.lyrics};
   await saveOverrides();
+  idbUpdateTrackFields(currentTrack.id, {lyrics: currentTrack.lyrics});
   closeOverlay('overlayLyrics');
   updatePlayerUI();
   showToast('Letra guardada');
