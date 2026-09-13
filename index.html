@@ -1132,7 +1132,7 @@ function renderLikedDetail(main){
 }
 
 function renderSongs(main){
-  const list = musicTracks();
+  const list = musicTracks().slice().sort((a,b)=>a.title.localeCompare(b.title,'es',{sensitivity:'base'}));
   if(list.length===0){ main.innerHTML = emptyState(noteIcon,'Sin canciones','Importa archivos de audio desde tu celular.','Importar música'); return; }
   main.innerHTML = `<div class="section-title">Todas las canciones<span class="see-all" onclick="openImport()">+ Añadir</span></div>
     ${list.map(t=>trackRow(t,{showAlbum:true})).join('')}`;
@@ -1734,7 +1734,7 @@ function labelForExpr(expr){
   return {kind:'Todas las canciones', name:''};
 }
 function buildQueue(expr){
-  if(expr==='all') return musicTracks();
+  if(expr==='all') return musicTracks().slice().sort((a,b)=>a.title.localeCompare(b.title,'es',{sensitivity:'base'}));
   if(expr==='liked') return tracks.filter(t=>t.liked);
   if(expr==='week') return topTracksThisWeek(50).map(x=>x.track);
   if(expr==='podcasts') return podcastTracks();
