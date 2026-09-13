@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <link rel="manifest" href="manifest.json">
+<link rel="manifest" href="manifest.json">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Celestia</title>
@@ -313,6 +313,12 @@ nav.bottom button.active{color:var(--accent);}
 .mini-av{width:40px;height:40px;border-radius:50%;overflow:hidden;flex-shrink:0;background:var(--surface-2);}
 .mini-av img,.mini-av svg{width:100%;height:100%;object-fit:cover;}
 .profile-av img,.profile-av svg{width:100%;height:100%;object-fit:cover;display:block;}
+.app-settings-row{display:flex;align-items:flex-start;gap:16px;padding:16px 4px;border-bottom:1px solid var(--line);cursor:pointer;}
+.app-settings-row:last-child{border-bottom:none;}
+.app-settings-row svg{color:var(--text);flex-shrink:0;margin-top:2px;}
+.app-settings-row .t{font-size:15px;font-weight:700;}
+.app-settings-row .s{font-size:12.5px;color:var(--text-dim);margin-top:2px;}
+.app-settings-row .badge{font-size:10.5px;color:var(--text-faint);border:1px solid var(--line);border-radius:10px;padding:2px 8px;margin-left:auto;flex-shrink:0;align-self:center;}
 .field{margin-bottom:14px;}
 .field label{font-size:11.5px;color:var(--text-dim);font-weight:600;display:block;margin-bottom:6px;}
 .field input,.field textarea{
@@ -375,6 +381,7 @@ nav.bottom button.active{color:var(--accent);}
 .stats-rank-row{display:flex;align-items:center;gap:14px;padding:12px 0;cursor:pointer;}
 .stats-rank-row .rank-n{width:20px;flex-shrink:0;color:var(--text-dim);font-size:15px;}
 .stats-rank-row .art{width:54px;height:54px;border-radius:6px;overflow:hidden;flex-shrink:0;background:var(--surface-2);display:flex;align-items:center;justify-content:center;color:var(--text-faint);}
+.stats-rank-row .art img{width:100%;height:100%;object-fit:cover;display:block;}
 .stats-rank-row .meta{flex:1;min-width:0;}
 .stats-rank-row .meta .t{font-size:15px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .stats-rank-row .meta .s{font-size:13px;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -618,9 +625,17 @@ nav.bottom button.active{color:var(--accent);}
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 21V14M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>
         Estadísticas de reproducción
       </button>
-      <button onclick="closeDrawer();openSettingsSheet()">
+      <button onclick="closeDrawer();goToRecent()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Recientes
+      </button>
+      <button onclick="closeDrawer();goToAppSettings()">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.9l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.9-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1-1.6 1.7 1.7 0 00-1.9.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.9 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1 1.7 1.7 0 00-.3-1.9l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.9.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.9-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.9V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg>
         Configuración y privacidad
+      </button>
+      <button onclick="closeDrawer();showToast('Mensajes — próximamente')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        Mensajes <span style="font-size:11px;color:var(--text-faint);margin-left:auto;">Próximamente</span>
       </button>
     </div>
     <div class="drawer-footer">Celestia — reproductor local</div>
@@ -781,6 +796,7 @@ nav.bottom button.active{color:var(--accent);}
 let tracks = [];          // {id,title,artist,album,file,url,lyrics,cover,liked,duration}
 let playlists = [];       // {id,name,trackIds:[]}
 let historyWeeks = [];    // [{weekKey,label,plays:{trackId:count}, artistPlays:{artist:count}}]
+let recentPlays = [];     // [{ts, trackId, sourceKind, sourceName}] — historial cronológico para "Recientes"
 let metaOverrides = {};   // por nombre de archivo: {title,artist,album,lyrics}
 
 let profile = {name:'Tú', photo:null, featured:[]};
@@ -882,6 +898,7 @@ async function loadState(){
   metaOverrides = lsGet('miku:meta-overrides', {});
   playlists = lsGet('miku:playlists', []);
   historyWeeks = lsGet('miku:history', []);
+  recentPlays = lsGet('celestia:recent', []);
   eqState = lsGet('miku:eq', eqState);
   profile = lsGet('miku:profile', profile);
   crossfadeState = lsGet('celestia:crossfade', crossfadeState);
@@ -901,6 +918,7 @@ async function saveProfileState(){ lsSet('miku:profile', profile); }
 async function saveOverrides(){ lsSet('miku:meta-overrides', metaOverrides); }
 async function savePlaylists(){ lsSet('miku:playlists', playlists); }
 async function saveHistory(){ lsSet('miku:history', historyWeeks); }
+async function saveRecent(){ lsSet('celestia:recent', recentPlays); }
 async function saveEQState(){ lsSet('miku:eq', eqState); }
 
 /* ============ IMPORTAR ARCHIVOS ============ */
@@ -997,6 +1015,8 @@ function render(){
   if(activeTab==='playlists') return renderPlaylists(main);
   if(activeTab==='podcasts') return renderPodcasts(main);
   if(activeTab==='history') return renderHistory(main);
+  if(activeTab==='recent') return renderRecent(main);
+  if(activeTab==='appSettings') return renderAppSettings(main);
   if(activeTab==='statsDetail') return renderStatsDetail(main);
   if(activeTab==='search') return renderSearch(main);
   if(activeTab==='playlistDetail') return renderPlaylistDetail(main);
@@ -1172,14 +1192,14 @@ function renderAlbumDetail(main){
 
 function buildLibraryItems(filter){
   const items = [];
-  if(filter==='Todo'||filter==='Playlists'){
+  if(filter==='Playlists'){
     items.push({type:'liked', name:'Tus me gusta', subtitle:'Playlist • '+(profile.name||'Tú')});
     playlists.slice().reverse().forEach(p=> items.push({type:'playlist', id:p.id, name:p.name, subtitle:'Playlist • '+(profile.name||'Tú')}));
   }
-  if(filter==='Todo'||filter==='Álbumes'){
+  if(filter==='Álbumes'){
     getAlbums().forEach((al,i)=> items.push({type:'album', idx:i, name:al.album, subtitle:'Álbum • '+al.artist}));
   }
-  if(filter==='Todo'||filter==='Artistas'){
+  if(filter==='Artistas'){
     getArtists().forEach(a=> items.push({type:'artist', name:a, subtitle:'Artista'}));
   }
   if(window.__libSort==='alpha') items.sort((a,b)=>a.name.localeCompare(b.name));
@@ -1220,10 +1240,10 @@ function libCard(item){
 function toggleLibView(){ window.__libView = window.__libView==='grid'? 'list':'grid'; render(); }
 function toggleLibSort(){ window.__libSort = window.__libSort==='alpha'? 'recent':'alpha'; render(); }
 function renderPlaylists(main){
-  window.__libFilter = window.__libFilter || 'Todo';
+  window.__libFilter = window.__libFilter || 'Playlists';
   window.__libView = window.__libView || 'list';
   window.__libSort = window.__libSort || 'recent';
-  const chips = ['Todo','Playlists','Álbumes','Artistas'];
+  const chips = ['Playlists','Álbumes','Artistas'];
   const items = buildLibraryItems(window.__libFilter);
   main.innerHTML = `
     <div class="lib-header">
@@ -1420,6 +1440,12 @@ function registerPlay(track){
   w.artistPlays[track.artist] = (w.artistPlays[track.artist]||0)+1;
   saveHistory();
 }
+function logPlayEvent(track){
+  registerPlay(track);
+  recentPlays.push({ts: Date.now(), trackId: track.id, sourceKind: currentSource.kind, sourceName: currentSource.name});
+  if(recentPlays.length>300) recentPlays = recentPlays.slice(-300); // no crece sin límite
+  saveRecent();
+}
 let listenSaveTimer = null;
 function addListenSeconds(sec){
   const w = currentWeekBucket();
@@ -1548,11 +1574,10 @@ function renderStatsDetail(main){
     `;
   } else {
     const artistsArr = Object.entries(w.artistPlays).sort((a,b)=>b[1]-a[1]);
-    const totalPlays = artistsArr.reduce((s,x)=>s+x[1],0);
     main.innerHTML = `
       <div class="stats-header">${backBtn}<div class="stats-title">Artistas principales</div>${shareBtn}</div>
       <div class="stats-week-range" style="margin-top:18px;">${w.rangeLabel||''}</div>
-      <div class="stats-headline">Escuchaste <span class="accent-num">${totalPlays.toLocaleString('es')}</span> artistas esta semana</div>
+      <div class="stats-headline">Escuchaste <span class="accent-num">${artistsArr.length.toLocaleString('es')}</span> artistas esta semana</div>
       <div class="stats-divider"></div>
       ${artistsArr.map(([a,c],i)=>`
         <div class="stats-rank-row" onclick="openArtist('${encodeURIComponent(a)}')">
@@ -1567,6 +1592,111 @@ function renderStatsDetail(main){
   }
 }
 function backToStats(){ activeTab='history'; document.getElementById('tabsBar').style.display='none'; render(); }
+
+function groupRecentPlays(){
+  const sorted = [...recentPlays].sort((a,b)=>a.ts-b.ts); // orden cronológico ascendente
+  const groups = [];
+  let cur = null;
+  for(const entry of sorted){
+    const dayKey = new Date(entry.ts).toDateString();
+    if(cur && cur.dayKey===dayKey && cur.sourceKind===entry.sourceKind && cur.sourceName===entry.sourceName){
+      cur.count++; cur.trackIds.push(entry.trackId); cur.lastTs = entry.ts;
+    } else {
+      cur = {dayKey, sourceKind:entry.sourceKind, sourceName:entry.sourceName, count:1, trackIds:[entry.trackId], lastTs:entry.ts};
+      groups.push(cur);
+    }
+  }
+  return groups.reverse(); // más reciente primero
+}
+function recentDayLabel(dayKey){
+  const d = new Date(dayKey);
+  const today = new Date(); today.setHours(0,0,0,0);
+  const yest = new Date(today); yest.setDate(yest.getDate()-1);
+  const dd = new Date(d); dd.setHours(0,0,0,0);
+  if(dd.getTime()===today.getTime()) return 'Hoy';
+  if(dd.getTime()===yest.getTime()) return 'Ayer';
+  return dd.toLocaleDateString('es',{weekday:'short', day:'numeric', month:'short', year:'numeric'});
+}
+function recentGroupClick(g){
+  if(g.sourceKind==='Playlist' && g.sourceName==='Tus me gusta') return 'openLiked()';
+  if(g.sourceKind==='Playlist'){ const p=playlists.find(p=>p.name===g.sourceName); return p?`openPlaylist('${p.id}')`:''; }
+  if(g.sourceKind==='Álbum'){ const idx=getAlbums().findIndex(a=>a.album===g.sourceName); return idx>=0?`openAlbum(${idx})`:''; }
+  if(g.sourceKind==='Artista') return `openArtist('${encodeURIComponent(g.sourceName)}')`;
+  return '';
+}
+function renderRecent(main){
+  const backBtn = `<button class="stats-back" onclick="activeTab='home';document.getElementById('tabsBar').style.display='';render()">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>`;
+  const groups = groupRecentPlays();
+  if(!groups.length){
+    main.innerHTML = `<div class="stats-header">${backBtn}<div class="stats-title">Recientes</div></div>` +
+      emptyState(noteIcon,'Aún no hay nada aquí','Cuando termines de escuchar canciones, tu actividad va a aparecer en esta lista.',null);
+    return;
+  }
+  let lastDayKey = null;
+  let rows = '';
+  groups.forEach(g=>{
+    if(g.dayKey!==lastDayKey){
+      rows += `<div class="section-title" style="margin-top:20px;">${recentDayLabel(g.dayKey)}</div>`;
+      lastDayKey = g.dayKey;
+    }
+    const coverTrack = tracks.find(t=>t.id===g.trackIds[g.trackIds.length-1]);
+    const title = g.sourceName || g.sourceKind;
+    const ownerPart = (g.sourceKind==='Playlist')? ' • '+(profile.name||'Tú') : '';
+    const subtitle = `Reprodujiste ${g.count} ${g.count===1?'canción':'canciones'} • ${g.sourceKind}${ownerPart}`;
+    const clickFn = recentGroupClick(g);
+    rows += `<div class="row" ${clickFn?`onclick="${clickFn}"`:''}>
+      <div class="art">${coverTrack? trackArt(coverTrack,52) : noteIcon}</div>
+      <div class="meta"><div class="t">${escapeHtml(title)}</div><div class="s">${escapeHtml(subtitle)}</div></div>
+    </div>`;
+  });
+  main.innerHTML = `<div class="stats-header">${backBtn}<div class="stats-title">Recientes</div></div>` + rows;
+}
+
+function renderAppSettings(main){
+  const backBtn = `<button class="stats-back" onclick="activeTab='home';document.getElementById('tabsBar').style.display='';render()">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>`;
+  main.innerHTML = `
+    <div class="stats-header">${backBtn}<div class="stats-title">Configuración</div></div>
+    <div style="margin-top:16px;">
+
+      <div class="app-settings-row" onclick="openProfileEdit()">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+        <div><div class="t">Cuenta</div><div class="s">Nombre de usuario y foto de perfil</div></div>
+      </div>
+
+      <div class="app-settings-row" onclick="openEQ()">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 21V14M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>
+        <div><div class="t">Reproducción</div><div class="s">Ecualizador y crossfade entre canciones</div></div>
+      </div>
+
+      <div class="app-settings-row" onclick="confirmClearHistory()">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
+        <div><div class="t">Almacenamiento y datos</div><div class="s">Borrar estadísticas de reproducción guardadas en este dispositivo</div></div>
+      </div>
+
+      <div class="app-settings-row" onclick="showToast('Apariencia — próximamente')">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        <div><div class="t">Apariencia</div><div class="s">Temas y colores personalizados</div></div>
+        <span class="badge">Próximamente</span>
+      </div>
+
+      <div class="app-settings-row" onclick="showToast('Notificaciones — próximamente')">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg>
+        <div><div class="t">Notificaciones</div><div class="s">Controles del reproductor en la barra de notificaciones</div></div>
+        <span class="badge">Próximamente</span>
+      </div>
+
+      <div class="app-settings-row" style="cursor:default;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></svg>
+        <div><div class="t">Acerca de</div><div class="s">Celestia 1.0 — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo.</div></div>
+      </div>
+
+    </div>
+  `;
+}
 let currentSource = {kind:'Todas las canciones', name:''};
 function labelForExpr(expr){
   if(expr==='liked') return {kind:'Playlist', name:'Tus me gusta'};
@@ -1600,13 +1730,13 @@ function loadCurrent(autoplay){
   audio.src = currentTrack.url;
   audio.currentTime = 0;
   lastListenTick = null;
+  playCounted = false;
   ensureEQGraph();
   const chain = chainFor(audio);
   if(chain) chain.gain.gain.value = 1;
   if(autoplay){ audio.play(); }
   updatePlayerUI();
   renderMini();
-  registerPlay(currentTrack);
   updateMediaSessionMetadata();
   if(activeTab==='history') render();
   if(document.getElementById('overlayQueue').classList.contains('show')) renderQueueList();
@@ -1668,9 +1798,9 @@ function startCrossfade(){
       currentIndex = idx>=0? idx : currentIndex;
       currentTrack = nextT;
       lastListenTick = null;
+      playCounted = false;
       updatePlayerUI();
       renderMini();
-      registerPlay(currentTrack);
       updateMediaSessionMetadata();
       if(activeTab==='history') render();
       if(document.getElementById('overlayQueue').classList.contains('show')) renderQueueList();
@@ -1683,6 +1813,7 @@ function onAudioPlay(e){ if(e.target!==audio) return; isPlaying=true; updatePlay
 function onAudioPause(e){ if(e.target!==audio) return; isPlaying=false; updatePlayIcons(); if('mediaSession' in navigator) navigator.mediaSession.playbackState='paused'; clearTimeout(listenSaveTimer); saveHistory(); }
 function onAudioEnded(e){
   if(e.target!==audio) return;
+  if(!playCounted && currentTrack){ playCounted = true; logPlayEvent(currentTrack); if(activeTab==='history'||activeTab==='recent') render(); }
   clearTimeout(listenSaveTimer); saveHistory();
   if(sleepTimerEndOfTrack){
     sleepTimerEndOfTrack = false;
@@ -1691,11 +1822,12 @@ function onAudioEnded(e){
     updatePlayIcons();
     return;
   }
-  if(repeatMode===1){ audio.currentTime=0; audio.play(); return; }
+  if(repeatMode===1){ audio.currentTime=0; playCounted=false; audio.play(); return; }
   const nextT = peekNextTrack();
   if(nextT){ nextTrack(); } else { updatePlayIcons(); }
 }
 let lastListenTick = null;
+let playCounted = false;
 function onAudioTimeUpdate(e){
   if(e.target!==audio) return;
   const pct = audio.duration? (audio.currentTime/audio.duration*100):0;
@@ -1708,6 +1840,13 @@ function onAudioTimeUpdate(e){
     if(delta>0 && delta<2) addListenSeconds(delta);
   }
   lastListenTick = audio.currentTime;
+  // Solo se cuenta como "reproducida" cuando llegó casi al final (90%+),
+  // no apenas se selecciona o se toca brevemente la canción.
+  if(!playCounted && currentTrack && isFinite(audio.duration) && audio.duration>0 && (audio.currentTime/audio.duration)>=0.9){
+    playCounted = true;
+    logPlayEvent(currentTrack);
+    if(activeTab==='history'||activeTab==='recent') render();
+  }
   if('mediaSession' in navigator && isFinite(audio.duration)){
     try{ navigator.mediaSession.setPositionState({duration:audio.duration, playbackRate:1, position:audio.currentTime}); }catch(e){}
   }
@@ -2187,6 +2326,8 @@ function refreshAvatarUI(){
 function openDrawer(){ refreshAvatarUI(); document.getElementById('drawer').classList.add('show'); document.getElementById('drawerOverlay').classList.add('show'); }
 function closeDrawer(){ document.getElementById('drawer').classList.remove('show'); document.getElementById('drawerOverlay').classList.remove('show'); }
 function goToHistory(){ activeTab='history'; window.__histWeekIdx=0; document.getElementById('tabsBar').style.display='none'; render(); }
+function goToRecent(){ activeTab='recent'; document.getElementById('tabsBar').style.display='none'; render(); }
+function goToAppSettings(){ activeTab='appSettings'; document.getElementById('tabsBar').style.display='none'; render(); }
 
 function goToProfile(){ activeTab='profile'; document.getElementById('tabsBar').style.display='none'; render(); }
 function renderProfileView(main){
@@ -2204,7 +2345,7 @@ function renderProfileView(main){
     </div>
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:24px;">
       <button class="btn outline" style="padding:8px 22px;" onclick="openProfileEdit()">Editar</button>
-      <button class="icon-btn" onclick="openSettingsSheet()">
+      <button class="icon-btn" onclick="goToAppSettings()">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.9l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.9-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1-1.6 1.7 1.7 0 00-1.9.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.9 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1 1.7 1.7 0 00-.3-1.9l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.9.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.9-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.9V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg>
       </button>
     </div>
