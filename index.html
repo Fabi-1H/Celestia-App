@@ -787,6 +787,12 @@ nav.bottom button.active{color:var(--accent);}
   <input type="file" id="fileInput" class="hidden-input" multiple accept="audio/*">
   <input type="file" id="folderInput" class="hidden-input" multiple webkitdirectory>
   <div class="toast" id="toast"></div>
+  <div id="importProgress" style="display:none;position:fixed;left:16px;right:16px;bottom:90px;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:12px 16px;z-index:400;font-size:13px;">
+    <div id="importProgressText">Importando…</div>
+    <div style="height:5px;background:var(--surface);border-radius:3px;margin-top:8px;overflow:hidden;">
+      <div id="importProgressBar" style="height:100%;width:0%;background:var(--accent);transition:width .2s;"></div>
+    </div>
+  </div>
   <audio id="audio" crossorigin="anonymous"></audio>
   <audio id="audioB" crossorigin="anonymous"></audio>
 </div>
@@ -930,8 +936,18 @@ async function handleImportedFiles(fileList){
   const audioFiles = all.filter(isAudioFile);
   const skipped = all.length - audioFiles.length;
   if(!audioFiles.length){ showToast('No se encontraron archivos de audio'); return; }
-  showToast('Analizando '+audioFiles.length+' canción(es)...');
-  for(const file of audioFiles){ await addTrackFromFile(file); }
+  const progressEl = document.getElementById('importProgress');
+  const progressText = document.getElementById('importProgressText');
+  const progressBar = document.getElementById('importProgressBar');
+  progressEl.style.display = 'block';
+  for(let i=0;i<audioFiles.length;i++){
+    progressText.textContent = `Importando ${i+1} de ${audioFiles.length}…`;
+    progressBar.style.width = Math.round((i/audioFiles.length)*100)+'%';
+    await addTrackFromFile(audioFiles[i]);
+    // refrescamos la biblioteca cada tanto para que se vea avanzar, sin recalcular todo por cada archivo
+    if(i%15===0 || i===audioFiles.length-1) renderAll();
+  }
+  progressEl.style.display = 'none';
   renderAll();
   showToast('Listo — '+audioFiles.length+' canción(es) importada(s)'+(skipped? ' · '+skipped+' archivo(s) no compatibles omitidos':''));
 }
@@ -951,8 +967,10 @@ function addTrackFromFile(file){
     if(tracks.some(t=>t.id===id)){ resolve(); return; } // ya importada anteriormente
     const url = URL.createObjectURL(file);
     const base = { id, file, name: file.name, url, title:null, artist:null, album:null, cover:null, duration:0, liked:false, lyrics:'', isPodcast:false };
+    let settled = false;
 
     const finish = (tag)=>{
+      if(settled) return; settled = true;
       const guess = guessFromFilename(file.name);
       const ov = metaOverrides[file.name] || {};
       base.title = ov.title || (tag && tag.title) || guess.title;
@@ -961,10 +979,12 @@ function addTrackFromFile(file){
       base.lyrics = ov.lyrics || (tag && tag.lyrics) || '';
       base.isPodcast = !!ov.isPodcast;
       if(tag && tag.picture){
-        const {data, format} = tag.picture;
-        let bstr='';
-        for(let i=0;i<data.length;i++) bstr += String.fromCharCode(data[i]);
-        base.cover = `data:${format};base64,${btoa(bstr)}`;
+        try{
+          const {data, format} = tag.picture;
+          let bstr='';
+          for(let i=0;i<data.length;i++) bstr += String.fromCharCode(data[i]);
+          base.cover = `data:${format};base64,${btoa(bstr)}`;
+        }catch(e){} // carátula corrupta o demasiado pesada: seguimos sin ella
       }
       tracks.push(base);
       idbPutTrack({
@@ -983,15 +1003,21 @@ function addTrackFromFile(file){
     };
 
     if(window.jsmediatags){
-      window.jsmediatags.read(file, {
-        onSuccess: (t)=>{
-          const tg = t.tags;
-          let lyr = '';
-          if(tg.lyrics && tg.lyrics.lyrics) lyr = tg.lyrics.lyrics;
-          finish({title:tg.title, artist:tg.artist, album:tg.album, picture:tg.picture, lyrics:lyr});
-        },
-        onError: ()=> finish(null)
-      });
+      // Si la lectura de metadatos se traba (tag corrupto, formato raro, etc.),
+      // no dejamos que bloquee el resto de la importación para siempre.
+      const timeoutId = setTimeout(()=> finish(null), 6000);
+      try{
+        window.jsmediatags.read(file, {
+          onSuccess: (t)=>{
+            clearTimeout(timeoutId);
+            const tg = t.tags;
+            let lyr = '';
+            if(tg.lyrics && tg.lyrics.lyrics) lyr = tg.lyrics.lyrics;
+            finish({title:tg.title, artist:tg.artist, album:tg.album, picture:tg.picture, lyrics:lyr});
+          },
+          onError: ()=>{ clearTimeout(timeoutId); finish(null); }
+        });
+      }catch(e){ clearTimeout(timeoutId); finish(null); }
     } else { finish(null); }
   });
 }
