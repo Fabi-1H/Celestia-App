@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <link rel="manifest" href="manifest.json">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Celestia</title>
@@ -312,6 +311,7 @@ nav.bottom button.active{color:var(--accent);}
 .settings-label:first-of-type{margin-top:4px;}
 .mini-av{width:40px;height:40px;border-radius:50%;overflow:hidden;flex-shrink:0;background:var(--surface-2);}
 .mini-av img,.mini-av svg{width:100%;height:100%;object-fit:cover;}
+.profile-av img,.profile-av svg{width:100%;height:100%;object-fit:cover;display:block;}
 .field{margin-bottom:14px;}
 .field label{font-size:11.5px;color:var(--text-dim);font-weight:600;display:block;margin-bottom:6px;}
 .field input,.field textarea{
@@ -2195,7 +2195,7 @@ function renderProfileView(main){
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
     </button>
     <div style="display:flex;align-items:center;gap:18px;margin:14px 0 20px;">
-      <div style="width:104px;height:104px;border-radius:50%;overflow:hidden;flex-shrink:0;box-shadow:0 0 0 2px var(--accent-dim);">${avatarHTML()}</div>
+      <div class="profile-av" style="width:104px;height:104px;border-radius:50%;overflow:hidden;flex-shrink:0;box-shadow:0 0 0 2px var(--accent-dim);">${avatarHTML()}</div>
       <div>
         <div style="font-family:var(--font-head);font-size:23px;font-weight:700;">${escapeHtml(profile.name||'Tú')}</div>
         <div style="color:var(--text-dim);font-size:12.5px;margin-top:5px;">${playlists.length} playlist(s) • ${tracks.length} canción(es)</div>
