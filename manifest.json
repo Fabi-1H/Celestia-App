@@ -1,5 +1,5 @@
 {
-  "background_color": "#ffffff",
+  "background_color": "#0A0909",
   "dir": "ltr",
   "display": "standalone",
   "name": "Celestia",
@@ -7,7 +7,7 @@
   "scope": "/",
   "short_name": "Celestia",
   "start_url": "https://fabi-1h.github.io/Celestia-App/",
-  "theme_color": "#ffffff",
+  "theme_color": "#0A0909",
   "id": "Celestia",
   "description": "Celestia is a local audio player that will make you feel a comfortable, familiar, and heavenly experience.",
   "lang": "es",
