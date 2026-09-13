@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <link rel="manifest" href="manifest.json">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Celestia</title>
@@ -807,19 +806,26 @@ let crossfading = false;
 let crossfadeState = {enabled:false, seconds:6};
 
 /* ============ PERSISTENCIA ============ */
-async function loadState(){
-  try{ const r = await window.storage.get('miku:meta-overrides'); metaOverrides = r? JSON.parse(r.value): {}; }catch(e){ metaOverrides={}; }
-  try{ const r = await window.storage.get('miku:playlists'); playlists = r? JSON.parse(r.value): []; }catch(e){ playlists=[]; }
-  try{ const r = await window.storage.get('miku:history'); historyWeeks = r? JSON.parse(r.value): []; }catch(e){ historyWeeks=[]; }
-  try{ const r = await window.storage.get('miku:eq'); eqState = r? JSON.parse(r.value): eqState; }catch(e){}
-  try{ const r = await window.storage.get('miku:profile'); profile = r? JSON.parse(r.value): profile; }catch(e){}
-  try{ const r = await window.storage.get('celestia:crossfade'); crossfadeState = r? JSON.parse(r.value): crossfadeState; }catch(e){}
+function lsGet(key, fallback){
+  try{ const v = localStorage.getItem(key); return v!==null ? JSON.parse(v) : fallback; }
+  catch(e){ return fallback; }
 }
-async function saveProfileState(){ try{ await window.storage.set('miku:profile', JSON.stringify(profile)); }catch(e){} }
-async function saveOverrides(){ try{ await window.storage.set('miku:meta-overrides', JSON.stringify(metaOverrides)); }catch(e){} }
-async function savePlaylists(){ try{ await window.storage.set('miku:playlists', JSON.stringify(playlists)); }catch(e){} }
-async function saveHistory(){ try{ await window.storage.set('miku:history', JSON.stringify(historyWeeks)); }catch(e){} }
-async function saveEQState(){ try{ await window.storage.set('miku:eq', JSON.stringify(eqState)); }catch(e){} }
+function lsSet(key, value){
+  try{ localStorage.setItem(key, JSON.stringify(value)); }catch(e){}
+}
+async function loadState(){
+  metaOverrides = lsGet('miku:meta-overrides', {});
+  playlists = lsGet('miku:playlists', []);
+  historyWeeks = lsGet('miku:history', []);
+  eqState = lsGet('miku:eq', eqState);
+  profile = lsGet('miku:profile', profile);
+  crossfadeState = lsGet('celestia:crossfade', crossfadeState);
+}
+async function saveProfileState(){ lsSet('miku:profile', profile); }
+async function saveOverrides(){ lsSet('miku:meta-overrides', metaOverrides); }
+async function savePlaylists(){ lsSet('miku:playlists', playlists); }
+async function saveHistory(){ lsSet('miku:history', historyWeeks); }
+async function saveEQState(){ lsSet('miku:eq', eqState); }
 
 /* ============ IMPORTAR ARCHIVOS ============ */
 function openImport(){ document.getElementById('overlayImportChoice').classList.add('show'); }
@@ -2074,7 +2080,7 @@ function setCrossfadeSeconds(s){
   document.getElementById('cfDurations').querySelectorAll('button').forEach(b=> b.classList.toggle('active', b.textContent===s+'s'));
   saveCrossfadeState();
 }
-async function saveCrossfadeState(){ try{ await window.storage.set('celestia:crossfade', JSON.stringify(crossfadeState)); }catch(e){} }
+async function saveCrossfadeState(){ lsSet('celestia:crossfade', crossfadeState); }
 
 /* ============ AVATAR / DRAWER / PERFIL ============ */
 function avatarHTML(){ return profile.photo? `<img src="${profile.photo}">` : kLogoSVG(); }
