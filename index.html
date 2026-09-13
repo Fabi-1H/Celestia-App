@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <link rel="manifest" href="manifest.json">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Celestia</title>
@@ -2307,6 +2306,11 @@ function showToast(msg){
 
 /* ============ INIT ============ */
 (async function init(){
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', ()=>{
+      navigator.serviceWorker.register('sw.js').catch(()=>{});
+    });
+  }
   await loadState();
   refreshAvatarUI();
   setupMediaSession();
