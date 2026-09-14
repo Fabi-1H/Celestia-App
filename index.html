@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
 <link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0A0909">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Celestia</title>
@@ -245,6 +246,7 @@ nav.bottom button.active{color:var(--accent);}
   max-width:430px;margin:0 auto;
   transform:translateY(100%);pointer-events:none;
   transition:transform .32s cubic-bezier(.22,1,.36,1);
+  overflow-y:auto;
 }
 #player.show{transform:translateY(0);pointer-events:auto;}
 #player .phead{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
@@ -319,6 +321,18 @@ nav.bottom button.active{color:var(--accent);}
 .app-settings-row .t{font-size:15px;font-weight:700;}
 .app-settings-row .s{font-size:12.5px;color:var(--text-dim);margin-top:2px;}
 .app-settings-row .badge{font-size:10.5px;color:var(--text-faint);border:1px solid var(--line);border-radius:10px;padding:2px 8px;margin-left:auto;flex-shrink:0;align-self:center;}
+.player-extra{margin-top:22px;padding-top:16px;border-top:1px solid var(--line);}
+.player-extra h4{font-size:13px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px;}
+.artist-note{font-size:13.5px;color:var(--text-dim);line-height:1.5;background:var(--surface-2);border-radius:10px;padding:12px 14px;margin-bottom:14px;}
+.artist-note-edit{background:none;border:1px solid var(--line);color:var(--text-dim);font-size:11.5px;font-weight:600;padding:5px 12px;border-radius:14px;margin-bottom:14px;}
+.artist-more-scroll{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;margin-bottom:18px;}
+.artist-more-card{flex-shrink:0;width:96px;cursor:pointer;}
+.artist-more-card .art{width:96px;height:96px;border-radius:8px;overflow:hidden;background:var(--surface-2);display:flex;align-items:center;justify-content:center;color:var(--text-faint);}
+.artist-more-card .art img{width:100%;height:100%;object-fit:cover;}
+.artist-more-card .t{font-size:11.5px;margin-top:6px;line-height:1.3;color:var(--text-dim);}
+.credits-row{display:flex;justify-content:space-between;font-size:13px;padding:8px 0;border-bottom:1px solid var(--line);}
+.credits-row:last-child{border-bottom:none;}
+.credits-row .role{color:var(--text-faint);}
 .field{margin-bottom:14px;}
 .field label{font-size:11.5px;color:var(--text-dim);font-weight:600;display:block;margin-bottom:6px;}
 .field input,.field textarea{
@@ -538,6 +552,7 @@ nav.bottom button.active{color:var(--accent);}
       <span class="lyrics-bar-preview" id="lyricsBarPreview">Toca para añadir letra</span>
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3v18M16 3v18M3 8h18M3 16h18" opacity="0"/><path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
+    <div id="playerArtistSection"></div>
   </div>
 
   <!-- OVERLAYS -->
@@ -804,6 +819,8 @@ let playlists = [];       // {id,name,trackIds:[]}
 let historyWeeks = [];    // [{weekKey,label,plays:{trackId:count}, artistPlays:{artist:count}}]
 let recentPlays = [];     // [{ts, trackId, sourceKind, sourceName}] — historial cronológico para "Recientes"
 let metaOverrides = {};   // por nombre de archivo: {title,artist,album,lyrics}
+let artistNotes = {};     // { artistName: 'nota escrita por el usuario' } — no hay datos reales de biografía sin internet
+let wikiCache = {};       // { artistName: {extract, thumbnail, pageUrl, ts} | {notFound:true, ts} } — caché de búsquedas en Wikipedia
 
 let profile = {name:'Tú', photo:null, featured:[]};
 let pendingPhoto = null;
@@ -902,6 +919,8 @@ async function idbUpdateTrackFields(id, patch){
 
 async function loadState(){
   metaOverrides = lsGet('miku:meta-overrides', {});
+  artistNotes = lsGet('celestia:artist-notes', {});
+  wikiCache = lsGet('celestia:wiki-cache', {});
   playlists = lsGet('miku:playlists', []);
   historyWeeks = lsGet('miku:history', []);
   recentPlays = lsGet('celestia:recent', []);
@@ -916,12 +935,14 @@ async function loadState(){
       id: rec.id, file: null, name: rec.name, url,
       title: rec.title, artist: rec.artist, album: rec.album,
       cover: rec.cover, duration: rec.duration || 0,
-      liked: !!rec.liked, lyrics: rec.lyrics || '', isPodcast: !!rec.isPodcast
+      liked: !!rec.liked, lyrics: rec.lyrics || '', composer: rec.composer || '', isPodcast: !!rec.isPodcast, addedAt: rec.addedAt || 0
     });
   }
 }
 async function saveProfileState(){ lsSet('miku:profile', profile); }
 async function saveOverrides(){ lsSet('miku:meta-overrides', metaOverrides); }
+async function saveArtistNotes(){ lsSet('celestia:artist-notes', artistNotes); }
+async function saveWikiCache(){ lsSet('celestia:wiki-cache', wikiCache); }
 async function savePlaylists(){ lsSet('miku:playlists', playlists); }
 async function saveHistory(){ lsSet('miku:history', historyWeeks); }
 async function saveRecent(){ lsSet('celestia:recent', recentPlays); }
@@ -966,7 +987,7 @@ function addTrackFromFile(file){
     const id = 't_'+file.name+'_'+file.size;
     if(tracks.some(t=>t.id===id)){ resolve(); return; } // ya importada anteriormente
     const url = URL.createObjectURL(file);
-    const base = { id, file, name: file.name, url, title:null, artist:null, album:null, cover:null, duration:0, liked:false, lyrics:'', isPodcast:false };
+    const base = { id, file, name: file.name, url, title:null, artist:null, album:null, cover:null, duration:0, liked:false, lyrics:'', composer:'', isPodcast:false, addedAt: Date.now() };
     let settled = false;
 
     const finish = (tag)=>{
@@ -977,6 +998,7 @@ function addTrackFromFile(file){
       base.artist = ov.artist || (tag && tag.artist) || guess.artist;
       base.album = ov.album || (tag && tag.album) || 'Álbum desconocido';
       base.lyrics = ov.lyrics || (tag && tag.lyrics) || '';
+      base.composer = ov.composer || (tag && tag.composer) || '';
       base.isPodcast = !!ov.isPodcast;
       if(tag && tag.picture){
         try{
@@ -989,8 +1011,8 @@ function addTrackFromFile(file){
       tracks.push(base);
       idbPutTrack({
         id: base.id, blob: file, name: base.name, title: base.title, artist: base.artist,
-        album: base.album, cover: base.cover, lyrics: base.lyrics,
-        isPodcast: base.isPodcast, liked: base.liked, duration: 0
+        album: base.album, cover: base.cover, lyrics: base.lyrics, composer: base.composer,
+        isPodcast: base.isPodcast, liked: base.liked, duration: 0, addedAt: base.addedAt
       });
       const probe = new Audio();
       probe.preload = 'metadata';
@@ -1013,7 +1035,7 @@ function addTrackFromFile(file){
             const tg = t.tags;
             let lyr = '';
             if(tg.lyrics && tg.lyrics.lyrics) lyr = tg.lyrics.lyrics;
-            finish({title:tg.title, artist:tg.artist, album:tg.album, picture:tg.picture, lyrics:lyr});
+            finish({title:tg.title, artist:tg.artist, album:tg.album, picture:tg.picture, lyrics:lyr, composer:tg.composer});
           },
           onError: ()=>{ clearTimeout(timeoutId); finish(null); }
         });
@@ -1043,6 +1065,7 @@ function render(){
   if(activeTab==='history') return renderHistory(main);
   if(activeTab==='recent') return renderRecent(main);
   if(activeTab==='appSettings') return renderAppSettings(main);
+  if(activeTab==='recentAdded') return renderRecentAdded(main);
   if(activeTab==='statsDetail') return renderStatsDetail(main);
   if(activeTab==='search') return renderSearch(main);
   if(activeTab==='playlistDetail') return renderPlaylistDetail(main);
@@ -1093,30 +1116,43 @@ function renderHome(main){
     return;
   }
   const quick = buildQuickAccess();
-  const recents = musicTracks().slice(-8).reverse();
+  const recents = musicTracks().slice().sort((a,b)=>b.addedAt-a.addedAt).slice(0,4);
   const top = topTracksThisWeek(5);
-  const artistsList = getArtists().slice(0,8);
+  const artistsList = getArtists().slice(0,4);
   main.innerHTML = `
     <div class="quick-grid">${quick.map(item=>`
       <div class="quick-item" onclick="${item.type==='liked'?'openLiked()':`openPlaylist('${item.id}')`}">
         ${quickTileArt(item)}
         <div class="name">${escapeHtml(item.name)}</div>
       </div>`).join('')}</div>
-    <div class="section-title">Añadidas recientemente</div>
+    <div class="section-title">Añadidas recientemente${musicTracks().length>4?`<span class="see-all" onclick="goToRecentAdded()">•••</span>`:''}</div>
     ${recents.map(t=>trackRow(t)).join('')}
-    ${top.length? `<div class="section-title">Tu semana</div>
+    ${top.length? `<div class="section-title">Tu semana<span class="see-all" onclick="goToHistory()">•••</span></div>
     <div class="hgrid">${top.map(t=>`
       <div class="card" onclick="playTrack('${t.track.id}','week')">
         <div class="art">${trackArt(t.track,132)}</div>
         <div class="t">${escapeHtml(t.track.title)}</div><div class="s">${t.count} reproducciones</div>
       </div>`).join('')}</div>`:''}
-    ${artistsList.length? `<div class="section-title">Artistas</div>
+    ${artistsList.length? `<div class="section-title">Artistas${getArtists().length>4?`<span class="see-all" onclick="goToLibraryArtists()">•••</span>`:''}</div>
     <div class="hgrid">${artistsList.map(a=>`
       <div class="card artist" onclick="openArtist('${encodeURIComponent(a)}')">
         <div class="art">${trackArt(getArtistTracks(a)[0],132)}</div>
         <div class="t">${escapeHtml(a)}</div><div class="s">Artista</div>
       </div>`).join('')}</div>`:''}
   `;
+}
+function goToLibraryArtists(){ window.__libFilter='Artistas'; showTab('playlists'); }
+function goToRecentAdded(){ activeTab='recentAdded'; document.getElementById('tabsBar').style.display='none'; render(); }
+function renderRecentAdded(main){
+  const backBtn = `<button class="stats-back" onclick="activeTab='home';document.getElementById('tabsBar').style.display='';render()">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>`;
+  const cutoff = Date.now() - 7*24*60*60*1000; // últimos 7 días
+  const list = musicTracks().filter(t=>t.addedAt>=cutoff).sort((a,b)=>b.addedAt-a.addedAt);
+  const body = list.length
+    ? list.map(t=>trackRow(t,{showAlbum:true})).join('')
+    : `<div style="padding:20px 4px;color:var(--text-dim);font-size:13.5px;">No importaste canciones nuevas en los últimos 7 días.</div>`;
+  main.innerHTML = `<div class="stats-header">${backBtn}<div class="stats-title">Agregadas recientemente</div></div>` + body;
 }
 function openLiked(){ activeTab='likedDetail'; document.getElementById('tabsBar').style.display='none'; render(); }
 function renderLikedDetail(main){
@@ -2095,6 +2131,7 @@ function updatePlayerUI(){
   const firstLine = currentTrackLRC? (currentTrackLRC[0].text||'') : (currentTrack.lyrics? currentTrack.lyrics.split('\n').map(l=>l.trim()).find(l=>l.length) : '');
   document.getElementById('playerLyricsLine').textContent = firstLine || '';
   document.getElementById('lyricsBarPreview').textContent = firstLine || 'Toca para añadir letra';
+  renderPlayerArtistSection();
   updatePlayIcons();
 }
 function renderMini(){
@@ -2108,7 +2145,92 @@ function renderMini(){
   document.getElementById('miniRepeatBtn').classList.toggle('on',repeatMode>0);
   updatePlayIcons();
 }
+const WIKI_CACHE_DAYS = 30;      // cuánto guardamos un resultado exitoso antes de volver a buscar
+const WIKI_NOTFOUND_COOLDOWN_DAYS = 7; // cuánto esperamos antes de reintentar un artista sin resultados
+async function fetchWikiSummary(artist){
+  try{
+    const url = `https://es.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(artist)}`;
+    const res = await fetch(url);
+    if(!res.ok) return null;
+    const data = await res.json();
+    if(data.type==='disambiguation' || !data.extract) return null;
+    return {
+      extract: data.extract,
+      thumbnail: data.thumbnail? data.thumbnail.source : null,
+      pageUrl: data.content_urls? data.content_urls.desktop.page : null
+    };
+  }catch(e){ return null; } // sin internet u otro error de red
+}
 function openPlayer(){ document.getElementById('player').classList.add('show'); }
+function renderPlayerArtistSection(){
+  const el = document.getElementById('playerArtistSection');
+  if(!el || !currentTrack) return;
+  const artist = currentTrack.artist;
+  const cached = wikiCache[artist];
+  const isFresh = cached && (Date.now()-cached.ts) < (cached.notFound? WIKI_NOTFOUND_COOLDOWN_DAYS : WIKI_CACHE_DAYS)*86400000;
+
+  renderArtistSectionBody(el, artist, isFresh? cached : null, !isFresh);
+
+  if(!isFresh){
+    fetchWikiSummary(artist).then(result=>{
+      wikiCache[artist] = result? {...result, ts:Date.now()} : {notFound:true, ts:Date.now()};
+      saveWikiCache();
+      if(currentTrack && currentTrack.artist===artist){ // el usuario podría haber cambiado de canción mientras buscaba
+        renderArtistSectionBody(el, artist, result, false);
+      }
+    });
+  }
+}
+function renderArtistSectionBody(el, artist, wikiResult, loading){
+  const more = musicTracks().filter(t=>t.artist===artist && (!currentTrack || t.id!==currentTrack.id)).slice(0,10);
+  const note = artistNotes[artist] || '';
+
+  let aboutHtml;
+  if(loading){
+    aboutHtml = `<div class="artist-note" style="color:var(--text-faint);">Buscando información sobre ${escapeHtml(artist)}…</div>`;
+  } else if(wikiResult && wikiResult.extract){
+    aboutHtml = `<div class="artist-note">${escapeHtml(wikiResult.extract)}</div>
+      <div style="font-size:11px;color:var(--text-faint);margin:-6px 0 14px;">Fuente: <a href="${wikiResult.pageUrl}" target="_blank" style="color:var(--text-faint);text-decoration:underline;">Wikipedia</a></div>`;
+  } else {
+    aboutHtml = note
+      ? `<div class="artist-note">${escapeHtml(note)}</div><button class="artist-note-edit" onclick="editArtistNote('${encodeURIComponent(artist)}')">Editar nota</button>`
+      : `<div style="font-size:12.5px;color:var(--text-faint);margin-bottom:10px;">No encontramos a ${escapeHtml(artist)} en Wikipedia.</div>
+         <button class="artist-note-edit" onclick="editArtistNote('${encodeURIComponent(artist)}')">+ Añadir una nota vos mismo</button>`;
+  }
+
+  const moreHtml = more.length
+    ? `<div class="artist-more-scroll">${more.map(t=>`
+        <div class="artist-more-card" onclick="playTrack('${t.id}','artist:${encodeURIComponent(artist)}')">
+          <div class="art">${trackArt(t,96)}</div>
+          <div class="t">${escapeHtml(t.title)}</div>
+        </div>`).join('')}</div>`
+    : `<div style="font-size:12.5px;color:var(--text-faint);margin-bottom:18px;">No tenés más canciones de este artista en tu biblioteca.</div>`;
+
+  const composerHtml = currentTrack.composer
+    ? `<div class="credits-row"><span>${escapeHtml(currentTrack.composer)}</span><span class="role">Compositor</span></div>`
+    : `<div class="credits-row"><span style="color:var(--text-faint);">No disponible en el archivo</span><span class="role">Compositor</span></div>`;
+
+  el.innerHTML = `
+    <div class="player-extra">
+      <h4>Acerca del artista</h4>
+      ${aboutHtml}
+      <h4>Más de ${escapeHtml(artist)}</h4>
+      ${moreHtml}
+      <h4>Créditos</h4>
+      <div class="credits-row"><span>${escapeHtml(artist)}</span><span class="role">Artista principal</span></div>
+      ${composerHtml}
+    </div>
+  `;
+}
+function editArtistNote(encArtist){
+  const artist = decodeURIComponent(encArtist);
+  const current = artistNotes[artist] || '';
+  const next = prompt('Nota sobre '+artist+' (solo la ves vos, se guarda en este celular):', current);
+  if(next===null) return;
+  if(next.trim()===''){ delete artistNotes[artist]; } else { artistNotes[artist] = next.trim(); }
+  saveArtistNotes();
+  renderPlayerArtistSection();
+}
 function closePlayer(){ document.getElementById('player').classList.remove('show'); }
 function fmtTime(s){ if(!isFinite(s)) return '0:00'; const m=Math.floor(s/60); const sec=Math.floor(s%60); return m+':'+String(sec).padStart(2,'0'); }
 
