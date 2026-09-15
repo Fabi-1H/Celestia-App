@@ -72,12 +72,12 @@ header.top{
 .avatar-btn svg{width:100%;height:100%;}
 
 /* DRAWER */
-.drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:250;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .25s ease, visibility 0s linear .25s;}
-.drawer-overlay.show{opacity:1;visibility:visible;pointer-events:auto;transition:opacity .25s ease;}
+.drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:250;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .35s ease, visibility 0s linear .35s;}
+.drawer-overlay.show{opacity:1;visibility:visible;pointer-events:auto;transition:opacity .35s ease;}
 .drawer{
   position:fixed;top:0;left:0;bottom:0;width:min(82%,320px);
   background:linear-gradient(180deg,#1E1618,var(--bg) 60%);
-  transform:translateX(-105%); transition:transform .28s ease;
+  transform:translateX(-105%); transition:transform .4s cubic-bezier(.22,1,.36,1);
   z-index:260; padding:26px 20px calc(20px + env(safe-area-inset-bottom));
   display:flex;flex-direction:column;
 }
@@ -133,8 +133,8 @@ header.top{
 .tab.active{background:var(--text);color:#0A0A0B;border-color:var(--text);}
 
 main{flex:1;overflow-y:auto;padding:6px 20px 160px;}
-@keyframes fadeSlideIn{from{opacity:0;transform:translateY(8px);} to{opacity:1;transform:translateY(0);}}
-main.anim{animation:fadeSlideIn .24s cubic-bezier(.22,1,.36,1);}
+@keyframes fadeSlideIn{from{opacity:0;transform:translateY(16px);} to{opacity:1;transform:translateY(0);}}
+main.anim{animation:fadeSlideIn .42s cubic-bezier(.22,1,.36,1);}
 .section-title{
   font-family:var(--font-head);
   font-size:19px; font-weight:700; margin:22px 0 12px;
@@ -260,7 +260,7 @@ nav.bottom button.active{color:var(--accent);}
   display:flex;flex-direction:column;padding:18px 22px;z-index:100;
   max-width:430px;margin:0 auto;
   transform:translateY(100%);pointer-events:none;
-  transition:transform .32s cubic-bezier(.22,1,.36,1);
+  transition:transform .45s cubic-bezier(.22,1,.36,1);
   overflow-y:auto;will-change:transform;
 }
 #player.show{transform:translateY(0);pointer-events:auto;}
@@ -308,8 +308,11 @@ nav.bottom button.active{color:var(--accent);}
 #player .lyrics-card-head .label{font-weight:700;font-size:14px;}
 #player .lyrics-card-icons{display:flex;gap:8px;}
 #player .lyrics-card-icons button{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.08);border:none;color:var(--text-dim);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-#player .lyrics-card-lines p{font-size:15px;font-weight:700;line-height:1.4;color:var(--text-faint);margin:0 0 6px;transition:color .25s;animation:lyricLineIn .28s ease;}
-@keyframes lyricLineIn{from{opacity:0;transform:translateY(7px);}to{opacity:1;transform:translateY(0);}}
+#player .lyrics-card-lines{overflow:hidden;height:96px;position:relative;scroll-behavior:auto;}
+#player .lyrics-card-lines p{font-size:15px;font-weight:700;line-height:1.4;color:var(--text-faint);margin:0 0 10px;transition:color .45s ease;}
+#player .lyrics-card-lines p.active{color:var(--text);}
+#player .lyrics-card-lines p.line-anim{animation:lyricLineIn .4s ease;}
+@keyframes lyricLineIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
 #player .lyrics-card-lines p.active{color:var(--text);}
 
 /* PANELS (lyrics / eq / add to playlist / edit / sheet) */
@@ -317,13 +320,13 @@ nav.bottom button.active{color:var(--accent);}
   position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:150;
   display:flex;align-items:flex-end;justify-content:center;
   opacity:0;visibility:hidden;pointer-events:none;
-  transition:opacity .2s ease, visibility 0s linear .2s;
+  transition:opacity .35s ease, visibility 0s linear .35s;
 }
-.overlay.show{opacity:1;visibility:visible;pointer-events:auto;transition:opacity .2s ease;}
+.overlay.show{opacity:1;visibility:visible;pointer-events:auto;transition:opacity .35s ease;}
 .sheet{
   width:100%;max-width:430px;background:var(--surface);border-radius:20px 20px 0 0;
   padding:18px 22px calc(22px + env(safe-area-inset-bottom));max-height:82vh;overflow-y:auto;
-  transform:translateY(28px);transition:transform .28s cubic-bezier(.22,1,.36,1);
+  transform:translateY(28px);transition:transform .4s cubic-bezier(.22,1,.36,1);
   will-change:transform;
 }
 .overlay.show .sheet{transform:translateY(0);}
@@ -331,7 +334,7 @@ nav.bottom button.active{color:var(--accent);}
 #overlayLyrics .sheet{
   max-width:430px;width:100%;height:100%;max-height:100%;border-radius:0;
   padding:0;overflow:hidden;background:#151515;position:relative;
-  transform:translateY(100%);transition:transform .32s cubic-bezier(.22,1,.36,1);
+  transform:translateY(100%);transition:transform .45s cubic-bezier(.22,1,.36,1);
 }
 #overlayLyrics.show .sheet{transform:translateY(0);}
 .lyrics-bg{position:absolute;inset:0;z-index:0;background:linear-gradient(180deg,#2a1f22 0%,#0A0909 70%);}
@@ -740,7 +743,6 @@ nav.bottom button.active{color:var(--accent);}
     <div class="drawer-circles">
       <div class="drawer-circle-item" onclick="closeDrawer();if(currentTrack) openPlayer();">
         <div class="drawer-circle-av" id="drawerActivityRing">
-          ${avatarHTML()}
           <div class="drawer-circle-badge" id="drawerActivityBadge"></div>
         </div>
         <div class="t">Actividad</div>
@@ -974,6 +976,16 @@ function idbOpen(){
     req.onerror = ()=> reject(req.error);
   });
 }
+function dataURItoBlobURL(dataURI){
+  try{
+    const [header, base64] = dataURI.split(',');
+    const mime = header.match(/data:([^;]+);/)[1];
+    const binary = atob(base64);
+    const arr = new Uint8Array(binary.length);
+    for(let i=0;i<binary.length;i++) arr[i] = binary.charCodeAt(i);
+    return URL.createObjectURL(new Blob([arr], {type: mime}));
+  }catch(e){ return dataURI; } // si algo falla, devolvemos el original como respaldo
+}
 async function idbPutTrack(record){
   try{
     const db = await idbOpen();
@@ -1037,7 +1049,7 @@ async function loadState(){
     tracks.push({
       id: rec.id, file: null, name: rec.name, url,
       title: rec.title, artist: rec.artist, album: rec.album,
-      cover: rec.cover, duration: rec.duration || 0,
+      cover: rec.cover? dataURItoBlobURL(rec.cover) : null, duration: rec.duration || 0,
       liked: !!rec.liked, lyrics: rec.lyrics || '', composer: rec.composer || '', isPodcast: !!rec.isPodcast, addedAt: rec.addedAt || 0
     });
   }
@@ -1103,18 +1115,20 @@ function addTrackFromFile(file){
       base.lyrics = ov.lyrics || (tag && tag.lyrics) || '';
       base.composer = ov.composer || (tag && tag.composer) || '';
       base.isPodcast = !!ov.isPodcast;
+      let coverForStorage = null;
       if(tag && tag.picture){
         try{
           const {data, format} = tag.picture;
           let bstr='';
           for(let i=0;i<data.length;i++) bstr += String.fromCharCode(data[i]);
-          base.cover = `data:${format};base64,${btoa(bstr)}`;
+          coverForStorage = `data:${format};base64,${btoa(bstr)}`;
+          base.cover = dataURItoBlobURL(coverForStorage); // referencia corta: no vuelve a insertar el base64 completo en cada redibujo
         }catch(e){} // carátula corrupta o demasiado pesada: seguimos sin ella
       }
       tracks.push(base);
       idbPutTrack({
         id: base.id, blob: file, name: base.name, title: base.title, artist: base.artist,
-        album: base.album, cover: base.cover, lyrics: base.lyrics, composer: base.composer,
+        album: base.album, cover: coverForStorage, lyrics: base.lyrics, composer: base.composer,
         isPodcast: base.isPodcast, liked: base.liked, duration: 0, addedAt: base.addedAt
       });
       const probe = new Audio();
@@ -2126,7 +2140,7 @@ function updateLRCNow(){
     el.textContent = text;
     el.classList.remove('line-anim'); void el.offsetWidth; el.classList.add('line-anim');
   }
-  if(idx!==lastCardLrcIdx){ lastCardLrcIdx = idx; renderPlayerLyricsCard(); }
+  if(idx!==lastCardLrcIdx){ lastCardLrcIdx = idx; updateLyricsCardActiveLine(idx); }
   if(document.getElementById('overlayLyrics').classList.contains('show') && document.getElementById('lyricsSyncedView').style.display!=='none'){
     document.querySelectorAll('.lrc-line.active').forEach(e=>e.classList.remove('active'));
     if(idx>=0){
@@ -2356,22 +2370,38 @@ function renderPlayerLyricsCard(){
   const box = document.getElementById('lyricsCardLines');
   if(!box || !currentTrack) return;
   const text = currentTrack.lyrics || '';
+  lastCardLrcIdx = -999;
   if(!text.trim()){
     box.innerHTML = `<p style="color:var(--text-faint);">Toca para añadir letra</p>`;
     return;
   }
   if(currentTrackLRC && currentTrackLRC.length){
-    const idx = Math.max(0, lrcIndexAt(audio.currentTime));
-    const start = Math.max(0, idx-1);
-    const slice = currentTrackLRC.slice(start, start+4);
-    box.innerHTML = slice.map((l,i)=>{
-      const realIdx = start+i;
-      return `<p class="${realIdx===idx?'active':''}">${escapeHtml(l.text||'♪')}</p>`;
-    }).join('');
+    box.innerHTML = currentTrackLRC.map((l,i)=>`<p id="cardline_${i}">${escapeHtml(l.text||'♪')}</p>`).join('');
+    updateLyricsCardActiveLine(Math.max(0, lrcIndexAt(audio.currentTime)));
   } else {
-    const lines = text.split(/\r\n|\r|\n/).map(l=>l.trim()).filter(Boolean).slice(0,4);
-    box.innerHTML = lines.map((l,i)=>`<p class="${i===0?'active':''}">${escapeHtml(l)}</p>`).join('');
+    const lines = text.split(/\r\n|\r|\n/).map(l=>l.trim()).filter(Boolean).slice(0,8);
+    box.innerHTML = lines.map((l,i)=>`<p class="${i===0?'active':''} line-anim">${escapeHtml(l)}</p>`).join('');
   }
+}
+function updateLyricsCardActiveLine(idx){
+  const box = document.getElementById('lyricsCardLines');
+  if(!box) return;
+  box.querySelectorAll('p.active').forEach(p=>p.classList.remove('active'));
+  const el = document.getElementById('cardline_'+idx);
+  if(!el) return;
+  el.classList.add('active');
+  animateScrollTo(box, Math.max(0, el.offsetTop-6), 550);
+}
+function animateScrollTo(el, targetTop, duration){
+  const startTop = el.scrollTop, change = targetTop-startTop, startTime = performance.now();
+  if(Math.abs(change)<1) return;
+  function step(now){
+    const t = Math.min(1, (now-startTime)/duration);
+    const eased = 1-Math.pow(1-t,3); // ease-out, se siente suave y no brusca
+    el.scrollTop = startTop + change*eased;
+    if(t<1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
 }
 function renderMini(){
   const mini = document.getElementById('mini');
@@ -2551,6 +2581,7 @@ async function excludeTrack(id){
   const t = tracks.find(x=>x.id===id);
   if(!t) return;
   try{ URL.revokeObjectURL(t.url); }catch(e){}
+  try{ if(t.cover) URL.revokeObjectURL(t.cover); }catch(e){}
   tracks = tracks.filter(x=>x.id!==id);
   idbDeleteTrack(id);
   playlists.forEach(p=>{ p.trackIds = p.trackIds.filter(tid=>tid!==id); });
@@ -2793,9 +2824,10 @@ function refreshAvatarUI(){
 function openDrawer(){ refreshAvatarUI(); refreshDrawerActivity(); document.getElementById('drawer').classList.add('show'); document.getElementById('drawerOverlay').classList.add('show'); }
 function refreshDrawerActivity(){
   const ring = document.getElementById('drawerActivityRing');
-  const badge = document.getElementById('drawerActivityBadge');
   const status = document.getElementById('drawerActivityStatus');
   if(!ring) return;
+  ring.innerHTML = avatarHTML() + '<div class="drawer-circle-badge" id="drawerActivityBadge"></div>';
+  const badge = document.getElementById('drawerActivityBadge');
   const playing = !!(currentTrack && audio && !audio.paused);
   ring.classList.toggle('playing', playing);
   status.textContent = playing? 'Activada' : 'Sin actividad';
