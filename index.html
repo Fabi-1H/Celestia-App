@@ -334,8 +334,8 @@ nav.bottom button.active{color:var(--accent);}
 .credits-row{display:flex;justify-content:space-between;font-size:13px;padding:8px 0;border-bottom:1px solid var(--line);}
 .credits-row:last-child{border-bottom:none;}
 .credits-row .role{color:var(--text-faint);}
-.artist-banner{width:100%;aspect-ratio:16/10;border-radius:10px 10px 0 0;overflow:hidden;margin-top:2px;}
-.artist-banner img{width:100%;height:100%;object-fit:cover;display:block;}
+.artist-banner{width:100%;aspect-ratio:4/3;border-radius:10px 10px 0 0;overflow:hidden;margin-top:2px;}
+.artist-banner img{width:100%;height:100%;object-fit:cover;object-position:top center;display:block;}
 .artist-note-card{background:var(--surface-2);border-radius:10px;overflow:hidden;margin-bottom:14px;}
 .artist-note-card .artist-note{background:none;border-radius:0;margin-bottom:0;}
 .artist-note-card .wiki-source{font-size:11px;color:var(--text-faint);padding:0 14px 12px;}
@@ -2192,7 +2192,7 @@ function openPlayer(){ document.getElementById('player').classList.add('show'); 
 function renderPlayerArtistSection(){
   const el = document.getElementById('playerArtistSection');
   if(!el || !currentTrack) return;
-  const artist = currentTrack.artist;
+  const artist = (currentTrack.artist||'').trim();
   const cached = wikiCache[artist];
   const isFresh = cached && (Date.now()-cached.ts) < (cached.notFound? WIKI_NOTFOUND_COOLDOWN_DAYS : WIKI_CACHE_DAYS)*86400000;
 
