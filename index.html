@@ -189,6 +189,9 @@ main.anim{animation:fadeSlideIn .24s cubic-bezier(.22,1,.36,1);}
 .row .rank{width:22px;text-align:center;font-family:var(--font-head);font-weight:700;color:var(--text-faint);font-size:15px;}
 .row .num{width:22px;text-align:center;color:var(--text-faint);font-size:13px;}
 .row-menu{color:var(--text-dim);padding:8px;background:none;border:none;}
+.queue-row{transition:transform .15s;}
+.queue-row.dragging{transition:none;z-index:5;position:relative;background:var(--surface-2);border-radius:8px;box-shadow:0 6px 16px rgba(0,0,0,.4);}
+.queue-drag-handle{color:var(--text-faint);padding:8px;background:none;border:none;touch-action:none;cursor:grab;flex-shrink:0;}
 
 .list-header{display:flex;align-items:center;gap:12px;color:var(--text-dim);font-size:11.5px;text-transform:none;padding:4px 4px 6px;border-bottom:1px solid var(--line);margin-bottom:6px;}
 
@@ -307,6 +310,23 @@ nav.bottom button.active{color:var(--accent);}
   transform:translateY(28px);transition:transform .28s cubic-bezier(.22,1,.36,1);
 }
 .overlay.show .sheet{transform:translateY(0);}
+#overlayLyrics{background:rgba(0,0,0,.92);}
+#overlayLyrics .sheet{
+  max-width:430px;width:100%;height:100%;max-height:100%;border-radius:0;
+  padding:0;overflow:hidden;background:#151515;position:relative;
+}
+.lyrics-bg{position:absolute;inset:0;z-index:0;background:linear-gradient(180deg,#2a1f22 0%,#0A0909 70%);}
+.lyrics-fg{position:relative;z-index:1;height:100%;display:flex;flex-direction:column;}
+.lyrics-top{display:flex;align-items:center;gap:8px;padding:calc(14px + env(safe-area-inset-top)) 14px 10px;flex-shrink:0;}
+.lyrics-top button{background:none;border:none;color:#fff;padding:6px;flex-shrink:0;}
+.lyrics-top-meta{flex:1;min-width:0;text-align:center;}
+.lyrics-top-meta .tt{font-size:14px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.lyrics-top-meta .ta{font-size:12px;color:rgba(255,255,255,.7);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.lyrics-scroll{flex:1;overflow-y:auto;padding:16px 24px calc(30px + env(safe-area-inset-bottom));}
+.lyrics-reading{display:none;}
+.lyrics-reading p, .lrc-line{font-size:23px;font-weight:800;line-height:1.35;color:rgba(255,255,255,.5);margin:0 0 24px;transition:color .25s;}
+.lrc-line.active{color:#fff;}
+#lyricsEditWrap textarea{min-height:220px;}
 .sheet h3{font-family:var(--font-head);font-size:18px;margin:0 0 16px;display:flex;justify-content:space-between;align-items:center;}
 .sheet h3 button{background:none;border:none;color:var(--text-dim);}
 .sheet-option{display:flex;align-items:center;gap:14px;padding:12px 4px;color:var(--text);font-size:14.5px;cursor:pointer;border:none;background:none;width:100%;text-align:left;}
@@ -563,15 +583,31 @@ nav.bottom button.active{color:var(--accent);}
 
   <!-- OVERLAYS -->
   <div class="overlay" id="overlayLyrics"><div class="sheet">
-    <h3>Letra
-      <button id="lyricsEditToggle" style="display:none;background:var(--surface-2);color:var(--text);font-size:12px;font-weight:700;padding:6px 14px;border-radius:16px;margin-left:auto;margin-right:8px;" onclick="toggleLyricsEditMode()">Editar</button>
-      <button onclick="closeOverlay('overlayLyrics')">✕</button>
-    </h3>
-    <div id="lyricsSyncedView" style="display:none;"></div>
-    <div class="field"><textarea id="lyricsText" placeholder="No hay letra guardada. Pégala aquí (texto simple, o formato LRC con marcas de tiempo como [00:12.34] para sincronizarla) o búscala en la web."></textarea></div>
-    <div style="display:flex;gap:10px;">
-      <button class="btn secondary" style="flex:1" onclick="searchLyricsWeb()">Buscar en la web</button>
-      <button class="btn" style="flex:1" onclick="saveLyrics()">Guardar</button>
+    <div class="lyrics-bg" id="lyricsBg"></div>
+    <div class="lyrics-fg">
+      <div class="lyrics-top">
+        <button onclick="closeOverlay('overlayLyrics')">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="lyrics-top-meta">
+          <div class="tt" id="lyricsHeadTitle"></div>
+          <div class="ta" id="lyricsHeadArtist"></div>
+        </div>
+        <button onclick="toggleLyricsEditMode()" id="lyricsEditToggle">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>
+        </button>
+      </div>
+      <div class="lyrics-scroll" id="lyricsScroll">
+        <div id="lyricsSyncedView" class="lyrics-reading"></div>
+        <div id="lyricsPlainView" class="lyrics-reading"></div>
+        <div id="lyricsEditWrap" style="display:none;">
+          <div class="field"><textarea id="lyricsText" placeholder="No hay letra guardada. Pégala aquí (texto simple, o formato LRC con marcas de tiempo como [00:12.34] para sincronizarla) o búscala en la web."></textarea></div>
+          <div style="display:flex;gap:10px;">
+            <button class="btn secondary" style="flex:1" onclick="searchLyricsWeb()">Buscar en la web</button>
+            <button class="btn" style="flex:1" onclick="saveLyrics()">Guardar</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div></div>
 
@@ -610,6 +646,8 @@ nav.bottom button.active{color:var(--accent);}
     <h3 id="trackMenuTitle">Canción <button onclick="closeOverlay('overlayTrackMenu')">✕</button></h3>
     <button class="sheet-option" onclick="closeOverlay('overlayTrackMenu');playFromMenu()">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 3l14 9-14 9V3z"/></svg>Reproducir</button>
+    <button class="sheet-option" onclick="closeOverlay('overlayTrackMenu');addToQueueNext(menuTrack)">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6H3M15 12H3M9 18H3M18 9v9M14.5 13.5L18 10l3.5 3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Agregar a la fila de reproducción</button>
     <button class="sheet-option" onclick="closeOverlay('overlayTrackMenu');openAddToPlaylist(menuTrack)">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13M9 9l12-2M9 18a3 3 0 11-6 0 3 3 0 016 0zM21 16a3 3 0 11-6 0 3 3 0 016 0z"/></svg>Añadir a playlist</button>
     <button class="sheet-option" onclick="closeOverlay('overlayTrackMenu');openEditSheet(menuTrack)">
@@ -1344,7 +1382,7 @@ function renderPlaylists(main){
       window.__libView==='list'? items.map(libRow).join('') : `<div class="hgrid" style="flex-wrap:wrap;">${items.map(libCard).join('')}</div>`}
   `;
 }
-function openPlaylist(id){ currentPlaylistViewId=id; activeTab='playlistDetail'; render(); }
+function openPlaylist(id){ currentPlaylistViewId=id; plEditMode=false; activeTab='playlistDetail'; render(); }
 function fmtDurationTotal(totalSeconds){
   const mins = Math.round(totalSeconds/60);
   if(mins<60) return mins+' min';
@@ -1386,12 +1424,80 @@ function renderPlaylistDetail(main){
         <svg width="26" height="26" viewBox="0 0 24 24" fill="#fff"><path d="M7 5l12 7-12 7V5z"/></svg>
       </button>
     </div>
-    <button class="btn secondary" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:18px;" onclick="openSongPicker('${p.id}')">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
-      Añadir canciones
-    </button>
+    <div style="display:flex;gap:10px;margin-bottom:18px;">
+      <button class="btn secondary" style="flex:1;display:flex;align-items:center;justify-content:center;gap:8px;" onclick="openSongPicker('${p.id}')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+        Añadir canciones
+      </button>
+      ${pt.length>1? `<button class="btn secondary" onclick="togglePlaylistEditMode()">${plEditMode?'Listo':'Reordenar'}</button>`:''}
+    </div>
     ${pt.length===0? `<div class="empty" style="padding:30px 10px;"><p>Aún no hay canciones aquí. Usa "Añadir canciones" para empezar.</p></div>` :
-      pt.map(t=>trackRow(t,{showAlbum:false, playlistId:p.id, queueExpr:`'playlist:${p.id}'`})).join('')}`;
+      plEditMode
+        ? `<div id="plTrackList">${pt.map((t,pos)=>`
+            <div class="row queue-row pl-row" data-pos="${pos}">
+              <div class="art">${trackArt(t,46)}</div>
+              <div class="meta"><div class="t">${escapeHtml(t.title)}</div><div class="s">${escapeHtml(t.artist)}</div></div>
+              <button class="row-menu" onclick="removePlaylistTrackAt(${pos})">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+              </button>
+              <button class="queue-drag-handle" onpointerdown="startPlaylistDrag(event,${pos})">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>
+              </button>
+            </div>`).join('')}</div>`
+        : pt.map(t=>trackRow(t,{showAlbum:false, playlistId:p.id, queueExpr:`'playlist:${p.id}'`})).join('')}`;
+}
+let plEditMode = false;
+function togglePlaylistEditMode(){ plEditMode = !plEditMode; render(); }
+function removePlaylistTrackAt(pos){
+  const p = playlists.find(pl=>pl.id===currentPlaylistViewId);
+  p.trackIds.splice(pos,1);
+  savePlaylists();
+  render();
+}
+let plDrag = null;
+function startPlaylistDrag(e, pos){
+  e.preventDefault();
+  const rows = Array.from(document.querySelectorAll('#plTrackList .pl-row'));
+  const rowEl = rows[pos];
+  if(!rowEl) return;
+  const rect = rowEl.getBoundingClientRect();
+  plDrag = { startY: e.clientY, pos, newPos: pos, rowHeight: rect.height, rowEl, rows };
+  rowEl.classList.add('dragging');
+  document.addEventListener('pointermove', onPlaylistDragMove);
+  document.addEventListener('pointerup', onPlaylistDragEnd);
+}
+function onPlaylistDragMove(e){
+  if(!plDrag) return;
+  const dy = e.clientY - plDrag.startY;
+  plDrag.rowEl.style.transform = `translateY(${dy}px)`;
+  const maxPos = plDrag.rows.length-1;
+  let newPos = plDrag.pos + Math.round(dy/plDrag.rowHeight);
+  newPos = Math.min(Math.max(newPos,0), maxPos);
+  if(newPos!==plDrag.newPos){
+    plDrag.newPos = newPos;
+    plDrag.rows.forEach((r,idx)=>{
+      if(r===plDrag.rowEl) return;
+      let shift = 0;
+      if(newPos>plDrag.pos && idx>plDrag.pos && idx<=newPos) shift = -1;
+      else if(newPos<plDrag.pos && idx<plDrag.pos && idx>=newPos) shift = 1;
+      r.style.transform = shift? `translateY(${shift*plDrag.rowHeight}px)` : '';
+    });
+  }
+}
+function onPlaylistDragEnd(){
+  if(!plDrag) return;
+  document.removeEventListener('pointermove', onPlaylistDragMove);
+  document.removeEventListener('pointerup', onPlaylistDragEnd);
+  const {pos, newPos} = plDrag;
+  if(newPos!==pos){
+    const p = playlists.find(pl=>pl.id===currentPlaylistViewId);
+    const [moved] = p.trackIds.splice(pos,1);
+    p.trackIds.splice(newPos,0,moved);
+    savePlaylists();
+  }
+  plDrag.rowEl.classList.remove('dragging');
+  plDrag = null;
+  render();
 }
 
 let playlistMenuId = null;
@@ -2027,18 +2133,15 @@ function renderQueueList(){
     </div>`;
   if(upcoming.length){
     html += upcoming.map((x,pos)=>`
-      <div class="row" ${queueEditMode?'':`onclick="jumpToQueueIndex(${x.i})"`}>
+      <div class="row queue-row" data-qi="${x.i}" data-pos="${pos}" ${queueEditMode?'':`onclick="jumpToQueueIndex(${x.i})"`}>
         <div class="art">${trackArt(x.t,46)}</div>
         <div class="meta"><div class="t">${escapeHtml(x.t.title)}</div><div class="s">${escapeHtml(x.t.artist)}</div></div>
         ${queueEditMode? `
-          <button class="row-menu" onclick="event.stopPropagation();moveQueueItem(${x.i},-1)" ${pos===0?'style="opacity:.25"':''}>
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 15l-6-6-6 6"/></svg>
-          </button>
-          <button class="row-menu" onclick="event.stopPropagation();moveQueueItem(${x.i},1)" ${pos===upcoming.length-1?'style="opacity:.25"':''}>
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
-          </button>
           <button class="row-menu" onclick="event.stopPropagation();removeFromQueue(${x.i})">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+          <button class="queue-drag-handle" onpointerdown="startQueueDrag(event,${pos})">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>
           </button>` : `
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text-faint);flex-shrink:0;"><path d="M4 6h16M4 12h16M4 18h16"/></svg>`}
       </div>`).join('');
@@ -2049,10 +2152,54 @@ function renderQueueList(){
   document.getElementById('queuePillShuffle').classList.toggle('on', shuffleOn);
   document.getElementById('queuePillRepeat').classList.toggle('on', repeatMode===1);
 }
-function moveQueueItem(i, dir){
-  const j = i+dir;
-  if(j<=currentIndex || j>=currentQueue.length) return;
-  const tmp = currentQueue[i]; currentQueue[i]=currentQueue[j]; currentQueue[j]=tmp;
+let queueDrag = null;
+function startQueueDrag(e, pos){
+  e.preventDefault();
+  const rows = Array.from(document.querySelectorAll('#queueList .queue-row'));
+  const rowEl = rows[pos];
+  if(!rowEl) return;
+  const rect = rowEl.getBoundingClientRect();
+  queueDrag = {
+    startY: e.clientY,
+    pos, newPos: pos,
+    rowHeight: rect.height,
+    rowEl, rows,
+    upcomingStart: currentIndex+1
+  };
+  rowEl.classList.add('dragging');
+  document.addEventListener('pointermove', onQueueDragMove);
+  document.addEventListener('pointerup', onQueueDragEnd);
+}
+function onQueueDragMove(e){
+  if(!queueDrag) return;
+  const dy = e.clientY - queueDrag.startY;
+  queueDrag.rowEl.style.transform = `translateY(${dy}px)`;
+  const maxPos = queueDrag.rows.length-1;
+  let newPos = queueDrag.pos + Math.round(dy/queueDrag.rowHeight);
+  newPos = Math.min(Math.max(newPos,0), maxPos);
+  if(newPos!==queueDrag.newPos){
+    queueDrag.newPos = newPos;
+    queueDrag.rows.forEach((r,idx)=>{
+      if(r===queueDrag.rowEl) return;
+      let shift = 0;
+      if(newPos>queueDrag.pos && idx>queueDrag.pos && idx<=newPos) shift = -1;
+      else if(newPos<queueDrag.pos && idx<queueDrag.pos && idx>=newPos) shift = 1;
+      r.style.transform = shift? `translateY(${shift*queueDrag.rowHeight}px)` : '';
+    });
+  }
+}
+function onQueueDragEnd(){
+  if(!queueDrag) return;
+  document.removeEventListener('pointermove', onQueueDragMove);
+  document.removeEventListener('pointerup', onQueueDragEnd);
+  const {pos, newPos, upcomingStart} = queueDrag;
+  if(newPos!==pos){
+    const fromIdx = upcomingStart+pos, toIdx = upcomingStart+newPos;
+    const [moved] = currentQueue.splice(fromIdx,1);
+    currentQueue.splice(toIdx,0,moved);
+  }
+  queueDrag.rowEl.classList.remove('dragging');
+  queueDrag = null;
   renderQueueList();
 }
 function removeFromQueue(i){
@@ -2279,6 +2426,12 @@ function openTrackMenu(id, playlistId){
   document.getElementById('overlayTrackMenu').classList.add('show');
 }
 function playFromMenu(){ playTrack(menuTrack.id,'all'); }
+function addToQueueNext(track){
+  if(!currentTrack){ playTrack(track.id,'all'); return; }
+  currentQueue.splice(currentIndex+1, 0, track);
+  showToast('Sonará a continuación');
+  if(document.getElementById('overlayQueue').classList.contains('show')) renderQueueList();
+}
 function removeFromPlaylistCurrent(){
   const p = playlists.find(pl=>pl.id===window.__menuPlaylistId);
   if(p){ p.trackIds = p.trackIds.filter(id=>id!==menuTrack.id); savePlaylists(); }
@@ -2383,15 +2536,59 @@ async function saveEdit(){
 }
 
 /* ============ LETRA ============ */
+function extractDominantColor(imgSrc, callback){
+  if(!imgSrc){ callback(null); return; }
+  try{
+    const img = new Image();
+    img.onload = () => {
+      try{
+        const size = 12;
+        const canvas = document.createElement('canvas');
+        canvas.width = size; canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, size, size);
+        const data = ctx.getImageData(0,0,size,size).data;
+        let r=0,g=0,b=0,n=0;
+        for(let i=0;i<data.length;i+=4){ r+=data[i]; g+=data[i+1]; b+=data[i+2]; n++; }
+        callback([Math.round(r/n), Math.round(g/n), Math.round(b/n)]);
+      }catch(e){ callback(null); } // imagen no legible por canvas (poco común con data: URIs locales)
+    };
+    img.onerror = () => callback(null);
+    img.src = imgSrc;
+  }catch(e){ callback(null); }
+}
 function openLyrics(){
   document.getElementById('lyricsText').value = currentTrack.lyrics || '';
+  document.getElementById('lyricsHeadTitle').textContent = currentTrack.title;
+  document.getElementById('lyricsHeadArtist').textContent = currentTrack.artist;
+  document.getElementById('lyricsEditWrap').style.display = 'none';
+  showLyricsReadingMode();
+  extractDominantColor(currentTrack.cover, (rgb)=>{
+    const bg = document.getElementById('lyricsBg');
+    if(rgb){
+      const [r,g,b] = rgb.map(c=>Math.round(c*0.5)); // oscurecemos para que el texto blanco siempre se lea bien
+      bg.style.background = `linear-gradient(180deg, rgb(${r},${g},${b}) 0%, #0A0909 70%)`;
+    } else {
+      bg.style.background = 'linear-gradient(180deg,#2a1f22 0%,#0A0909 70%)';
+    }
+  });
+  document.getElementById('overlayLyrics').classList.add('show');
+}
+function showLyricsReadingMode(){
   const synced = isLRC(currentTrack.lyrics);
   document.getElementById('lyricsSyncedView').style.display = synced? 'block':'none';
-  document.getElementById('lyricsText').style.display = synced? 'none':'block';
-  document.getElementById('lyricsEditToggle').style.display = synced? 'inline-block':'none';
-  document.getElementById('lyricsEditToggle').textContent = 'Editar';
-  if(synced) renderSyncedLyrics();
-  document.getElementById('overlayLyrics').classList.add('show');
+  document.getElementById('lyricsPlainView').style.display = synced? 'none':'block';
+  if(synced) renderSyncedLyrics(); else renderPlainLyricsReading();
+}
+function renderPlainLyricsReading(){
+  const box = document.getElementById('lyricsPlainView');
+  const text = currentTrack.lyrics || '';
+  if(!text.trim()){
+    box.innerHTML = `<p style="color:rgba(255,255,255,.45);">No hay letra guardada todavía. Tocá el botón de arriba a la derecha para añadirla.</p>`;
+    return;
+  }
+  const paragraphs = text.split(/\n\s*\n/).map(p=>p.trim()).filter(Boolean);
+  box.innerHTML = paragraphs.map(p=>`<p>${escapeHtml(p).replace(/\n/g,'<br>')}</p>`).join('');
 }
 function renderSyncedLyrics(){
   refreshLRCCache();
@@ -2400,13 +2597,16 @@ function renderSyncedLyrics(){
   box.innerHTML = currentTrackLRC.map((l,i)=>`<p class="lrc-line" id="lrc_${i}">${escapeHtml(l.text||'♪')}</p>`).join('');
 }
 function toggleLyricsEditMode(){
-  const ta = document.getElementById('lyricsText');
-  const sv = document.getElementById('lyricsSyncedView');
-  const nowEditing = ta.style.display!=='none';
-  ta.style.display = nowEditing? 'none':'block';
-  sv.style.display = nowEditing? 'block':'none';
-  document.getElementById('lyricsEditToggle').textContent = nowEditing? 'Editar':'Ver sincronizada';
-  if(nowEditing) renderSyncedLyrics();
+  const editWrap = document.getElementById('lyricsEditWrap');
+  const isEditing = editWrap.style.display!=='none';
+  if(isEditing){
+    editWrap.style.display = 'none';
+    showLyricsReadingMode();
+  } else {
+    document.getElementById('lyricsSyncedView').style.display = 'none';
+    document.getElementById('lyricsPlainView').style.display = 'none';
+    editWrap.style.display = 'block';
+  }
 }
 async function saveLyrics(){
   currentTrack.lyrics = document.getElementById('lyricsText').value;
@@ -2414,7 +2614,8 @@ async function saveLyrics(){
   metaOverrides[fname] = {...(metaOverrides[fname]||{}), lyrics: currentTrack.lyrics};
   await saveOverrides();
   idbUpdateTrackFields(currentTrack.id, {lyrics: currentTrack.lyrics});
-  closeOverlay('overlayLyrics');
+  document.getElementById('lyricsEditWrap').style.display = 'none';
+  showLyricsReadingMode();
   updatePlayerUI();
   showToast('Letra guardada');
 }
