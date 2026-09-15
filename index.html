@@ -249,6 +249,7 @@ nav.bottom button.active{color:var(--accent);}
   overflow-y:auto;
 }
 #player.show{transform:translateY(0);pointer-events:auto;}
+#player > *{flex-shrink:0;}
 #player .phead{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
 #player .phead button{background:none;border:none;color:var(--text);padding:8px;}
 #player .phead .lbl{font-size:11px;color:var(--text-dim);text-align:center;}
@@ -925,7 +926,7 @@ async function idbUpdateTrackFields(id, patch){
 async function loadState(){
   metaOverrides = lsGet('miku:meta-overrides', {});
   artistNotes = lsGet('celestia:artist-notes', {});
-  wikiCache = lsGet('celestia:wiki-cache', {});
+  wikiCache = lsGet('celestia:wiki-cache-v2', {}); // v2: invalida resultados viejos de la búsqueda sin fallback
   playlists = lsGet('miku:playlists', []);
   historyWeeks = lsGet('miku:history', []);
   recentPlays = lsGet('celestia:recent', []);
@@ -947,7 +948,7 @@ async function loadState(){
 async function saveProfileState(){ lsSet('miku:profile', profile); }
 async function saveOverrides(){ lsSet('miku:meta-overrides', metaOverrides); }
 async function saveArtistNotes(){ lsSet('celestia:artist-notes', artistNotes); }
-async function saveWikiCache(){ lsSet('celestia:wiki-cache', wikiCache); }
+async function saveWikiCache(){ lsSet('celestia:wiki-cache-v2', wikiCache); }
 async function savePlaylists(){ lsSet('miku:playlists', playlists); }
 async function saveHistory(){ lsSet('miku:history', historyWeeks); }
 async function saveRecent(){ lsSet('celestia:recent', recentPlays); }
