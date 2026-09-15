@@ -31,7 +31,7 @@
 }
 @font-face{font-family:'Space Grotesk';src:local('Space Grotesk');}
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
-html,body{margin:0;padding:0;height:100%;background:#000;}
+html,body{margin:0;padding:0;height:100%;background:#0A0909;}
 body{
   font-family:var(--font-body);
   color:var(--text);
@@ -101,6 +101,18 @@ header.top{
 .drawer-menu button svg{color:var(--text-dim);flex-shrink:0;}
 .plan-pill{margin-left:auto;background:var(--accent);color:var(--accent-ink);font-size:10.5px;font-weight:700;padding:4px 10px;border-radius:12px;}
 .drawer-footer{margin-top:auto;font-size:11px;color:var(--text-faint);padding-top:14px;}
+.drawer-circles{display:flex;gap:22px;margin-top:20px;padding-top:16px;border-top:1px solid var(--line);}
+.drawer-circle-item{display:flex;flex-direction:column;align-items:center;width:76px;cursor:pointer;}
+.drawer-circle-av{width:64px;height:64px;border-radius:50%;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;position:relative;overflow:visible;transition:border-color .2s;}
+.drawer-circle-av img,.drawer-circle-av svg{width:100%;height:100%;border-radius:50%;object-fit:cover;}
+.drawer-circle-av.playing{border-color:#3fd15e;}
+.drawer-circle-invite{background:var(--surface-2);color:var(--text-dim);border-style:dashed;}
+.drawer-circle-invite svg{width:24px;height:24px;border-radius:0;}
+.drawer-circle-badge{position:absolute;bottom:-3px;right:-3px;width:22px;height:22px;border-radius:6px;overflow:hidden;border:2px solid var(--bg);background:var(--surface-2);display:none;}
+.drawer-circle-badge img{width:100%;height:100%;object-fit:cover;}
+.drawer-circle-item .t{font-size:11.5px;font-weight:700;margin-top:8px;text-align:center;line-height:1.25;}
+.drawer-circle-item .s{font-size:10.5px;color:var(--text-faint);margin-top:1px;}
+.drawer-circle-item .s.on{color:#3fd15e;}
 .brand{
   font-family:var(--font-head);
   font-size:20px;
@@ -249,7 +261,7 @@ nav.bottom button.active{color:var(--accent);}
   max-width:430px;margin:0 auto;
   transform:translateY(100%);pointer-events:none;
   transition:transform .32s cubic-bezier(.22,1,.36,1);
-  overflow-y:auto;
+  overflow-y:auto;will-change:transform;
 }
 #player.show{transform:translateY(0);pointer-events:auto;}
 #player > *{flex-shrink:0;}
@@ -288,13 +300,15 @@ nav.bottom button.active{color:var(--accent);}
 #player .player-icons-row{display:flex;align-items:center;justify-content:space-between;margin:2px 0 14px;}
 #player .player-icons-row button{background:none;border:none;color:var(--text-dim);padding:8px;}
 #player .player-icons-row button:active{color:var(--accent);}
-#player .lyrics-bar{
-  display:flex;align-items:center;gap:10px;background:var(--surface-2);border:none;border-radius:10px;
-  padding:12px 14px;width:100%;color:var(--text);text-align:left;margin-top:auto;cursor:pointer;
+#player .lyrics-card{
+  background:var(--surface-2);border-radius:14px;padding:16px 18px;width:100%;margin-top:auto;cursor:pointer;
 }
-#player .lyrics-bar-label{font-weight:700;font-size:13px;flex-shrink:0;}
-#player .lyrics-bar-preview{flex:1;color:var(--text-dim);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-#player .lyrics-bar svg{color:var(--text-dim);flex-shrink:0;}
+#player .lyrics-card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+#player .lyrics-card-head .label{font-weight:700;font-size:14px;}
+#player .lyrics-card-icons{display:flex;gap:8px;}
+#player .lyrics-card-icons button{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.08);border:none;color:var(--text-dim);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+#player .lyrics-card-lines p{font-size:15px;font-weight:700;line-height:1.4;color:var(--text-faint);margin:0 0 6px;transition:color .25s;}
+#player .lyrics-card-lines p.active{color:var(--text);}
 
 /* PANELS (lyrics / eq / add to playlist / edit / sheet) */
 .overlay{
@@ -308,6 +322,7 @@ nav.bottom button.active{color:var(--accent);}
   width:100%;max-width:430px;background:var(--surface);border-radius:20px 20px 0 0;
   padding:18px 22px calc(22px + env(safe-area-inset-bottom));max-height:82vh;overflow-y:auto;
   transform:translateY(28px);transition:transform .28s cubic-bezier(.22,1,.36,1);
+  will-change:transform;
 }
 .overlay.show .sheet{transform:translateY(0);}
 #overlayLyrics{background:rgba(0,0,0,.92);}
@@ -573,11 +588,25 @@ nav.bottom button.active{color:var(--accent);}
       <button onclick="shareCurrentTrack()" title="Compartir"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.6l7.6-4.2M8.2 13.4l7.6 4.2"/></svg></button>
       <button onclick="openQueue()" title="Fila de reproducción"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h11M4 12h11M4 18h6M17 12v7a2.5 2.5 0 11-2-2.4V9l5-1v9"/></svg></button>
     </div>
-    <button class="lyrics-bar" onclick="openLyrics()">
-      <span class="lyrics-bar-label">Letras</span>
-      <span class="lyrics-bar-preview" id="lyricsBarPreview">Toca para añadir letra</span>
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3v18M16 3v18M3 8h18M3 16h18" opacity="0"/><path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </button>
+    <div class="lyrics-card" onclick="openLyrics()">
+      <div class="lyrics-card-head">
+        <span class="label">Letras</span>
+        <div class="lyrics-card-icons" onclick="event.stopPropagation()">
+          <button onclick="showToast('Traducir — próximamente')">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 8h9M9.5 5v3M13 8c-1 4-3 7-6 9M6 12c1.5 2 3.5 3.5 6 4M15 21l4-9 4 9M16.3 18h5.4"/></svg>
+          </button>
+          <button onclick="shareCurrentTrack()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.3 10.7l7.4-4.4M8.3 13.3l7.4 4.4"/></svg>
+          </button>
+          <button onclick="openLyrics()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3H3v6M15 3h6v6M9 21H3v-6M15 21h6v-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="lyrics-card-lines" id="lyricsCardLines">
+        <p id="lyricsBarPreview">Toca para añadir letra</p>
+      </div>
+    </div>
     <div id="playerArtistSection"></div>
   </div>
 
@@ -696,6 +725,22 @@ nav.bottom button.active{color:var(--accent);}
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
         Mensajes <span style="font-size:11px;color:var(--text-faint);margin-left:auto;">Próximamente</span>
       </button>
+    </div>
+    <div class="drawer-circles">
+      <div class="drawer-circle-item" onclick="closeDrawer();if(currentTrack) openPlayer();">
+        <div class="drawer-circle-av" id="drawerActivityRing">
+          ${avatarHTML()}
+          <div class="drawer-circle-badge" id="drawerActivityBadge"></div>
+        </div>
+        <div class="t">Actividad</div>
+        <div class="s" id="drawerActivityStatus">Sin actividad</div>
+      </div>
+      <div class="drawer-circle-item" onclick="closeDrawer();inviteFriends()">
+        <div class="drawer-circle-av drawer-circle-invite">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+        </div>
+        <div class="t">Invitar a amigos</div>
+      </div>
     </div>
     <div class="drawer-footer">Celestia — reproductor local</div>
   </div>
@@ -2039,7 +2084,7 @@ function isLRC(text){ return /\[\d{1,2}:\d{2}(\.\d{1,2})?\]/.test(text||''); }
 function parseLRC(text){
   const re = /\[(\d{1,2}):(\d{2})(?:\.(\d{1,2}))?\]/g;
   const out = [];
-  (text||'').split('\n').forEach(line=>{
+  (text||'').split(/\r\n|\r|\n/).forEach(line=>{
     const times = [];
     let m; re.lastIndex = 0;
     while((m = re.exec(line))){
@@ -2067,6 +2112,7 @@ function updateLRCNow(){
   const text = idx>=0? currentTrackLRC[idx].text : currentTrackLRC[0].text;
   const el = document.getElementById('playerLyricsLine');
   if(el && text!=null && el.textContent!==text) el.textContent = text;
+  if(idx!==lastCardLrcIdx){ lastCardLrcIdx = idx; renderPlayerLyricsCard(); }
   if(document.getElementById('overlayLyrics').classList.contains('show') && document.getElementById('lyricsSyncedView').style.display!=='none'){
     document.querySelectorAll('.lrc-line.active').forEach(e=>e.classList.remove('active'));
     if(idx>=0){
@@ -2284,11 +2330,34 @@ function updatePlayerUI(){
   document.getElementById('playerSourceKind').textContent = 'REPRODUCIENDO DESDE '+currentSource.kind.toUpperCase();
   document.getElementById('playerSourceName').textContent = currentSource.name || '';
   refreshLRCCache();
-  const firstLine = currentTrackLRC? (currentTrackLRC[0].text||'') : (currentTrack.lyrics? currentTrack.lyrics.split('\n').map(l=>l.trim()).find(l=>l.length) : '');
+  const firstLine = currentTrackLRC? (currentTrackLRC[0].text||'') : (currentTrack.lyrics? currentTrack.lyrics.split(/\r\n|\r|\n/).map(l=>l.trim()).find(l=>l.length) : '');
   document.getElementById('playerLyricsLine').textContent = firstLine || '';
-  document.getElementById('lyricsBarPreview').textContent = firstLine || 'Toca para añadir letra';
+  lastCardLrcIdx = -999;
+  renderPlayerLyricsCard();
   renderPlayerArtistSection();
   updatePlayIcons();
+}
+let lastCardLrcIdx = -999;
+function renderPlayerLyricsCard(){
+  const box = document.getElementById('lyricsCardLines');
+  if(!box || !currentTrack) return;
+  const text = currentTrack.lyrics || '';
+  if(!text.trim()){
+    box.innerHTML = `<p style="color:var(--text-faint);">Toca para añadir letra</p>`;
+    return;
+  }
+  if(currentTrackLRC && currentTrackLRC.length){
+    const idx = Math.max(0, lrcIndexAt(audio.currentTime));
+    const start = Math.max(0, idx-1);
+    const slice = currentTrackLRC.slice(start, start+4);
+    box.innerHTML = slice.map((l,i)=>{
+      const realIdx = start+i;
+      return `<p class="${realIdx===idx?'active':''}">${escapeHtml(l.text||'♪')}</p>`;
+    }).join('');
+  } else {
+    const lines = text.split(/\r\n|\r|\n/).map(l=>l.trim()).filter(Boolean).slice(0,4);
+    box.innerHTML = lines.map((l,i)=>`<p class="${i===0?'active':''}">${escapeHtml(l)}</p>`).join('');
+  }
 }
 function renderMini(){
   const mini = document.getElementById('mini');
@@ -2707,7 +2776,35 @@ function refreshAvatarUI(){
     return p? `<div class="chip" onclick="closeDrawer();openPlaylist('${p.id}')">${escapeHtml(p.name)}</div>`:'';
   }).join('');
 }
-function openDrawer(){ refreshAvatarUI(); document.getElementById('drawer').classList.add('show'); document.getElementById('drawerOverlay').classList.add('show'); }
+function openDrawer(){ refreshAvatarUI(); refreshDrawerActivity(); document.getElementById('drawer').classList.add('show'); document.getElementById('drawerOverlay').classList.add('show'); }
+function refreshDrawerActivity(){
+  const ring = document.getElementById('drawerActivityRing');
+  const badge = document.getElementById('drawerActivityBadge');
+  const status = document.getElementById('drawerActivityStatus');
+  if(!ring) return;
+  const playing = !!(currentTrack && audio && !audio.paused);
+  ring.classList.toggle('playing', playing);
+  status.textContent = playing? 'Activada' : 'Sin actividad';
+  status.classList.toggle('on', playing);
+  if(playing && currentTrack && currentTrack.cover){
+    badge.style.display = 'block';
+    badge.innerHTML = `<img src="${currentTrack.cover}">`;
+  } else {
+    badge.style.display = 'none';
+    badge.innerHTML = '';
+  }
+}
+function inviteFriends(){
+  const url = 'https://fabi-1h.github.io/Celestia-App/';
+  const shareData = { title:'Celestia', text:'Probá Celestia, mi reproductor de música', url };
+  if(navigator.share){
+    navigator.share(shareData).catch(()=>{});
+  } else if(navigator.clipboard){
+    navigator.clipboard.writeText(url).then(()=> showToast('Enlace copiado')).catch(()=> showToast(url));
+  } else {
+    showToast(url);
+  }
+}
 function closeDrawer(){ document.getElementById('drawer').classList.remove('show'); document.getElementById('drawerOverlay').classList.remove('show'); }
 function goToHistory(){ activeTab='history'; window.__histWeekIdx=0; document.getElementById('tabsBar').style.display='none'; render(); }
 function goToRecent(){ activeTab='recent'; document.getElementById('tabsBar').style.display='none'; render(); }
