@@ -329,7 +329,9 @@ nav.bottom button.active{color:var(--accent);}
 #overlayLyrics .sheet{
   max-width:430px;width:100%;height:100%;max-height:100%;border-radius:0;
   padding:0;overflow:hidden;background:#151515;position:relative;
+  transform:translateY(100%);transition:transform .32s cubic-bezier(.22,1,.36,1);
 }
+#overlayLyrics.show .sheet{transform:translateY(0);}
 .lyrics-bg{position:absolute;inset:0;z-index:0;background:linear-gradient(180deg,#2a1f22 0%,#0A0909 70%);}
 .lyrics-fg{position:relative;z-index:1;height:100%;display:flex;flex-direction:column;}
 .lyrics-top{display:flex;align-items:center;gap:8px;padding:calc(14px + env(safe-area-inset-top)) 14px 10px;flex-shrink:0;}
@@ -459,6 +461,13 @@ nav.bottom button.active{color:var(--accent);}
   display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 6px 18px var(--accent-glow);
 }
 .play-fab:active{transform:scale(.94);}
+.sheet-option, .drawer-menu button, .app-settings-row, .artist-more-card, .drawer-circle-item, .queue-drag-handle, .row-menu, .artist-note-edit{
+  transition:transform .12s ease, opacity .12s ease;
+}
+.sheet-option:active, .drawer-menu button:active, .app-settings-row:active, .artist-more-card:active, .drawer-circle-item:active, .row-menu:active, .artist-note-edit:active{
+  transform:scale(.96);opacity:.8;
+}
+#importProgress.show{opacity:1;visibility:visible;transform:translateY(0);transition:opacity .2s ease, transform .2s ease;}
 .icon-btn.active-accent{color:var(--accent);}
 .queue-now-label{font-size:11.5px;font-weight:700;color:var(--text-faint);text-transform:uppercase;letter-spacing:.04em;margin:6px 0 4px;}
 .queue-sub{color:var(--text-dim);font-size:13px;margin:2px 0 14px;}
@@ -894,7 +903,7 @@ nav.bottom button.active{color:var(--accent);}
   <input type="file" id="fileInput" class="hidden-input" multiple accept="audio/*">
   <input type="file" id="folderInput" class="hidden-input" multiple webkitdirectory>
   <div class="toast" id="toast"></div>
-  <div id="importProgress" style="display:none;position:fixed;left:16px;right:16px;bottom:90px;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:12px 16px;z-index:400;font-size:13px;">
+  <div id="importProgress" style="position:fixed;left:16px;right:16px;bottom:90px;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:12px 16px;z-index:400;font-size:13px;opacity:0;visibility:hidden;transform:translateY(8px);transition:opacity .2s ease, transform .2s ease, visibility 0s linear .2s;">
     <div id="importProgressText">Importando…</div>
     <div style="height:5px;background:var(--surface);border-radius:3px;margin-top:8px;overflow:hidden;">
       <div id="importProgressBar" style="height:100%;width:0%;background:var(--accent);transition:width .2s;"></div>
@@ -1052,7 +1061,7 @@ async function handleImportedFiles(fileList){
   const progressEl = document.getElementById('importProgress');
   const progressText = document.getElementById('importProgressText');
   const progressBar = document.getElementById('importProgressBar');
-  progressEl.style.display = 'block';
+  progressEl.classList.add('show');
   for(let i=0;i<audioFiles.length;i++){
     progressText.textContent = `Importando ${i+1} de ${audioFiles.length}…`;
     progressBar.style.width = Math.round((i/audioFiles.length)*100)+'%';
@@ -1060,7 +1069,7 @@ async function handleImportedFiles(fileList){
     // refrescamos la biblioteca cada tanto para que se vea avanzar, sin recalcular todo por cada archivo
     if(i%15===0 || i===audioFiles.length-1) renderAll();
   }
-  progressEl.style.display = 'none';
+  progressEl.classList.remove('show');
   renderAll();
   showToast('Listo — '+audioFiles.length+' canción(es) importada(s)'+(skipped? ' · '+skipped+' archivo(s) no compatibles omitidos':''));
 }
