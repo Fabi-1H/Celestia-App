@@ -313,6 +313,7 @@ nav.bottom button.active{color:var(--accent);}
 #player .lyrics-card-lines p.active{color:var(--text);}
 #player .lyrics-card-lines p.line-anim{animation:lyricLineIn .4s ease;}
 @keyframes lyricLineIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+@keyframes rowEditIn{from{opacity:0;transform:translateX(-14px);}to{opacity:1;transform:translateX(0);}}
 #player .lyrics-card-lines p.active{color:var(--text);}
 
 /* PANELS (lyrics / eq / add to playlist / edit / sheet) */
@@ -1504,7 +1505,7 @@ function renderPlaylistDetail(main){
     ${pt.length===0? `<div class="empty" style="padding:30px 10px;"><p>Aún no hay canciones aquí. Usa "Añadir canciones" para empezar.</p></div>` :
       plEditMode
         ? `<div id="plTrackList">${pt.map((t,pos)=>`
-            <div class="row queue-row pl-row" data-pos="${pos}">
+            <div class="row queue-row pl-row" data-pos="${pos}" style="animation:rowEditIn .38s ease both;animation-delay:${Math.min(pos*0.035,0.4)}s;">
               <div class="art">${trackArt(t,46)}</div>
               <div class="meta"><div class="t">${escapeHtml(t.title)}</div><div class="s">${escapeHtml(t.artist)}</div></div>
               <button class="row-menu" onclick="removePlaylistTrackAt(${pos})">
@@ -2212,7 +2213,7 @@ function renderQueueList(){
     </div>`;
   if(upcoming.length){
     html += upcoming.map((x,pos)=>`
-      <div class="row queue-row" data-qi="${x.i}" data-pos="${pos}" ${queueEditMode?'':`onclick="jumpToQueueIndex(${x.i})"`}>
+      <div class="row queue-row" data-qi="${x.i}" data-pos="${pos}" ${queueEditMode?`style="animation:rowEditIn .38s ease both;animation-delay:${Math.min(pos*0.035,0.4)}s;"`:`onclick="jumpToQueueIndex(${x.i})"`}>
         <div class="art">${trackArt(x.t,46)}</div>
         <div class="meta"><div class="t">${escapeHtml(x.t.title)}</div><div class="s">${escapeHtml(x.t.artist)}</div></div>
         ${queueEditMode? `
