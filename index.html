@@ -2152,9 +2152,18 @@ function renderMini(){
 }
 const WIKI_CACHE_DAYS = 30;      // cuánto guardamos un resultado exitoso antes de volver a buscar
 const WIKI_NOTFOUND_COOLDOWN_DAYS = 7; // cuánto esperamos antes de reintentar un artista sin resultados
-async function fetchWikiSummary(artist){
+async function wikiSearchTitles(artist){
   try{
-    const url = `https://es.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(artist)}`;
+    const url = `https://es.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(artist)}&format=json&origin=*&srlimit=3`;
+    const res = await fetch(url);
+    if(!res.ok) return [];
+    const data = await res.json();
+    return (data.query && data.query.search)? data.query.search.map(r=>r.title) : [];
+  }catch(e){ return []; }
+}
+async function fetchWikiSummaryByTitle(title){
+  try{
+    const url = `https://es.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`;
     const res = await fetch(url);
     if(!res.ok) return null;
     const data = await res.json();
@@ -2164,7 +2173,19 @@ async function fetchWikiSummary(artist){
       thumbnail: data.thumbnail? data.thumbnail.source : null,
       pageUrl: data.content_urls? data.content_urls.desktop.page : null
     };
-  }catch(e){ return null; } // sin internet u otro error de red
+  }catch(e){ return null; }
+}
+async function fetchWikiSummary(artist){
+  // Probamos primero el título tal cual (rápido, funciona la mayoría de las veces),
+  // y si falla o cae en una página de desambiguación, buscamos el título correcto.
+  const direct = await fetchWikiSummaryByTitle(artist);
+  if(direct) return direct;
+  const candidates = await wikiSearchTitles(artist);
+  for(const title of candidates){
+    const result = await fetchWikiSummaryByTitle(title);
+    if(result) return result;
+  }
+  return null;
 }
 function openPlayer(){ document.getElementById('player').classList.add('show'); }
 function renderPlayerArtistSection(){
@@ -2200,10 +2221,12 @@ function renderArtistSectionBody(el, artist, wikiResult, loading){
         <div class="wiki-source">Fuente: <a href="${wikiResult.pageUrl}" target="_blank" style="color:var(--text-faint);text-decoration:underline;">Wikipedia</a></div>
       </div>`;
   } else {
+    const offlineMsg = (typeof navigator!=='undefined' && navigator.onLine===false)
+      ? `<div style="font-size:12.5px;color:var(--text-faint);margin-bottom:10px;">Sin conexión — no se pudo buscar información de ${escapeHtml(artist)}.</div>`
+      : `<div style="font-size:12.5px;color:var(--text-faint);margin-bottom:10px;">No encontramos a ${escapeHtml(artist)} en Wikipedia.</div>`;
     aboutHtml = note
       ? `<div class="artist-note">${escapeHtml(note)}</div><button class="artist-note-edit" onclick="editArtistNote('${encodeURIComponent(artist)}')">Editar nota</button>`
-      : `<div style="font-size:12.5px;color:var(--text-faint);margin-bottom:10px;">No encontramos a ${escapeHtml(artist)} en Wikipedia.</div>
-         <button class="artist-note-edit" onclick="editArtistNote('${encodeURIComponent(artist)}')">+ Añadir una nota vos mismo</button>`;
+      : `${offlineMsg}<button class="artist-note-edit" onclick="editArtistNote('${encodeURIComponent(artist)}')">+ Añadir una nota vos mismo</button>`;
   }
 
   const moreHtml = more.length
