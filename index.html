@@ -665,7 +665,10 @@ nav.bottom button.active{color:var(--accent);}
   <div class="overlay" id="overlayQueue"><div class="sheet">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;">
       <h3 style="margin:0;">Fila de reproducción</h3>
-      <button class="queue-edit-btn" id="queueEditBtn" onclick="toggleQueueEdit()">Editar</button>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <button class="queue-edit-btn" id="queueEditBtn" onclick="toggleQueueEdit()">Editar</button>
+        <button onclick="closeOverlay('overlayQueue')" style="background:none;border:none;color:var(--text);padding:6px;">✕</button>
+      </div>
     </div>
     <div id="queueList"></div>
     <div class="queue-pill-row">
