@@ -2145,7 +2145,12 @@ function updateLRCNow(){
     document.querySelectorAll('.lrc-line.active').forEach(e=>e.classList.remove('active'));
     if(idx>=0){
       const lineEl = document.getElementById('lrc_'+idx);
-      if(lineEl){ lineEl.classList.add('active'); lineEl.scrollIntoView({block:'center', behavior:'smooth'}); }
+      const scrollBox = document.getElementById('lyricsScroll');
+      if(lineEl && scrollBox){
+        lineEl.classList.add('active');
+        const target = lineEl.offsetTop - (scrollBox.clientHeight/2) + (lineEl.clientHeight/2);
+        animateScrollTo(scrollBox, Math.max(0, target), 550);
+      }
     }
   }
 }
@@ -2709,6 +2714,13 @@ function renderSyncedLyrics(){
   const box = document.getElementById('lyricsSyncedView');
   if(!currentTrackLRC || !currentTrackLRC.length){ box.innerHTML=''; return; }
   box.innerHTML = currentTrackLRC.map((l,i)=>`<p class="lrc-line" id="lrc_${i}">${escapeHtml(l.text||'♪')}</p>`).join('');
+  const idx = Math.max(0, lrcIndexAt(audio.currentTime));
+  const lineEl = document.getElementById('lrc_'+idx);
+  const scrollBox = document.getElementById('lyricsScroll');
+  if(lineEl && scrollBox){
+    lineEl.classList.add('active');
+    scrollBox.scrollTop = Math.max(0, lineEl.offsetTop - (scrollBox.clientHeight/2) + (lineEl.clientHeight/2));
+  }
 }
 function toggleLyricsEditMode(){
   const editWrap = document.getElementById('lyricsEditWrap');
