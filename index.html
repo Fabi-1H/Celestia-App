@@ -391,7 +391,6 @@ nav.bottom button.active{color:var(--accent);}
 .field textarea{resize:vertical;min-height:120px;line-height:1.5;}
 .field input:focus,.field textarea:focus{border-color:var(--accent);}
 #photoPreview img,#photoPreview svg{width:100%;height:100%;object-fit:cover;display:block;}
-#lyricsSyncedView{max-height:48vh;overflow-y:auto;padding:4px 2px 14px;}
 .lrc-line{color:var(--text-dim);font-size:15px;font-weight:600;line-height:1.9;margin:0;padding:3px 0;transition:color .2s ease;}
 .lrc-line.active{color:var(--text);font-size:17px;}
 
@@ -1205,7 +1204,7 @@ function trackArt(t, size){
 }
 
 function trackRow(t, opts={}){
-  return `<div class="row ${currentTrack && currentTrack.id===t.id?'playing':''}" onclick="playTrack('${t.id}', ${opts.queueExpr||"'all'"})">
+  return `<div class="row ${currentTrack && currentTrack.id===t.id?'playing':''}" ${opts.animStyle?`style="${opts.animStyle}"`:''} onclick="playTrack('${t.id}', ${opts.queueExpr||"'all'"})">
     <div class="art">${trackArt(t,46)}</div>
     <div class="meta"><div class="t">${escapeHtml(t.title)}</div><div class="s">${escapeHtml(t.artist)} ${opts.showAlbum?'• '+escapeHtml(t.album):''}</div></div>
     <button class="row-menu" onclick="event.stopPropagation();openTrackMenu('${t.id}', '${opts.playlistId||''}')">
@@ -1515,7 +1514,7 @@ function renderPlaylistDetail(main){
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>
               </button>
             </div>`).join('')}</div>`
-        : pt.map(t=>trackRow(t,{showAlbum:false, playlistId:p.id, queueExpr:`'playlist:${p.id}'`})).join('')}`;
+        : pt.map((t,pos)=>trackRow(t,{showAlbum:false, playlistId:p.id, queueExpr:`'playlist:${p.id}'`, animStyle:`animation:rowEditIn .38s ease both;animation-delay:${Math.min(pos*0.035,0.4)}s;`})).join('')}`;
 }
 let plEditMode = false;
 function togglePlaylistEditMode(){ plEditMode = !plEditMode; render(); }
