@@ -353,6 +353,11 @@ nav.bottom button.active{color:var(--accent);}
 .lyrics-reading p, .lrc-line{font-size:23px;font-weight:800;line-height:1.35;color:rgba(255,255,255,.5);margin:0 0 24px;transition:color .25s, transform .25s;transform-origin:left center;}
 .lrc-line.active{color:#fff;transform:scale(1.035);}
 #lyricsEditWrap textarea{min-height:220px;}
+.lyrics-mini-controls{flex-shrink:0;padding:10px 22px calc(14px + env(safe-area-inset-bottom));}
+.lyrics-mini-controls input[type=range]{width:100%;accent-color:#fff;height:3px;}
+.lyrics-mini-controls .times{display:flex;justify-content:space-between;font-size:11px;color:rgba(255,255,255,.65);margin-top:2px;}
+.lyrics-mini-controls .ctrls{display:flex;align-items:center;justify-content:center;gap:28px;margin-top:8px;}
+.lyrics-mini-controls .ctrls button{background:none;border:none;color:#fff;padding:6px;}
 .sheet h3{font-family:var(--font-head);font-size:18px;margin:0 0 16px;display:flex;justify-content:space-between;align-items:center;}
 .sheet h3 button{background:none;border:none;color:var(--text-dim);}
 .sheet-option{display:flex;align-items:center;gap:14px;padding:12px 4px;color:var(--text);font-size:14.5px;cursor:pointer;border:none;background:none;width:100%;text-align:left;}
@@ -654,6 +659,15 @@ nav.bottom button.active{color:var(--accent);}
           </div>
         </div>
       </div>
+      <div class="lyrics-mini-controls">
+        <input type="range" id="lyricsSeek" min="0" max="100" value="0" oninput="seekTo(this.value)">
+        <div class="times"><span id="lyricsCurTime">0:00</span><span id="lyricsDurTime">0:00</span></div>
+        <div class="ctrls">
+          <button onclick="prevTrack()"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zM20 6L9 12l11 6V6z"/></svg></button>
+          <button onclick="togglePlay()" id="lyricsPlayBtn"></button>
+          <button onclick="nextTrack()"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M16 6h2v12h-2zM4 6l11 6-11 6V6z"/></svg></button>
+        </div>
+      </div>
     </div>
   </div></div>
 
@@ -704,16 +718,39 @@ nav.bottom button.active{color:var(--accent);}
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4v16h16v-7M18.5 2.5a2.1 2.1 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Editar título/artista/álbum</button>
     <button class="sheet-option" onclick="closeOverlay('overlayTrackMenu');openLyricsFromMenu()">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h10M4 18h7"/></svg>Letra</button>
+    <button class="sheet-option" onclick="closeOverlay('overlayTrackMenu');goToAlbumFromMenu()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.5"/></svg>Ir al álbum</button>
+    <button class="sheet-option" onclick="closeOverlay('overlayTrackMenu');goToArtistFromMenu()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>Ir al artista</button>
+    <button class="sheet-option" onclick="closeOverlay('overlayTrackMenu');openSpeedSheet()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="13" r="8"/><path d="M12 13l3-3M9 4h6" stroke-linecap="round"/></svg>Cambiar la velocidad de la canción</button>
+    <button class="sheet-option" onclick="closeOverlay('overlayTrackMenu');openSleepTimer()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 2h6"/></svg>Apagado automático</button>
     <button class="sheet-option" id="menuPodcastBtn" onclick="toggleClassifyPodcast(menuTrack.id)">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 14a3 3 0 003-3V6a3 3 0 00-6 0v5a3 3 0 003 3z"/><path d="M19 11a7 7 0 01-14 0M12 18v3"/></svg>
       <span id="menuPodcastLabel">Clasificar como Podcast</span></button>
+    <button class="sheet-option" onclick="showToast('SongDNA — próximamente')">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4c4 0 4 4 8 4s4-4 8-4M4 20c4 0 4-4 8-4s4 4 8 4"/></svg>
+      Explorar SongDNA <span style="font-size:10px;color:var(--text-faint);margin-left:auto;">Próximamente</span></button>
+    <button class="sheet-option" onclick="showToast('Empezar una jam — próximamente')">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="9" r="3"/><circle cx="16" cy="9" r="3"/><path d="M2 20c0-3 3-5 6-5s6 2 6 5M10 20c0-3 3-5 6-5s6 2 6 5"/></svg>
+      Empezar una jam <span style="font-size:10px;color:var(--text-faint);margin-left:auto;">Próximamente</span></button>
+    <button class="sheet-option" onclick="showToast('Ir a radio de la canción — próximamente')">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="2"/><path d="M8.5 8.5a5 5 0 000 7M15.5 8.5a5 5 0 010 7M5.5 5.5a9 9 0 000 13M18.5 5.5a9 9 0 010 13"/></svg>
+      Ir a radio de la canción <span style="font-size:10px;color:var(--text-faint);margin-left:auto;">Próximamente</span></button>
+    <button class="sheet-option" onclick="showToast('Excluir de tu perfil de gustos — próximamente')">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M8 8l8 8"/></svg>
+      Excluir de tu perfil de gustos <span style="font-size:10px;color:var(--text-faint);margin-left:auto;">Próximamente</span></button>
     <button class="sheet-option" id="menuRemoveBtn" style="color:var(--danger)" onclick="removeFromPlaylistCurrent()">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>Quitar de esta lista</button>
     <button class="sheet-option" id="menuExcludeBtn" style="color:var(--danger)" onclick="excludeTrack(menuTrack.id)">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M8 8l8 8"/></svg>Excluir de la biblioteca</button>
   </div></div>
 
-  <!-- DRAWER LATERAL -->
+  <div class="overlay" id="overlaySpeed"><div class="sheet">
+    <h3>Velocidad de reproducción <button onclick="closeOverlay('overlaySpeed')">✕</button></h3>
+    <div id="speedOptions" style="display:flex;flex-wrap:wrap;gap:10px;"></div>
+  </div></div>
   <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
   <div class="drawer" id="drawer">
     <div class="drawer-profile" onclick="closeDrawer();goToProfile()">
@@ -2168,6 +2205,12 @@ function onAudioTimeUpdate(e){
   document.getElementById('seek').value = pct;
   document.getElementById('curTime').textContent = fmtTime(audio.currentTime);
   document.getElementById('durTime').textContent = fmtTime(audio.duration||0);
+  const lyricsSeek = document.getElementById('lyricsSeek');
+  if(lyricsSeek){
+    lyricsSeek.value = pct;
+    document.getElementById('lyricsCurTime').textContent = fmtTime(audio.currentTime);
+    document.getElementById('lyricsDurTime').textContent = fmtTime(audio.duration||0);
+  }
   if(lastListenTick!=null){
     const delta = audio.currentTime - lastListenTick;
     if(delta>0 && delta<2) addListenSeconds(delta);
@@ -2439,6 +2482,8 @@ function updatePlayIcons(){
   const svgPlaySm = `<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5l12 7-12 7V5z"/></svg>`;
   document.getElementById('bigPlayBtn').innerHTML = isPlaying? svgPause: svgPlay;
   document.getElementById('miniPlayBtn').innerHTML = isPlaying? svgPauseSm: svgPlaySm;
+  const lyricsPlayBtn = document.getElementById('lyricsPlayBtn');
+  if(lyricsPlayBtn) lyricsPlayBtn.innerHTML = isPlaying? svgPause: svgPlay;
   document.getElementById('likeBtn').classList.toggle('active', !!(currentTrack&&currentTrack.liked));
 }
 function updatePlayerUI(){
@@ -2598,6 +2643,11 @@ function renderArtistSectionBody(el, artist, wikiResult, loading){
 
   el.innerHTML = `
     <div class="player-extra">
+      <h4>Acerca de esta canción <span style="background:var(--accent);color:var(--accent-ink);font-size:9.5px;font-weight:800;padding:1px 6px;border-radius:5px;margin-left:4px;">BETA</span></h4>
+      <div class="artist-note" style="color:var(--text-faint);">
+        Esta función necesita un análisis con inteligencia artificial que Celestia todavía no puede generar por sí sola.
+      </div>
+      <button class="artist-note-edit" onclick="showToast('Próximamente')" style="margin-bottom:18px;">Próximamente</button>
       <h4>Acerca del artista</h4>
       ${aboutHtml}
       <h4>Más de ${escapeHtml(artist)}</h4>
@@ -2643,6 +2693,25 @@ function removeFromPlaylistCurrent(){
   if(activeTab==='playlistDetail') refreshPlaylistRows(); else render();
 }
 function openLyricsFromMenu(){ currentTrack = menuTrack; openLyrics(); }
+function goToAlbumFromMenu(){
+  const albums = getAlbums();
+  const idx = albums.findIndex(a=>a.album===menuTrack.album && a.artist===menuTrack.artist);
+  if(idx>=0) openAlbum(idx); else showToast('No se encontró el álbum');
+}
+function goToArtistFromMenu(){ openArtist(encodeURIComponent(menuTrack.artist)); }
+function openSpeedSheet(){
+  const speeds = [0.5, 0.75, 1, 1.25, 1.5, 2];
+  const current = audio.playbackRate || 1;
+  document.getElementById('speedOptions').innerHTML = speeds.map(s=>`
+    <button class="btn ${Math.abs(current-s)<0.01?'':'secondary'}" style="flex:1;min-width:80px;" onclick="setPlaybackSpeed(${s})">${s}x</button>
+  `).join('');
+  document.getElementById('overlaySpeed').classList.add('show');
+}
+function setPlaybackSpeed(s){
+  audio.playbackRate = s;
+  closeOverlay('overlaySpeed');
+  showToast('Velocidad: '+s+'x');
+}
 
 async function toggleClassifyPodcast(id){
   const t = tracks.find(x=>x.id===id);
@@ -2778,6 +2847,8 @@ function openLyrics(){
     }
   });
   document.getElementById('overlayLyrics').classList.add('show');
+  updatePlayIcons();
+  onAudioTimeUpdate({target:audio});
 }
 function showLyricsReadingMode(){
   const synced = isLRC(currentTrack.lyrics);
