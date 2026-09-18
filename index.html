@@ -158,7 +158,7 @@ main.anim{animation:fadeSlideIn .42s cubic-bezier(.22,1,.36,1);}
 .btn.outline{background:transparent;border:1px solid var(--line);color:var(--text);}
 .btn:active{transform:scale(0.97);}
 .pl-pills-row{display:flex;gap:10px;margin-bottom:18px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none;}
-.pl-header-bg{margin:0 -20px;padding:0 20px 6px;background:linear-gradient(180deg,var(--pl-color,#2a2a2a) 0%,var(--bg) 100%);}
+.pl-header-bg{margin:-6px -20px 0;padding:0 20px 6px;background:linear-gradient(180deg,var(--pl-color,#2a2a2a) 0%,var(--bg) 100%);}
 .pl-pills-row::-webkit-scrollbar{display:none;}
 .pl-pills-row .btn{display:flex;align-items:center;gap:7px;white-space:nowrap;flex-shrink:0;padding:10px 16px;font-size:13px;}
 
@@ -653,7 +653,11 @@ nav.bottom button.active{color:var(--accent);}
         <div id="lyricsSyncedView" class="lyrics-reading"></div>
         <div id="lyricsPlainView" class="lyrics-reading"></div>
         <div id="lyricsEditWrap" style="display:none;">
-          <div class="field"><textarea id="lyricsText" placeholder="No hay letra guardada. Pégala aquí (texto simple, o formato LRC con marcas de tiempo como [00:12.34] para sincronizarla) o búscala en la web."></textarea></div>
+          <div class="field"><textarea id="lyricsText" placeholder="No hay letra guardada. Tocá 'Buscar letra sincronizada' o pegala manualmente aquí (texto simple, o formato LRC con [00:12.34] para sincronizarla)."></textarea></div>
+          <button class="btn secondary" style="width:100%;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:8px;" onclick="fetchSyncedLyricsAuto()">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+            Buscar letra sincronizada
+          </button>
           <div style="display:flex;gap:10px;">
             <button class="btn secondary" style="flex:1" onclick="searchLyricsWeb()">Buscar en la web</button>
             <button class="btn" style="flex:1" onclick="saveLyrics()">Guardar</button>
@@ -1231,6 +1235,10 @@ function showTab(tab){
 function render(){
   const main = document.getElementById('main');
   main.classList.remove('anim'); void main.offsetWidth; main.classList.add('anim');
+  const detailScreens = ['playlistDetail','artistDetail','albumDetail','likedDetail','profile','appSettings','recentAdded','statsDetail','history','recent'];
+  const isDetail = detailScreens.includes(activeTab);
+  document.querySelector('header.top').style.display = isDetail ? 'none' : 'flex';
+  main.style.paddingTop = isDetail ? 'calc(6px + env(safe-area-inset-top))' : '6px';
   if(activeTab==='home') return renderHome(main);
   if(activeTab==='songs') return renderSongs(main);
   if(activeTab==='artists') return renderArtists(main);
@@ -2984,6 +2992,31 @@ async function saveLyrics(){
   showLyricsReadingMode();
   updatePlayerUI();
   showToast('Letra guardada');
+}
+async function fetchSyncedLyricsAuto(){
+  if(!currentTrack) return;
+  showToast('Buscando letra sincronizada…');
+  try{
+    const url = `https://lrclib.net/api/search?track_name=${encodeURIComponent(currentTrack.title)}&artist_name=${encodeURIComponent(currentTrack.artist)}`;
+    const res = await fetch(url);
+    if(!res.ok) throw new Error('respuesta no válida');
+    const results = await res.json();
+    const withSynced = results.find(r=>r.syncedLyrics);
+    if(withSynced){
+      document.getElementById('lyricsText').value = withSynced.syncedLyrics;
+      showToast('¡Letra sincronizada encontrada!');
+      return;
+    }
+    const withPlain = results.find(r=>r.plainLyrics);
+    if(withPlain){
+      document.getElementById('lyricsText').value = withPlain.plainLyrics;
+      showToast('Se encontró letra, pero sin sincronizar');
+      return;
+    }
+    showToast('No se encontró letra para esta canción');
+  }catch(e){
+    showToast('No se pudo buscar — revisá tu conexión');
+  }
 }
 function searchLyricsWeb(){
   const q = encodeURIComponent(currentTrack.artist+' '+currentTrack.title+' letra');
