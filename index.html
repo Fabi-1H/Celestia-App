@@ -158,6 +158,7 @@ main.anim{animation:fadeSlideIn .42s cubic-bezier(.22,1,.36,1);}
 .btn.outline{background:transparent;border:1px solid var(--line);color:var(--text);}
 .btn:active{transform:scale(0.97);}
 .pl-pills-row{display:flex;gap:10px;margin-bottom:18px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none;}
+.pl-header-bg{margin:0 -20px;padding:0 20px 6px;background:linear-gradient(180deg,var(--pl-color,#2a2a2a) 0%,var(--bg) 100%);}
 .pl-pills-row::-webkit-scrollbar{display:none;}
 .pl-pills-row .btn{display:flex;align-items:center;gap:7px;white-space:nowrap;flex-shrink:0;padding:10px 16px;font-size:13px;}
 
@@ -298,7 +299,7 @@ nav.bottom button.active{color:var(--accent);}
   display:flex;align-items:center;justify-content:center;opacity:0;transform:scale(.6);transition:opacity .15s,transform .15s;
 }
 #repeatBtn.on .repeat-badge, #miniRepeatBtn.on .repeat-badge{opacity:1;transform:scale(1);background:var(--accent);color:var(--accent-ink);}
-#player .lyrics-line{color:var(--text);font-size:19px;font-weight:700;line-height:1.35;min-height:0;margin:2px 0 22px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+#player .lyrics-line{color:var(--text);font-size:19px;font-weight:700;line-height:1.35;height:52px;margin:2px 0 22px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
 #player .lyrics-line.line-anim{animation:lyricLineIn .28s ease;}
 #player .lyrics-line:empty{margin:0;}
 #player .player-icons-row{display:flex;align-items:center;justify-content:space-between;margin:2px 0 14px;}
@@ -315,7 +316,7 @@ nav.bottom button.active{color:var(--accent);}
 #player .lyrics-card-lines p{font-size:15px;font-weight:700;line-height:1.4;color:var(--text-faint);margin:0 0 10px;transition:color .45s ease;}
 #player .lyrics-card-lines p.active{color:var(--text);}
 #player .lyrics-card-lines p.line-anim{animation:lyricLineIn .4s ease;}
-@keyframes lyricLineIn{0%{opacity:.55;transform:translateY(10px);} 100%{opacity:1;transform:translateY(0);}}
+@keyframes lyricLineIn{0%{opacity:.55;transform:translateY(-14px);} 100%{opacity:1;transform:translateY(0);}}
 @keyframes rowEditIn{0%{opacity:.55;transform:translateX(-14px);} 100%{opacity:1;transform:translateX(0);}}
 #player .lyrics-card-lines p.active{color:var(--text);}
 
@@ -588,7 +589,7 @@ nav.bottom button.active{color:var(--accent);}
       </button>
     </div>
     <div class="progress">
-      <input type="range" id="seek" min="0" max="100" value="0" oninput="seekTo(this.value)">
+      <input type="range" id="seek" min="0" max="100" value="0" oninput="previewSeek(this.value)" onchange="commitSeek(this.value)">
       <div class="times"><span id="curTime">0:00</span><span id="durTime">0:00</span></div>
     </div>
     <div class="controls">
@@ -660,7 +661,7 @@ nav.bottom button.active{color:var(--accent);}
         </div>
       </div>
       <div class="lyrics-mini-controls">
-        <input type="range" id="lyricsSeek" min="0" max="100" value="0" oninput="seekTo(this.value)">
+        <input type="range" id="lyricsSeek" min="0" max="100" value="0" oninput="previewSeek(this.value)" onchange="commitSeek(this.value)">
         <div class="times"><span id="lyricsCurTime">0:00</span><span id="lyricsDurTime">0:00</span></div>
         <div class="ctrls">
           <button onclick="prevTrack()"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zM20 6L9 12l11 6V6z"/></svg></button>
@@ -980,6 +981,7 @@ let recentPlays = [];     // [{ts, trackId, sourceKind, sourceName}] — histori
 let metaOverrides = {};   // por nombre de archivo: {title,artist,album,lyrics}
 let artistNotes = {};     // { artistName: 'nota escrita por el usuario' } — no hay datos reales de biografía sin internet
 let wikiCache = {};       // { artistName: {extract, thumbnail, pageUrl, ts} | {notFound:true, ts} } — caché de búsquedas en Wikipedia
+let songWikiCache = {};   // { "titulo|||artista": {...} | {notFound:true, ts} } — caché de búsquedas sobre la canción en sí
 
 let profile = {name:'Tú', photo:null, featured:[]};
 let pendingPhoto = null;
@@ -1090,6 +1092,7 @@ async function loadState(){
   metaOverrides = lsGet('miku:meta-overrides', {});
   artistNotes = lsGet('celestia:artist-notes', {});
   wikiCache = lsGet('celestia:wiki-cache-v2', {}); // v2: invalida resultados viejos de la búsqueda sin fallback
+  songWikiCache = lsGet('celestia:song-wiki-cache', {});
   playlists = lsGet('miku:playlists', []);
   historyWeeks = lsGet('miku:history', []);
   recentPlays = lsGet('celestia:recent', []);
@@ -1112,6 +1115,7 @@ async function saveProfileState(){ lsSet('miku:profile', profile); }
 async function saveOverrides(){ lsSet('miku:meta-overrides', metaOverrides); }
 async function saveArtistNotes(){ lsSet('celestia:artist-notes', artistNotes); }
 async function saveWikiCache(){ lsSet('celestia:wiki-cache-v2', wikiCache); }
+async function saveSongWikiCache(){ lsSet('celestia:song-wiki-cache', songWikiCache); }
 async function savePlaylists(){ lsSet('miku:playlists', playlists); }
 async function saveHistory(){ lsSet('miku:history', historyWeeks); }
 async function saveRecent(){ lsSet('celestia:recent', recentPlays); }
@@ -1408,7 +1412,8 @@ function renderAlbums(main){
 function openAlbum(i){ window.currentAlbumIdx=i; activeTab='albumDetail'; render(); }
 function renderAlbumDetail(main){
   const al = getAlbums()[window.currentAlbumIdx];
-  main.innerHTML = `<button class="icon-btn" style="margin:6px 0 10px" onclick="showTab('playlists')">
+  main.innerHTML = `<div class="pl-header-bg" id="albHeaderBg">
+    <button class="icon-btn" style="margin:6px 0 10px" onclick="showTab('playlists')">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg> Biblioteca
     </button>
     <div style="text-align:center;margin:6px 0 18px;">
@@ -1416,11 +1421,13 @@ function renderAlbumDetail(main){
       <div style="font-family:var(--font-head);font-size:20px;font-weight:700;">${escapeHtml(al.album)}</div>
       <div style="color:var(--text-dim);font-size:13px;">${escapeHtml(al.artist)} • ${al.tracks.length} canción(es)</div>
     </div>
+    </div>
     ${al.tracks.map((t,i)=>`<div class="row ${currentTrack&&currentTrack.id===t.id?'playing':''}" onclick="playTrack('${t.id}','album:${window.currentAlbumIdx}')">
       <div class="num">${i+1}</div>
       <div class="meta"><div class="t">${escapeHtml(t.title)}</div></div>
       <button class="row-menu" onclick="event.stopPropagation();openTrackMenu('${t.id}','')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg></button>
     </div>`).join('')}`;
+  applyHeaderGradient('albHeaderBg', al.tracks[0]);
 }
 
 function buildLibraryItems(filter){
@@ -1525,6 +1532,7 @@ function renderPlaylistDetail(main){
   const pt = p.trackIds.map(id=>tracks.find(t=>t.id===id)).filter(Boolean);
   const totalSec = pt.reduce((s,t)=>s+(t.duration||0),0);
   main.innerHTML = `
+    <div class="pl-header-bg" id="plHeaderBg">
     <button class="icon-btn" style="margin:20px 0 4px" onclick="showTab('playlists')">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
     </button>
@@ -1547,6 +1555,7 @@ function renderPlaylistDetail(main){
       <button class="play-fab" onclick="playTrack('${pt[0]? pt[0].id:''}','playlist:${p.id}')" ${pt.length? '':'disabled style="opacity:.4"'}>
         <svg width="26" height="26" viewBox="0 0 24 24" fill="#fff"><path d="M7 5l12 7-12 7V5z"/></svg>
       </button>
+    </div>
     </div>
     <div class="pl-pills-row">
       <button class="btn secondary" onclick="openSongPicker('${p.id}')">
@@ -1588,6 +1597,7 @@ function renderPlaylistDetail(main){
               </button>
             </div>`).join('')}</div>`
         : `<div id="plTrackList">${pt.map((t,pos)=>trackRow(t,{showAlbum:false, playlistId:p.id, queueExpr:`'playlist:${p.id}'`, animStyle:`animation:rowEditIn .38s ease both;animation-delay:${Math.min(pos*0.035,0.4)}s;`})).join('')}</div>`}`;
+  applyHeaderGradient('plHeaderBg', pt[0]);
 }
 let plEditMode = false;
 function refreshPlaylistRows(){
@@ -2203,11 +2213,13 @@ function onAudioTimeUpdate(e){
   const pct = audio.duration? (audio.currentTime/audio.duration*100):0;
   document.getElementById('miniBar').style.width = pct+'%';
   document.getElementById('seek').value = pct;
+  document.getElementById('seek').style.background = `linear-gradient(to right, #fff 0%, #fff ${pct}%, var(--line) ${pct}%, var(--line) 100%)`;
   document.getElementById('curTime').textContent = fmtTime(audio.currentTime);
   document.getElementById('durTime').textContent = fmtTime(audio.duration||0);
   const lyricsSeek = document.getElementById('lyricsSeek');
   if(lyricsSeek){
     lyricsSeek.value = pct;
+    lyricsSeek.style.background = `linear-gradient(to right, #fff 0%, #fff ${pct}%, rgba(255,255,255,.3) ${pct}%, rgba(255,255,255,.3) 100%)`;
     document.getElementById('lyricsCurTime').textContent = fmtTime(audio.currentTime);
     document.getElementById('lyricsDurTime').textContent = fmtTime(audio.duration||0);
   }
@@ -2320,6 +2332,22 @@ function updateMediaSessionMetadata(){
     artwork: currentTrack.cover? [{src:currentTrack.cover, sizes:'300x300', type:'image/jpeg'}] : []
   });
 }
+function previewSeek(pct){
+  // Solo actualiza lo visual mientras arrastrás — no toca audio.currentTime todavía,
+  // así evitamos que cada micro-movimiento del dedo dispare un salto real de audio.
+  if(!audio.duration) return;
+  const t = audio.duration*(pct/100);
+  document.getElementById('curTime').textContent = fmtTime(t);
+  document.getElementById('seek').style.background = `linear-gradient(to right, #fff 0%, #fff ${pct}%, var(--line) ${pct}%, var(--line) 100%)`;
+  const lyricsSeek = document.getElementById('lyricsSeek');
+  if(lyricsSeek){
+    lyricsSeek.value = pct;
+    document.getElementById('lyricsCurTime').textContent = fmtTime(t);
+    lyricsSeek.style.background = `linear-gradient(to right, #fff 0%, #fff ${pct}%, rgba(255,255,255,.3) ${pct}%, rgba(255,255,255,.3) 100%)`;
+  }
+  document.getElementById('seek').value = pct;
+}
+function commitSeek(pct){ seekTo(pct); } // recién acá se hace el salto real, al soltar el dedo
 function seekTo(pct){ if(audio.duration) audio.currentTime = audio.duration*(pct/100); }
 
 /* ============ COLA DE REPRODUCCIÓN ============ */
@@ -2587,29 +2615,75 @@ async function fetchWikiSummary(artist){
   }
   return null;
 }
+async function fetchSongWikiSummary(title, artist){
+  // Las canciones suelen tener su propia página, distinta a la del artista
+  // (ej. "Bad (canción)"), así que probamos variantes típicas antes de buscar.
+  const directCandidates = [`${title} (canción)`, `${title} (song)`, title];
+  for(const c of directCandidates){
+    const r = await fetchWikiSummaryByTitle(c);
+    if(r) return r;
+  }
+  const searchResults = await wikiSearchTitles(`${title} ${artist} canción`);
+  for(const t of searchResults){
+    const r = await fetchWikiSummaryByTitle(t);
+    if(r) return r;
+  }
+  return null;
+}
 function openPlayer(){ document.getElementById('player').classList.add('show'); }
 function renderPlayerArtistSection(){
   const el = document.getElementById('playerArtistSection');
   if(!el || !currentTrack) return;
   const artist = (currentTrack.artist||'').trim();
-  const cached = wikiCache[artist];
-  const isFresh = cached && (Date.now()-cached.ts) < (cached.notFound? WIKI_NOTFOUND_COOLDOWN_DAYS : WIKI_CACHE_DAYS)*86400000;
+  const title = (currentTrack.title||'').trim();
+  const songKey = title+'|||'+artist;
 
-  renderArtistSectionBody(el, artist, isFresh? cached : null, !isFresh);
+  const artistCached = wikiCache[artist];
+  const artistFresh = artistCached && (Date.now()-artistCached.ts) < (artistCached.notFound? WIKI_NOTFOUND_COOLDOWN_DAYS : WIKI_CACHE_DAYS)*86400000;
+  const songCached = songWikiCache[songKey];
+  const songFresh = songCached && (Date.now()-songCached.ts) < (songCached.notFound? WIKI_NOTFOUND_COOLDOWN_DAYS : WIKI_CACHE_DAYS)*86400000;
 
-  if(!isFresh){
+  renderArtistSectionBody(el, artist, artistFresh? artistCached : null, !artistFresh, songFresh? songCached : null, !songFresh);
+
+  if(!artistFresh){
     fetchWikiSummary(artist).then(result=>{
       wikiCache[artist] = result? {...result, ts:Date.now()} : {notFound:true, ts:Date.now()};
       saveWikiCache();
-      if(currentTrack && currentTrack.artist===artist){ // el usuario podría haber cambiado de canción mientras buscaba
-        renderArtistSectionBody(el, artist, result, false);
+      if(currentTrack && (currentTrack.artist||'').trim()===artist){
+        const sc = songWikiCache[songKey];
+        const sf = sc && (Date.now()-sc.ts) < (sc.notFound? WIKI_NOTFOUND_COOLDOWN_DAYS : WIKI_CACHE_DAYS)*86400000;
+        renderArtistSectionBody(el, artist, result, false, sf? sc : null, !sf);
+      }
+    });
+  }
+  if(!songFresh){
+    fetchSongWikiSummary(title, artist).then(result=>{
+      songWikiCache[songKey] = result? {...result, ts:Date.now()} : {notFound:true, ts:Date.now()};
+      saveSongWikiCache();
+      if(currentTrack && (currentTrack.title||'').trim()===title && (currentTrack.artist||'').trim()===artist){
+        const ac = wikiCache[artist];
+        const af = ac && (Date.now()-ac.ts) < (ac.notFound? WIKI_NOTFOUND_COOLDOWN_DAYS : WIKI_CACHE_DAYS)*86400000;
+        renderArtistSectionBody(el, artist, af? ac : null, !af, result, false);
       }
     });
   }
 }
-function renderArtistSectionBody(el, artist, wikiResult, loading){
+function renderArtistSectionBody(el, artist, wikiResult, loading, songResult, songLoading){
   const more = musicTracks().filter(t=>t.artist===artist && (!currentTrack || t.id!==currentTrack.id)).slice(0,10);
   const note = artistNotes[artist] || '';
+
+  let songHtml;
+  if(songLoading){
+    songHtml = `<div class="artist-note" style="color:var(--text-faint);">Buscando información sobre esta canción…</div>`;
+  } else if(songResult && songResult.extract){
+    songHtml = `<div class="artist-note-card">
+        ${songResult.thumbnail? `<div class="artist-banner"><img src="${songResult.thumbnail}" loading="lazy"></div>` : ''}
+        <div class="artist-note">${escapeHtml(songResult.extract)}</div>
+        <div class="wiki-source">Fuente: <a href="${songResult.pageUrl}" target="_blank" style="color:var(--text-faint);text-decoration:underline;">Wikipedia</a></div>
+      </div>`;
+  } else {
+    songHtml = `<div style="font-size:12.5px;color:var(--text-faint);margin-bottom:18px;">No encontramos información sobre esta canción en particular.</div>`;
+  }
 
   let aboutHtml;
   if(loading){
@@ -2643,11 +2717,8 @@ function renderArtistSectionBody(el, artist, wikiResult, loading){
 
   el.innerHTML = `
     <div class="player-extra">
-      <h4>Acerca de esta canción <span style="background:var(--accent);color:var(--accent-ink);font-size:9.5px;font-weight:800;padding:1px 6px;border-radius:5px;margin-left:4px;">BETA</span></h4>
-      <div class="artist-note" style="color:var(--text-faint);">
-        Esta función necesita un análisis con inteligencia artificial que Celestia todavía no puede generar por sí sola.
-      </div>
-      <button class="artist-note-edit" onclick="showToast('Próximamente')" style="margin-bottom:18px;">Próximamente</button>
+      <h4>Acerca de esta canción</h4>
+      ${songHtml}
       <h4>Acerca del artista</h4>
       ${aboutHtml}
       <h4>Más de ${escapeHtml(artist)}</h4>
@@ -2830,6 +2901,18 @@ function extractDominantColor(imgSrc, callback){
     img.onerror = () => callback(null);
     img.src = imgSrc;
   }catch(e){ callback(null); }
+}
+function applyHeaderGradient(elId, track){
+  const el = document.getElementById(elId);
+  if(!el) return;
+  el.style.setProperty('--pl-color', '#2a2a2a'); // color neutro mientras se calcula el real
+  extractDominantColor(track? track.cover : null, (rgb)=>{
+    if(!el.isConnected) return; // el usuario ya salió de esta pantalla
+    if(rgb){
+      const [r,g,b] = rgb.map(c=>Math.round(c*0.7));
+      el.style.setProperty('--pl-color', `rgb(${r},${g},${b})`);
+    }
+  });
 }
 function openLyrics(){
   document.getElementById('lyricsText').value = currentTrack.lyrics || '';
