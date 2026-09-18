@@ -355,6 +355,8 @@ nav.bottom button.active{color:var(--accent);}
 .lrc-line.active{color:#fff;transform:scale(1.035);}
 #lyricsEditWrap textarea{min-height:220px;}
 .lyrics-mini-controls{flex-shrink:0;padding:10px 22px calc(14px + env(safe-area-inset-bottom));}
+.lyrics-icon-row{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:6px 22px 0;}
+.lyrics-icon-row button{background:none;border:none;color:rgba(255,255,255,.75);padding:6px;}
 .lyrics-mini-controls input[type=range]{width:100%;accent-color:#fff;height:3px;}
 .lyrics-mini-controls .times{display:flex;justify-content:space-between;font-size:11px;color:rgba(255,255,255,.65);margin-top:2px;}
 .lyrics-mini-controls .ctrls{display:flex;align-items:center;justify-content:center;gap:28px;margin-top:8px;}
@@ -664,6 +666,11 @@ nav.bottom button.active{color:var(--accent);}
           </div>
         </div>
       </div>
+      <div class="lyrics-icon-row">
+        <button onclick="showToast('Traducir — próximamente')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 8h9M9.5 5v3M13 8c-1 4-3 7-6 9M6 12c1.5 2 3.5 3.5 6 4M15 21l4-9 4 9M16.3 18h5.4"/></svg></button>
+        <button onclick="shareCurrentTrack()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.3 10.7l7.4-4.4M8.3 13.3l7.4 4.4"/></svg></button>
+        <button onclick="openTrackMenu(currentTrack.id,'')"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>
+      </div>
       <div class="lyrics-mini-controls">
         <input type="range" id="lyricsSeek" min="0" max="100" value="0" oninput="previewSeek(this.value)" onchange="commitSeek(this.value)">
         <div class="times"><span id="lyricsCurTime">0:00</span><span id="lyricsDurTime">0:00</span></div>
@@ -721,6 +728,8 @@ nav.bottom button.active{color:var(--accent);}
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13M9 9l12-2M9 18a3 3 0 11-6 0 3 3 0 016 0zM21 16a3 3 0 11-6 0 3 3 0 016 0z"/></svg>Añadir a playlist</button>
     <button class="sheet-option" onclick="closeOverlay('overlayTrackMenu');openEditSheet(menuTrack)">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4v16h16v-7M18.5 2.5a2.1 2.1 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Editar título/artista/álbum</button>
+    <button class="sheet-option" onclick="closeOverlay('overlayTrackMenu');changeCoverArt()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>Cambiar carátula</button>
     <button class="sheet-option" onclick="closeOverlay('overlayTrackMenu');openLyricsFromMenu()">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h10M4 18h7"/></svg>Letra</button>
     <button class="sheet-option" onclick="closeOverlay('overlayTrackMenu');goToAlbumFromMenu()">
@@ -883,6 +892,7 @@ nav.bottom button.active{color:var(--accent);}
         <div id="photoPreview" style="width:100%;height:100%;"></div>
       </button>
       <input type="file" id="photoInput" class="hidden-input" accept="image/*" onchange="handlePhotoInput(event)">
+      <input type="file" id="coverInput" class="hidden-input" accept="image/*" onchange="handleCoverInput(event)">
     </div>
     <div class="field">
       <label>Nombre (máx. 10 caracteres — letras, espacios y puntos)</label>
@@ -2772,6 +2782,29 @@ function removeFromPlaylistCurrent(){
   if(activeTab==='playlistDetail') refreshPlaylistRows(); else render();
 }
 function openLyricsFromMenu(){ currentTrack = menuTrack; openLyrics(); }
+function changeCoverArt(){
+  window.__coverTargetId = menuTrack.id;
+  document.getElementById('coverInput').click();
+}
+function handleCoverInput(e){
+  const file = e.target.files[0];
+  e.target.value = '';
+  if(!file) return;
+  const t = tracks.find(x=>x.id===window.__coverTargetId);
+  if(!t) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const dataUri = reader.result; // string base64 completo, listo para guardar en IndexedDB
+    try{ if(t.cover) URL.revokeObjectURL(t.cover); }catch(err){}
+    t.cover = dataURItoBlobURL(dataUri); // referencia corta y liviana para mostrar en pantalla
+    idbUpdateTrackFields(t.id, {cover: dataUri});
+    renderAll();
+    if(currentTrack && currentTrack.id===t.id) updatePlayerUI();
+    showToast('Carátula actualizada');
+  };
+  reader.onerror = () => showToast('No se pudo leer la imagen');
+  reader.readAsDataURL(file);
+}
 function goToAlbumFromMenu(){
   const albums = getAlbums();
   const idx = albums.findIndex(a=>a.album===menuTrack.album && a.artist===menuTrack.artist);
