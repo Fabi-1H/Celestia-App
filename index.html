@@ -196,6 +196,8 @@ main.anim{animation:fadeSlideIn .42s cubic-bezier(.22,1,.36,1);}
   transition:background-color .15s ease;
 }
 .row:active{background:var(--surface);}
+.art{overflow:hidden;}
+.art img,.art svg{width:100%;height:100%;object-fit:cover;display:block;}
 .row .art{width:46px;height:46px;border-radius:8px;background:var(--surface-2);flex-shrink:0;display:flex;align-items:center;justify-content:center;overflow:hidden;color:var(--text-faint);}
 .row .art img{width:100%;height:100%;object-fit:cover;}
 .row .meta{flex:1;min-width:0;}
@@ -1148,12 +1150,15 @@ async function handleImportedFiles(fileList){
   const progressText = document.getElementById('importProgressText');
   const progressBar = document.getElementById('importProgressBar');
   progressEl.classList.add('show');
-  for(let i=0;i<audioFiles.length;i++){
-    progressText.textContent = `Importando ${i+1} de ${audioFiles.length}…`;
-    progressBar.style.width = Math.round((i/audioFiles.length)*100)+'%';
-    await addTrackFromFile(audioFiles[i]);
-    // refrescamos la biblioteca cada tanto para que se vea avanzar, sin recalcular todo por cada archivo
-    if(i%15===0 || i===audioFiles.length-1) renderAll();
+  const CONCURRENCY = 4; // procesamos varios archivos a la vez — con bibliotecas grandes esto reduce el tiempo total drásticamente
+  let done = 0;
+  for(let i=0;i<audioFiles.length;i+=CONCURRENCY){
+    const batch = audioFiles.slice(i, i+CONCURRENCY);
+    await Promise.all(batch.map(f=>addTrackFromFile(f)));
+    done += batch.length;
+    progressText.textContent = `Importando ${Math.min(done,audioFiles.length)} de ${audioFiles.length}…`;
+    progressBar.style.width = Math.round((done/audioFiles.length)*100)+'%';
+    renderAll(); // refrescamos tras cada tanda en vez de cada 15 archivos sueltos
   }
   progressEl.classList.remove('show');
   renderAll();
@@ -1216,7 +1221,7 @@ function addTrackFromFile(file){
     if(window.jsmediatags){
       // Si la lectura de metadatos se traba (tag corrupto, formato raro, etc.),
       // no dejamos que bloquee el resto de la importación para siempre.
-      const timeoutId = setTimeout(()=> finish(null), 6000);
+      const timeoutId = setTimeout(()=> finish(null), 9000);
       try{
         window.jsmediatags.read(file, {
           onSuccess: (t)=>{
@@ -1276,6 +1281,7 @@ function emptyState(icon, title, text, btnLabel){
 const noteIcon = `<svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#5C5C61" stroke-width="1.6"><path d="M9 18V5l12-2v13M9 9l12-2M9 18a3 3 0 11-6 0 3 3 0 016 0zM21 16a3 3 0 11-6 0 3 3 0 016 0z"/></svg>`;
 
 function trackArt(t, size){
+  if(!t) return `<svg width="${size*0.45}" height="${size*0.45}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 18V5l12-2v13M9 9l12-2M9 18a3 3 0 11-6 0 3 3 0 016 0zM21 16a3 3 0 11-6 0 3 3 0 016 0z"/></svg>`;
   return t.cover ? `<img src="${t.cover}">` : `<svg width="${size*0.45}" height="${size*0.45}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 18V5l12-2v13M9 9l12-2M9 18a3 3 0 11-6 0 3 3 0 016 0zM21 16a3 3 0 11-6 0 3 3 0 016 0z"/></svg>`;
 }
 
@@ -1385,11 +1391,25 @@ function renderPodcasts(main){
 
 function musicTracks(){ return tracks.filter(t=>!t.isPodcast); }
 function podcastTracks(){ return tracks.filter(t=>t.isPodcast); }
-function getArtists(){ return [...new Set(musicTracks().map(t=>t.artist))].sort((a,b)=>a.localeCompare(b)); }
-function getArtistTracks(a){ return musicTracks().filter(t=>t.artist===a); }
+function getArtists(){
+  const seen = {};
+  musicTracks().forEach(t=>{
+    const key = (t.artist||'').trim().toLowerCase();
+    if(key && !seen[key]) seen[key] = (t.artist||'').trim();
+  });
+  return Object.values(seen).sort((a,b)=>a.localeCompare(b));
+}
+function getArtistTracks(a){
+  const key = (a||'').trim().toLowerCase();
+  return musicTracks().filter(t=>(t.artist||'').trim().toLowerCase()===key);
+}
 function getAlbums(){
   const map={};
-  musicTracks().forEach(t=>{ const key=t.album+'|||'+t.artist; if(!map[key]) map[key]={album:t.album, artist:t.artist, tracks:[]}; map[key].tracks.push(t); });
+  musicTracks().forEach(t=>{
+    const key=(t.album||'').trim().toLowerCase()+'|||'+(t.artist||'').trim().toLowerCase();
+    if(!map[key]) map[key]={album:(t.album||'').trim(), artist:(t.artist||'').trim(), tracks:[]};
+    map[key].tracks.push(t);
+  });
   return Object.values(map).sort((a,b)=>a.album.localeCompare(b.album));
 }
 
@@ -1949,8 +1969,9 @@ function renderStatsDetail(main){
     </button>`;
 
   if(kind==='songs'){
-    const songs = Object.entries(w.plays).sort((a,b)=>b[1]-a[1]).map(([id,c])=>({t:tracks.find(x=>x.id===id),c})).filter(x=>x.t && !x.t.isPodcast);
-    const totalPlays = songs.reduce((s,x)=>s+x.c,0);
+    const allSongs = Object.entries(w.plays).sort((a,b)=>b[1]-a[1]).map(([id,c])=>({t:tracks.find(x=>x.id===id),c})).filter(x=>x.t && !x.t.isPodcast);
+    const songs = allSongs.slice(0,10);
+    const totalPlays = allSongs.reduce((s,x)=>s+x.c,0);
     main.innerHTML = `
       <div class="stats-header">${backBtn}<div class="stats-title">Canciones principales</div>${shareBtn}</div>
       <div class="stats-week-range" style="margin-top:18px;">${w.rangeLabel||''}</div>
@@ -1971,11 +1992,12 @@ function renderStatsDetail(main){
         </div>`).join('') || `<p style="color:var(--text-dim);font-size:13px;margin-top:20px;">Sin reproducciones esta semana.</p>`}
     `;
   } else {
-    const artistsArr = Object.entries(w.artistPlays).sort((a,b)=>b[1]-a[1]);
+    const allArtists = Object.entries(w.artistPlays).sort((a,b)=>b[1]-a[1]);
+    const artistsArr = allArtists.slice(0,10);
     main.innerHTML = `
       <div class="stats-header">${backBtn}<div class="stats-title">Artistas principales</div>${shareBtn}</div>
       <div class="stats-week-range" style="margin-top:18px;">${w.rangeLabel||''}</div>
-      <div class="stats-headline">Escuchaste <span class="accent-num">${artistsArr.length.toLocaleString('es')}</span> artistas esta semana</div>
+      <div class="stats-headline">Escuchaste <span class="accent-num">${allArtists.length.toLocaleString('es')}</span> artistas esta semana</div>
       <div class="stats-divider"></div>
       ${artistsArr.map(([a,c],i)=>`
         <div class="stats-rank-row" onclick="openArtist('${encodeURIComponent(a)}')">
@@ -2129,7 +2151,7 @@ function loadCurrent(autoplay){
   audio.currentTime = 0;
   lastListenTick = null;
   playCounted = false;
-  ensureEQGraph();
+  if(eqState.enabled || crossfadeState.enabled) ensureEQGraph(); // el audio normal no pasa por Web Audio, así sigue sonando en segundo plano
   const chain = chainFor(audio);
   if(chain) chain.gain.gain.value = 1;
   if(autoplay){ audio.play(); }
@@ -2687,7 +2709,8 @@ function renderPlayerArtistSection(){
   }
 }
 function renderArtistSectionBody(el, artist, wikiResult, loading, songResult, songLoading){
-  const more = musicTracks().filter(t=>t.artist===artist && (!currentTrack || t.id!==currentTrack.id)).slice(0,10);
+  const artistKey = artist.toLowerCase();
+  const more = musicTracks().filter(t=>(t.artist||'').trim().toLowerCase()===artistKey && (!currentTrack || t.id!==currentTrack.id)).slice(0,10);
   const note = artistNotes[artist] || '';
 
   let songHtml;
@@ -2807,7 +2830,9 @@ function handleCoverInput(e){
 }
 function goToAlbumFromMenu(){
   const albums = getAlbums();
-  const idx = albums.findIndex(a=>a.album===menuTrack.album && a.artist===menuTrack.artist);
+  const wantAlbum = (menuTrack.album||'').trim().toLowerCase();
+  const wantArtist = (menuTrack.artist||'').trim().toLowerCase();
+  const idx = albums.findIndex(a=>a.album.toLowerCase()===wantAlbum && a.artist.toLowerCase()===wantArtist);
   if(idx>=0) openAlbum(idx); else showToast('No se encontró el álbum');
 }
 function goToArtistFromMenu(){ openArtist(encodeURIComponent(menuTrack.artist)); }
@@ -3301,6 +3326,11 @@ function showToast(msg){
   await loadState();
   refreshAvatarUI();
   setupMediaSession();
+  document.addEventListener('visibilitychange', ()=>{
+    if(!document.hidden && audioCtx && audioCtx.state==='suspended' && currentTrack && !audio.paused){
+      audioCtx.resume().catch(()=>{});
+    }
+  });
   render();
 })();
 </script>
