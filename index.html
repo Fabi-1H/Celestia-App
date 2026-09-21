@@ -438,9 +438,11 @@ nav.bottom button.active{color:var(--accent);}
 .week-tabs button{flex:1;padding:8px 0;border-radius:10px;background:var(--surface-2);border:1px solid var(--line);color:var(--text-dim);font-size:12px;font-weight:700;}
 .week-tabs button.active{background:var(--text);color:#0A0A0B;border-color:var(--text);}
 
-.stats-header{display:flex;align-items:center;gap:16px;margin:20px 0 4px;}
+.stats-header{display:grid;grid-template-columns:44px 1fr 44px;align-items:center;margin:16px 0 4px;}
+.stats-header.big .stats-title{font-size:19px;}
+.stats-header>*:last-child:not(.stats-title){justify-self:end;}
 .stats-back{background:none;border:none;color:var(--text);padding:4px;flex-shrink:0;}
-.stats-title{font-family:var(--font-head);font-size:17px;font-weight:700;}
+.stats-title{font-family:var(--font-head);font-size:17px;font-weight:700;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .stats-week-title{font-family:var(--font-head);font-size:22px;font-weight:700;margin-top:4px;}
 .stats-week-range{color:var(--text-dim);font-size:12.5px;margin-top:2px;margin-bottom:16px;}
 .stats-card{background:var(--surface-2);border-radius:14px;padding:18px;margin-bottom:14px;overflow:hidden;position:relative;}
@@ -452,17 +454,33 @@ nav.bottom button.active{color:var(--accent);}
 .stats-artist-art img.bg{position:absolute;inset:0;filter:blur(24px) brightness(.55);transform:scale(1.3);}
 .stats-artist-art img.fg{position:relative;object-fit:contain;}
 .stats-header .see-all{margin-left:auto;}
-.stats-headline{font-family:var(--font-head);font-size:26px;font-weight:700;line-height:1.3;margin:14px 0 18px;}
+.stats-range-big{font-size:19px;color:var(--text);margin:26px 0 8px;}
+.stats-headline{font-family:var(--font-head);font-size:34px;font-weight:700;line-height:1.16;margin:0 0 22px;}
 .stats-headline .accent-num{color:var(--accent);}
 .stats-divider{height:1px;background:var(--line);margin-bottom:10px;}
-.stats-rank-row{display:flex;align-items:center;gap:14px;padding:12px 0;cursor:pointer;}
-.stats-rank-row .rank-n{width:20px;flex-shrink:0;color:var(--text-dim);font-size:15px;}
-.stats-rank-row .art{width:54px;height:54px;border-radius:6px;overflow:hidden;flex-shrink:0;background:var(--surface-2);display:flex;align-items:center;justify-content:center;color:var(--text-faint);}
+.stats-rank-row{display:flex;align-items:center;padding:12px 0;cursor:pointer;transition:transform .15s ease;}
+.stats-rank-row:active{transform:scale(.985);}
+.stats-rank-row .rk{width:44px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-weight:800;font-size:20px;line-height:1;}
+.stats-rank-row .rk svg{display:block;}
+.stats-rank-row .art{width:84px;height:84px;margin-left:8px;border-radius:8px;overflow:hidden;flex-shrink:0;background:var(--surface-2);display:flex;align-items:center;justify-content:center;color:var(--text-faint);}
+.stats-rank-row .art.round{border-radius:50%;}
 .stats-rank-row .art img{width:100%;height:100%;object-fit:cover;display:block;}
-.stats-rank-row .meta{flex:1;min-width:0;}
-.stats-rank-row .meta .t{font-size:15px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.stats-rank-row .meta .s{font-size:13px;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.stats-rank-row .meta .plays{font-size:12.5px;color:var(--text-dim);margin-top:1px;}
+.stats-rank-row .meta{flex:1;min-width:0;margin-left:16px;}
+.stats-rank-row .meta .t{font-size:17px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.stats-rank-row .meta .s{font-size:14.5px;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:3px;}
+.stats-rank-row .meta .plays{font-size:14px;color:var(--text-dim);margin-top:3px;}
+/* minutos por día */
+.day-chart{display:flex;align-items:stretch;gap:9px;height:190px;margin:10px 0 6px;}
+.day-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0;}
+.day-val{font-size:11.5px;color:var(--text-dim);height:14px;font-variant-numeric:tabular-nums;}
+.day-wrap{flex:1;width:100%;display:flex;align-items:flex-end;justify-content:center;}
+.day-bar{width:100%;max-width:34px;min-height:3px;background:var(--surface-hover);border-radius:8px 8px 3px 3px;transform-origin:bottom;animation:barGrow .7s cubic-bezier(.22,1,.36,1) both;}
+.day-col.top .day-bar{background:var(--accent);}
+.day-col.today .day-lbl{color:var(--text);}
+.day-lbl{font-size:12.5px;color:var(--text-faint);font-weight:700;}
+@keyframes barGrow{from{transform:scaleY(0);}to{transform:scaleY(1);}}
+.min-line{display:flex;justify-content:space-between;gap:12px;padding:14px 0;border-bottom:1px solid var(--line);font-size:15px;}
+.min-line span:last-child{color:var(--text-dim);text-align:right;}
 
 /* BIBLIOTECA */
 .lib-header{display:flex;align-items:center;justify-content:space-between;margin:20px 0 2px;}
@@ -2016,12 +2034,17 @@ function spmHead(){
 function spmOpt(icon,label,action,i,extra){
   return `<button class="spm-opt ${extra&&extra.on?'on':''}" style="--i:${i}" onclick="${action}"><span class="spm-ic">${icon}</span><span class="spm-lb">${label}</span>${extra&&extra.badge?`<span class="spm-badge">${extra.badge}</span>`:''}</button>`;
 }
-function openCollMenu(kind){
+function openArtistMenu(enc){
+  const a = decodeURIComponent(enc);
+  window.__spLikeList = getArtistTracks(a);
+  openCollMenu('artist', a);
+}
+function openCollMenu(kind, artistName){
   if(kind==='album'){
     const al = getAlbums()[window.currentAlbumIdx]; if(!al) return;
     window.__collCtx = {kind:'album', idx:window.currentAlbumIdx, artist:al.artist};
   } else {
-    window.__collCtx = {kind:'artist', artist:window.currentArtist};
+    window.__collCtx = {kind:'artist', artist: artistName || window.currentArtist};
   }
   renderCollMenu();
   const sh = document.getElementById('collSheet'); sh.scrollTop = 0; sh.style.transform='';
@@ -2043,6 +2066,7 @@ function renderCollMenu(){
   } else {
     const fol = artistFollowing(c.artist), blk = artistBlocked(c.artist);
     h += spmOpt(SP_ICON.share,'Compartir','collShare()',n++);
+    if(activeTab!=='artistDetail') h += spmOpt(SP_ICON.user,'Ir al artista','collGoArtist()',n++);
     const allA = collTracks().length && collTracks().every(t=>t.liked);
     h += spmOpt(allA? SP_ICON.checkFill : SP_ICON.checkOff, allA? 'Quitar de Tus me gusta' : 'Añadir a Tus me gusta','collLikeAll()',n++,{on:allA});
     h += spmOpt(SP_ICON.image,'Cambiar foto del artista','collPickImage()',n++);
@@ -2729,6 +2753,8 @@ let listenSaveTimer = null;
 function addListenSeconds(sec){
   const w = currentWeekBucket();
   w.totalSeconds = (w.totalSeconds||0) + sec;
+  if(!w.daySeconds) w.daySeconds = [0,0,0,0,0,0,0];
+  w.daySeconds[(new Date().getDay()+6)%7] += sec; // lunes = 0
   clearTimeout(listenSaveTimer);
   listenSaveTimer = setTimeout(saveHistory, 4000);
 }
@@ -2764,8 +2790,8 @@ function renderHistory(main){
     <div class="stats-week-title">${weekLabel}</div>
     <div class="stats-week-range">${w.rangeLabel||''}</div>
 
-    <div class="stats-card">
-      <div class="stats-card-label">Minutos escuchados</div>
+    <div class="stats-card" onclick="openStatsDetail('minutes')" style="cursor:pointer;">
+      <div class="stats-card-label" style="display:flex;justify-content:space-between;align-items:center;">Minutos escuchados <span style="font-size:18px;">›</span></div>
       <div class="stats-big-num">${minutes.toLocaleString('es')}</div>
     </div>
 
@@ -2817,57 +2843,132 @@ function openStatsDetail(kind){
   document.getElementById('tabsBar').style.display='none';
   render();
 }
+const MONTHS_STATS = ['ene','feb','mar','abr','may','jun','jul','ago','sept','oct','nov','dic'];
+function isoWeekMonday(key){
+  const m = /^(\d+)-W(\d+)$/.exec(key||''); if(!m) return null;
+  const y = +m[1], wk = +m[2];
+  const jan4 = new Date(y,0,4); const dow = (jan4.getDay()+6)%7;
+  return new Date(y,0,4-dow+(wk-1)*7);
+}
+function compactRange(w){
+  const mon = isoWeekMonday(w.weekKey); if(!mon) return w.rangeLabel||'';
+  const sun = new Date(mon); sun.setDate(mon.getDate()+6);
+  return mon.getMonth()===sun.getMonth()
+    ? `${mon.getDate()} – ${sun.getDate()} de ${MONTHS_STATS[sun.getMonth()]}`
+    : `${mon.getDate()} de ${MONTHS_STATS[mon.getMonth()]} – ${sun.getDate()} de ${MONTHS_STATS[sun.getMonth()]}`;
+}
+function songPlaysList(w){
+  return Object.entries((w&&w.plays)||{}).sort((a,b)=>b[1]-a[1]).map(([id,c])=>({t:tracks.find(x=>x.id===id),c})).filter(x=>x.t && !x.t.isPodcast);
+}
+const ST_UP = `<svg width="15" height="9" viewBox="0 0 16 10"><path d="M8 0.8l7.4 8.4H0.6z" fill="#4ADE80"/></svg>`;
+const ST_DOWN = `<svg width="15" height="9" viewBox="0 0 16 10"><path d="M8 9.2L0.6 0.8h14.8z" fill="#F87171"/></svg>`;
+function moveArrow(rank, prevRank, hasPrev){
+  if(!hasPrev) return '';
+  if(prevRank==null || rank<prevRank) return ST_UP;   // subió o es nueva en la lista
+  if(rank>prevRank) return ST_DOWN;
+  return '';
+}
 function renderStatsDetail(main){
   const kind = window.__statsKind;
   const weeksOrdered = [...historyWeeks].reverse();
-  const w = weeksOrdered[window.__histWeekIdx] || weeksOrdered[0];
+  const wi = window.__histWeekIdx || 0;
+  const w = weeksOrdered[wi] || weeksOrdered[0];
+  const prevW = weeksOrdered[wi+1] || null;
+  const range = compactRange(w);
+  const rowAnim = (i)=> window.__softNow ? '' : `animation:rowEditIn .38s ease both;animation-delay:${Math.min(i*0.05,0.45)}s;`;
+  const dots = `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg>`;
   const backBtn = `<button class="stats-back" onclick="backToStats()">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
     </button>`;
-  const shareBtn = `<button class="stats-back" onclick="shareStatsText('${kind==='songs'?'Mis canciones principales':'Mis artistas principales'} en Celestia')">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.6l7.6-4.2M8.2 13.4l7.6 4.2"/></svg>
+  const shareBtn = `<button class="stats-back" onclick="shareStatsText(window.__statsShare)">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.6l7.6-4.2M8.2 13.4l7.6 4.2"/></svg>
     </button>`;
 
   if(kind==='songs'){
-    const allSongs = Object.entries(w.plays).sort((a,b)=>b[1]-a[1]).map(([id,c])=>({t:tracks.find(x=>x.id===id),c})).filter(x=>x.t && !x.t.isPodcast);
-    const songs = allSongs.slice(0,10);
-    const totalPlays = allSongs.reduce((s,x)=>s+x.c,0);
+    const all = songPlaysList(w);
+    const list = all.slice(0,10);
+    const prevRanks = {}; songPlaysList(prevW).forEach((x,i)=>{ prevRanks[x.t.id] = i+1; });
+    const hasPrev = !!prevW && Object.keys(prevRanks).length>0;
+    window.__statsShare = `Mis canciones principales (${range}) en Celestia\n` + list.slice(0,5).map((x,i)=>`${i+1}. ${x.t.title} — ${x.t.artist}`).join('\n');
     main.innerHTML = `
-      <div class="stats-header">${backBtn}<div class="stats-title">Canciones principales</div>${shareBtn}</div>
-      <div class="stats-week-range" style="margin-top:18px;">${w.rangeLabel||''}</div>
-      <div class="stats-headline">Escuchaste <span class="accent-num">${totalPlays.toLocaleString('es')}</span> canciones esta semana</div>
+      <div class="stats-header big">${backBtn}<div class="stats-title">Canciones principales</div>${shareBtn}</div>
+      <div class="stats-range-big">${range}</div>
+      <div class="stats-headline">Escuchaste <span class="accent-num">${all.length.toLocaleString('es')}</span> ${all.length===1?'canción':'canciones'} esta semana</div>
       <div class="stats-divider"></div>
-      ${songs.map((s,i)=>`
-        <div class="stats-rank-row">
-          <div class="rank-n">${i+1}</div>
-          <div class="art">${trackArt(s.t,54)}</div>
+      ${list.map((s2,i)=>`
+        <div class="stats-rank-row" style="${rowAnim(i)}" onclick="playTrack('${jsq(s2.t.id)}','all')">
+          <div class="rk">${moveArrow(i+1, prevRanks[s2.t.id], hasPrev)}<span>${i+1}</span></div>
+          <div class="art">${trackArt(s2.t,84)}</div>
           <div class="meta">
-            <div class="t">${escapeHtml(s.t.title)}</div>
-            <div class="s">${escapeHtml(s.t.artist)}</div>
-            <div class="plays">${s.c} reproducciones</div>
+            <div class="t">${escapeHtml(s2.t.title)}</div>
+            <div class="s">${escapeHtml(s2.t.artist)}</div>
+            <div class="plays">${s2.c} ${s2.c===1?'reproducción':'reproducciones'}</div>
           </div>
-          <button class="row-menu" onclick="event.stopPropagation();openTrackMenu('${s.t.id}','')">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
-          </button>
-        </div>`).join('') || `<p style="color:var(--text-dim);font-size:13px;margin-top:20px;">Sin reproducciones esta semana.</p>`}
+          <button class="row-menu" onclick="event.stopPropagation();openTrackMenu('${jsq(s2.t.id)}','')">${dots}</button>
+        </div>`).join('') || `<p style="color:var(--text-dim);font-size:14px;margin-top:20px;">Sin reproducciones esta semana.</p>`}
+    `;
+  } else if(kind==='artists'){
+    const all = mergedArtistPlays(w);
+    const list = all.slice(0,10);
+    const prevRanks = {}; if(prevW) mergedArtistPlays(prevW).forEach(([n],i)=>{ prevRanks[akey(n)] = i+1; });
+    const hasPrev = !!prevW && Object.keys(prevRanks).length>0;
+    // semanas (de las que guarda la app) en que el artista estuvo en el top 5
+    const top5Weeks = {};
+    weeksOrdered.slice(wi).forEach(wk=>{ mergedArtistPlays(wk).slice(0,5).forEach(([n])=>{ const k=akey(n); top5Weeks[k]=(top5Weeks[k]||0)+1; }); });
+    window.__statsShare = `Mis artistas principales (${range}) en Celestia\n` + list.slice(0,5).map(([n],i)=>`${i+1}. ${n}`).join('\n');
+    main.innerHTML = `
+      <div class="stats-header big">${backBtn}<div class="stats-title">Artistas principales</div>${shareBtn}</div>
+      <div class="stats-range-big">${range}</div>
+      <div class="stats-headline">Escuchaste <span class="accent-num">${all.length.toLocaleString('es')}</span> ${all.length===1?'artista':'artistas'} esta semana</div>
+      <div class="stats-divider"></div>
+      ${list.map(([a,c],i)=>{
+        const k = akey(a), tw = top5Weeks[k]||0;
+        return `<div class="stats-rank-row" style="${rowAnim(i)}" onclick="openArtist('${encA(a)}')">
+          <div class="rk">${moveArrow(i+1, prevRanks[k], hasPrev)}<span>${i+1}</span></div>
+          <div class="art round">${artistArt(a,84)}</div>
+          <div class="meta"><div class="t">${escapeHtml(a)}</div>${(i<5 && tw>=2)? `<div class="s">${tw} semanas en el top 5</div>` : ''}</div>
+          <button class="row-menu" onclick="event.stopPropagation();openArtistMenu('${encA(a)}')">${dots}</button>
+        </div>`;
+      }).join('') || `<p style="color:var(--text-dim);font-size:14px;margin-top:20px;">Sin datos esta semana.</p>`}
     `;
   } else {
-    const allArtists = mergedArtistPlays(w);
-    const artistsArr = allArtists.slice(0,10);
+    // minutos escuchados
+    const mins = Math.round((w.totalSeconds||0)/60);
+    const prevMins = prevW ? Math.round((prevW.totalSeconds||0)/60) : null;
+    const ds = w.daySeconds || null;
+    const DAYS = ['L','M','M','J','V','S','D'], DAYS_FULL = ['lunes','martes','miércoles','jueves','viernes','sábado','domingo'];
+    const todayIdx = (new Date().getDay()+6)%7;
+    let chart = '', extra = '';
+    if(ds && ds.some(v=>v>0)){
+      const max = Math.max(...ds);
+      const topDay = ds.indexOf(max);
+      chart = `<div class="stats-card-label" style="margin-top:2px;">Minutos por día</div>
+        <div class="day-chart">${ds.map((v,i)=>{
+          const m = Math.round(v/60);
+          return `<div class="day-col ${i===topDay?'top':''} ${(wi===0&&i===todayIdx)?'today':''}">
+            <div class="day-val">${m>0?m:''}</div>
+            <div class="day-wrap"><div class="day-bar" style="height:${v>0? Math.max(4, v/max*100) : 0}%;animation-delay:${i*0.05}s"></div></div>
+            <div class="day-lbl">${DAYS[i]}</div></div>`;
+        }).join('')}</div>`;
+      const active = ds.filter(v=>v>0);
+      const avg = Math.round(active.reduce((a,b)=>a+b,0)/active.length/60);
+      extra = `<div class="min-line"><span>Día con más música</span><span>${DAYS_FULL[topDay].charAt(0).toUpperCase()+DAYS_FULL[topDay].slice(1)} · ${Math.round(max/60)} min</span></div>
+        <div class="min-line"><span>Promedio por día activo</span><span>${avg} min</span></div>`;
+    } else {
+      chart = `<p style="color:var(--text-dim);font-size:14px;margin:22px 0 4px;">El detalle por día se empieza a guardar desde ahora; esta semana aún no lo tiene.</p>`;
+    }
+    let cmp = '';
+    if(prevMins!=null){
+      const d = mins - prevMins;
+      cmp = `<div class="min-line"><span>Frente a la ${wi===0?'semana pasada':'semana anterior'}</span><span>${d===0?'Igual':(d>0?'+':'−')+Math.abs(d)+' min'}</span></div>`;
+    }
+    window.__statsShare = `Escuché ${mins.toLocaleString('es')} minutos de música (${range}) en Celestia`;
     main.innerHTML = `
-      <div class="stats-header">${backBtn}<div class="stats-title">Artistas principales</div>${shareBtn}</div>
-      <div class="stats-week-range" style="margin-top:18px;">${w.rangeLabel||''}</div>
-      <div class="stats-headline">Escuchaste <span class="accent-num">${allArtists.length.toLocaleString('es')}</span> artistas esta semana</div>
+      <div class="stats-header big">${backBtn}<div class="stats-title">Minutos escuchados</div>${shareBtn}</div>
+      <div class="stats-range-big">${range}</div>
+      <div class="stats-headline">Escuchaste <span class="accent-num">${mins.toLocaleString('es')}</span> ${mins===1?'minuto':'minutos'} esta semana.</div>
       <div class="stats-divider"></div>
-      ${artistsArr.map(([a,c],i)=>`
-        <div class="stats-rank-row" onclick="openArtist('${encodeURIComponent(a)}')">
-          <div class="rank-n">${i+1}</div>
-          <div class="art" style="border-radius:50%;">${artistArt(a,54)}</div>
-          <div class="meta"><div class="t">${escapeHtml(a)}</div></div>
-          <button class="row-menu" onclick="event.stopPropagation();openArtist('${encodeURIComponent(a)}')">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
-          </button>
-        </div>`).join('') || `<p style="color:var(--text-dim);font-size:13px;margin-top:20px;">Sin datos esta semana.</p>`}
+      ${chart}${extra}${cmp}
     `;
   }
 }
