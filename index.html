@@ -583,6 +583,9 @@ nav.bottom button.active{color:var(--accent);}
 @keyframes spmIn{0%{opacity:0;transform:translateY(14px);}100%{opacity:1;transform:translateY(0);}}
 .overlay.show .spm-opt,.overlay.show .spm-head{animation:spmIn .38s cubic-bezier(.22,1,.36,1) both;animation-delay:calc(var(--i,0) * 35ms + 60ms);}
 .spm-empty{padding:18px 20px;color:var(--text-dim);font-size:14px;}
+.sp-check.out{transform:scale(0);opacity:0;}
+.ar-hero .ar-cam{position:absolute;top:calc(14px + env(safe-area-inset-top));right:14px;z-index:2;width:42px;height:42px;border-radius:50%;background:rgba(0,0,0,.45);border:none;color:#fff;display:flex;align-items:center;justify-content:center;transition:transform .16s cubic-bezier(.34,1.56,.64,1);}
+.ar-hero .ar-cam:active{transform:scale(.84);}
 .icon-btn.active-accent{color:var(--accent);}
 .queue-now-label{font-size:11.5px;font-weight:700;color:var(--text-faint);text-transform:uppercase;letter-spacing:.04em;margin:6px 0 4px;}
 .queue-sub{color:var(--text-dim);font-size:13px;margin:2px 0 14px;}
@@ -1073,6 +1076,7 @@ nav.bottom button.active{color:var(--accent);}
   </div></div>
 
   <input type="file" id="fileInput" class="hidden-input" multiple accept="audio/*">
+  <input type="file" id="artistImgInput" class="hidden-input" accept="image/*">
   <input type="file" id="folderInput" class="hidden-input" multiple webkitdirectory>
   <div class="toast" id="toast"></div>
   <div id="importProgress">
@@ -1095,6 +1099,7 @@ let playlists = [];       // {id,name,trackIds:[]}
 let historyWeeks = [];    // [{weekKey,label,plays:{trackId:count}, artistPlays:{artist:count}}]
 let recentPlays = [];     // [{ts, trackId, sourceKind, sourceName}] — historial cronológico para "Recientes"
 let metaOverrides = {};   // por nombre de archivo: {title,artist,album,lyrics}
+let artistManual = {};    // artistas cuya foto puso el usuario a mano (tiene prioridad sobre la búsqueda automática)
 let artistImages = {};    // { 'nombre en minúsculas': urlDeImagen } — fotos de artistas buscadas en internet
 let artistNotes = {};     // { artistName: 'nota escrita por el usuario' } — no hay datos reales de biografía sin internet
 let wikiCache = {};       // { artistName: {extract, thumbnail, pageUrl, ts} | {notFound:true, ts} } — caché de búsquedas en Wikipedia
@@ -1195,11 +1200,17 @@ async function idbDeleteTrack(id){
     });
   }catch(e){}
 }
-async function idbPutArt(key, data){
+async function idbDeleteArt(key){
+  try{
+    const db = await idbOpen();
+    db.transaction('artimg', 'readwrite').objectStore('artimg').delete(key);
+  }catch(e){}
+}
+async function idbPutArt(key, data, manual){
   try{
     const db = await idbOpen();
     const tx = db.transaction('artimg', 'readwrite');
-    tx.objectStore('artimg').put({key, data});
+    tx.objectStore('artimg').put({key, data, manual: !!manual});
   }catch(e){}
 }
 async function idbGetAllArt(){
@@ -1238,7 +1249,7 @@ async function loadState(){
   crossfadeState = lsGet('celestia:crossfade', crossfadeState);
 
   try{
-    (await idbGetAllArt()).forEach(r=>{ if(r && r.key && r.data) artistImages[r.key] = String(r.data).startsWith('data:')? dataURItoBlobURL(r.data) : r.data; });
+    (await idbGetAllArt()).forEach(r=>{ if(r && r.key && r.data){ artistImages[r.key] = String(r.data).startsWith('data:')? dataURItoBlobURL(r.data) : r.data; if(r.manual) artistManual[r.key] = true; } });
   }catch(e){}
   const savedTracks = await idbGetAllTracks();
   for(const rec of savedTracks){
@@ -1395,19 +1406,60 @@ async function fetchImageAsDataURI(url, max){
 async function applyCover(list, url){
   const dataURI = await fetchImageAsDataURI(url, 600);
   const stored = dataURI || url;
-  const shown = dataURI ? dataURItoBlobURL(dataURI) : url;
   list.forEach(t=>{
     if(t.cover) return;
-    t.cover = shown;
+    t.cover = dataURI ? dataURItoBlobURL(dataURI) : url;
     idbUpdateTrackFields(t.id, {cover: stored});
   });
 }
 async function applyArtistImage(name, url){
-  const dataURI = await fetchImageAsDataURI(url, 500);
-  const stored = dataURI || url;
   const key = name.trim().toLowerCase();
+  if(artistManual[key]) return; // la foto elegida a mano manda
+  const dataURI = await fetchImageAsDataURI(url, 500);
+  if(artistManual[key]) return;
+  const stored = dataURI || url;
   artistImages[key] = dataURI ? dataURItoBlobURL(dataURI) : url;
-  idbPutArt(key, stored);
+  idbPutArt(key, stored, false);
+  refreshPlayerArtist(name);
+}
+function refreshPlayerArtist(name){
+  if(currentTrack && (currentTrack.artist||'').trim().toLowerCase()===name.trim().toLowerCase() && document.getElementById('playerArtistSection')) renderPlayerArtistSection();
+}
+/* ----- foto de artista elegida por el usuario ----- */
+function pickArtistImage(name){
+  window.__pickArtist = name;
+  const inp = document.getElementById('artistImgInput'); inp.value = ''; inp.click();
+}
+document.getElementById('artistImgInput').addEventListener('change', async (e)=>{
+  const f = e.target.files && e.target.files[0];
+  const name = window.__pickArtist;
+  if(f && name) await setArtistImageManual(name, f);
+});
+async function setArtistImageManual(name, file){
+  let dataURI;
+  try{
+    const bmp = await createImageBitmap(file);
+    const sc = Math.min(1, 700/Math.max(bmp.width,bmp.height));
+    const c = document.createElement('canvas');
+    c.width = Math.max(1,Math.round(bmp.width*sc)); c.height = Math.max(1,Math.round(bmp.height*sc));
+    c.getContext('2d').drawImage(bmp,0,0,c.width,c.height);
+    dataURI = c.toDataURL('image/jpeg',0.88);
+  }catch(e){ showToast('No se pudo leer esa imagen'); return; }
+  const key = name.trim().toLowerCase();
+  artistImages[key] = dataURItoBlobURL(dataURI);
+  artistManual[key] = true;
+  idbPutArt(key, dataURI, true);
+  renderSoft(); refreshPlayerArtist(name);
+  showToast('Foto de '+name+' actualizada');
+}
+async function resetArtistImage(name){
+  const key = name.trim().toLowerCase();
+  delete artistImages[key]; delete artistManual[key];
+  idbDeleteArt(key);
+  const miss = lsGet('celestia:art-miss', {}); delete miss['ar|'+artNorm(name)]; lsSet('celestia:art-miss', miss);
+  renderSoft(); refreshPlayerArtist(name);
+  if(artOnlineEnabled() && navigator.onLine){ showToast('Buscando la foto automática…'); fetchMissingArt(true); }
+  else showToast('Foto manual quitada');
 }
 function artistImgSrc(a){
   const u = artistImages[(a||'').trim().toLowerCase()];
@@ -1643,6 +1695,8 @@ const noteIcon = `<svg width="52" height="52" viewBox="0 0 24 24" fill="none" st
 
 function trackArt(t, size){
   if(!t) return `<svg width="${size*0.45}" height="${size*0.45}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 18V5l12-2v13M9 9l12-2M9 18a3 3 0 11-6 0 3 3 0 016 0zM21 16a3 3 0 11-6 0 3 3 0 016 0z"/></svg>`;
+  const au = t.cover ? null : artistImages[(t.artist||'').trim().toLowerCase()];
+  if(au) return `<img src="${au}">`;
   return t.cover ? `<img src="${t.cover}">` : `<svg width="${size*0.45}" height="${size*0.45}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 18V5l12-2v13M9 9l12-2M9 18a3 3 0 11-6 0 3 3 0 016 0zM21 16a3 3 0 11-6 0 3 3 0 016 0z"/></svg>`;
 }
 
@@ -1811,25 +1865,33 @@ const SP_ICON = {
   note:`<svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M9 18V5l12-2v13M9 9l12-2M9 18a3 3 0 11-6 0 3 3 0 016 0zM21 16a3 3 0 11-6 0 3 3 0 016 0z"/></svg>`
 };
 function likeBtnHTML(t){
-  return `<button class="sp-check ${t.liked?'on':''}" data-like="${escapeHtml(t.id)}" onclick="event.stopPropagation();toggleTrackLike('${jsq(t.id)}')">${t.liked?SP_ICON.checkOn:SP_ICON.checkOff}</button>`;
+  if(!t.liked) return ''; // solo se muestra el check cuando la canción ya está en Tus me gusta
+  return `<button class="sp-check on" data-like="${escapeHtml(t.id)}" onclick="event.stopPropagation();toggleTrackLike('${jsq(t.id)}')">${SP_ICON.checkOn}</button>`;
+}
+function syncLikeChecks(){
+  document.querySelectorAll('.sp-row[data-tid]').forEach(r=>{
+    const t = tracks.find(x=>x.id===r.dataset.tid); if(!t) return;
+    const b = r.querySelector('.sp-check');
+    if(t.liked && !b){
+      const m = r.querySelector('.row-menu');
+      if(m){ m.insertAdjacentHTML('beforebegin', likeBtnHTML(t)); popEl(r.querySelector('.sp-check')); }
+    } else if(!t.liked && b && !b.classList.contains('out')){
+      b.classList.add('out'); setTimeout(()=>b.remove(), 200);
+    }
+  });
 }
 function toggleTrackLike(id){
   const t = tracks.find(x=>x.id===id); if(!t) return;
   t.liked = !t.liked;
   idbUpdateTrackFields(t.id, {liked:t.liked});
-  updatePlayIcons();
-  document.querySelectorAll('[data-like]').forEach(b=>{
-    if(b.getAttribute('data-like')!==id) return;
-    b.classList.toggle('on', t.liked);
-    b.innerHTML = t.liked? SP_ICON.checkOn : SP_ICON.checkOff;
-    popEl(b);
-  });
-  refreshLikeAllBtn();
+  updatePlayIcons(); // actualiza el reproductor, los checks de la lista y el botón de "todo el álbum"
 }
 function refreshLikeAllBtn(){
   const b = document.getElementById('spLikeAll'); if(!b) return;
   const list = window.__spLikeList || [];
-  const all = list.length && list.every(t=>t.liked);
+  const all = !!(list.length && list.every(t=>t.liked));
+  if(b.dataset.all === String(all)) return;
+  b.dataset.all = String(all);
   b.innerHTML = all ? SP_ICON.checkFill : SP_ICON.checkOff;
   b.style.color = all ? '' : 'var(--text-dim)';
   popEl(b);
@@ -1840,12 +1902,6 @@ function toggleLikeAll(){
   const all = list.every(t=>t.liked);
   list.forEach(t=>{ t.liked = !all; idbUpdateTrackFields(t.id,{liked:t.liked}); });
   updatePlayIcons();
-  document.querySelectorAll('[data-like]').forEach(b=>{
-    const t = list.find(x=>x.id===b.getAttribute('data-like')); if(!t) return;
-    b.classList.toggle('on', t.liked);
-    b.innerHTML = t.liked? SP_ICON.checkOn : SP_ICON.checkOff;
-  });
-  refreshLikeAllBtn();
   showToast(all ? 'Quitado de Tus me gusta' : 'Añadido a Tus me gusta');
 }
 function popEl(el){ if(!el) return; el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); }
@@ -1861,6 +1917,8 @@ Object.assign(SP_ICON, {
   jam:`<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="6"/><circle cx="15" cy="12" r="6"/></svg>`,
   radio:`<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="2.2"/><path d="M7.9 7.9a5.8 5.8 0 000 8.2M16.1 7.9a5.8 5.8 0 010 8.2M4.9 4.9a10 10 0 000 14.2M19.1 4.9a10 10 0 010 14.2"/></svg>`,
   plus:`<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 7.5v9M7.5 12h9"/></svg>`,
+  image:`<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2.5"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="M21 15l-5-5L5 21"/></svg>`,
+  refresh:`<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 11-3-6.7L21 8M21 3v5h-5"/></svg>`,
   list:`<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h11M4 12h11M4 18h6M17 12v7a2.5 2.5 0 11-2-2.4V9l5-1v9"/></svg>`
 });
 function playCollection(expr){
@@ -1888,6 +1946,7 @@ function refreshSpPlay(){
   }
 }
 function syncSpUI(){
+  syncLikeChecks(); refreshLikeAllBtn();
   document.querySelectorAll('.sp-row[data-tid]').forEach(r=>{
     r.classList.toggle('playing', !!currentTrack && r.dataset.tid===currentTrack.id);
   });
@@ -1938,6 +1997,8 @@ function renderCollMenu(){
   } else {
     const fol = artistFollowing(c.artist), blk = artistBlocked(c.artist);
     h += spmOpt(SP_ICON.share,'Compartir','collShare()',n++);
+    h += spmOpt(SP_ICON.image,'Cambiar foto del artista','collPickImage()',n++);
+    if(artistManual[c.artist.trim().toLowerCase()]) h += spmOpt(SP_ICON.refresh,'Volver a la foto automática','collResetImage()',n++);
     h += spmOpt(fol? SP_ICON.following : SP_ICON.follow, fol? 'Dejar de seguir' : 'Seguir','collFollow()',n++,{on:fol});
     h += spmOpt(SP_ICON.block, blk? 'Volver a reproducir a este artista' : 'No reproducir a este artista','collBlock()',n++,{on:blk});
     h += spmOpt(SP_ICON.jam,'Empezar una jam',"collSoon('Jam')",n++,{badge:'Próximamente'});
@@ -1970,6 +2031,8 @@ function collRadio(){
   const c = window.__collCtx; closeOverlay('overlayCollMenu');
   playCollection(c.kind==='album' ? 'radio:album:'+c.idx : 'radio:artist:'+encA(c.artist));
 }
+function collPickImage(){ closeOverlay('overlayCollMenu'); pickArtistImage(window.__collCtx.artist); }
+function collResetImage(){ closeOverlay('overlayCollMenu'); resetArtistImage(window.__collCtx.artist); }
 function collFollow(){ closeOverlay('overlayCollMenu'); toggleFollowArtist(encA(window.__collCtx.artist)); }
 function collBlock(){
   const a = window.__collCtx.artist;
@@ -2126,6 +2189,7 @@ function renderArtistDetail(main){
     <div class="ar-hero">
       ${artistImgSrc(a) ? `<img src="${artistImgSrc(a)}">` : SP_ICON.note}
       <button class="ar-back" onclick="showTab('playlists')">${SP_ICON.back}</button>
+      <button class="ar-cam" onclick="pickArtistImage(window.currentArtist)">${SP_ICON.image}</button>
       <div class="ar-name">${escapeHtml(a)}</div>
     </div>
     <div class="ar-meta" id="arMeta">${artistMetaHTML(a)}</div>
@@ -2183,7 +2247,7 @@ function renderAlbumDetail(main){
     <div class="sp-meta">Álbum • ${al.tracks.length} canción(es)${mins? ' • '+mins:''}</div>
     <div class="sp-actions">
       <div class="sp-thumb">${trackArt(coverT,46)}</div>
-      <button class="sp-ic" id="spLikeAll" onclick="toggleLikeAll()" style="${allLiked?'':'color:var(--text-dim)'}">${allLiked?SP_ICON.checkFill:SP_ICON.checkOff}</button>
+      <button class="sp-ic" id="spLikeAll" data-all="${!!allLiked}" onclick="toggleLikeAll()" style="${allLiked?'':'color:var(--text-dim)'}">${allLiked?SP_ICON.checkFill:SP_ICON.checkOff}</button>
       <button class="sp-ic" onclick="popEl(this);showToast('Ya está guardado en tu dispositivo')">${SP_ICON.download}</button>
       <button class="sp-ic" onclick="openCollMenu('album')">${SP_ICON.dots}</button>
       <div style="flex:1"></div>
@@ -2627,7 +2691,6 @@ function renderHistory(main){
   const maxArtist = artistsArr[0]?artistsArr[0][1]:1;
   const minutes = Math.round((w.totalSeconds||0)/60);
   const topArtist = artistsArr[0]? artistsArr[0][0] : null;
-  const topArtistTrack = topArtist? getArtistTracks(topArtist)[0] : null;
 
   main.innerHTML = `
     <div class="stats-header">${backBtn}<div class="stats-title">Estadísticas de reproducción</div></div>
@@ -2643,7 +2706,7 @@ function renderHistory(main){
     ${topArtist? `<div class="stats-card" onclick="openArtist('${encodeURIComponent(topArtist)}')" style="cursor:pointer;">
       <div class="stats-card-label">Artista principal</div>
       <div class="stats-artist-name">${escapeHtml(topArtist)}</div>
-      <div class="stats-artist-art">${topArtistTrack? trackArt(topArtistTrack,300):''}</div>
+      <div class="stats-artist-art">${topArtist? artistArt(topArtist,300):''}</div>
     </div>`:''}
 
     <div class="section-title" style="margin-top:26px;cursor:pointer;" onclick="openStatsDetail('songs')">Canciones más reproducidas
@@ -3138,7 +3201,7 @@ function updateMediaSessionMetadata(){
     title: currentTrack.title,
     artist: currentTrack.artist,
     album: currentTrack.album,
-    artwork: currentTrack.cover? [{src:currentTrack.cover, sizes:'300x300', type:'image/jpeg'}] : []
+    artwork: (currentTrack.cover||artistImages[(currentTrack.artist||'').trim().toLowerCase()])? [{src:(currentTrack.cover||artistImages[(currentTrack.artist||'').trim().toLowerCase()]), sizes:'300x300', type:'image/jpeg'}] : []
   });
 }
 function previewSeek(pct){
@@ -3482,6 +3545,7 @@ function renderArtistSectionBody(el, artist, wikiResult, loading, songResult, so
   const artistKey = artist.toLowerCase();
   const more = musicTracks().filter(t=>(t.artist||'').trim().toLowerCase()===artistKey && (!currentTrack || t.id!==currentTrack.id)).slice(0,10);
   const note = artistNotes[artist] || '';
+  const artImg = artistImages[artistKey] || null; // la foto propia (buscada o elegida) tiene prioridad sobre la de Wikipedia
 
   let songHtml;
   if(songLoading){
@@ -3501,7 +3565,7 @@ function renderArtistSectionBody(el, artist, wikiResult, loading, songResult, so
     aboutHtml = `<div class="artist-note" style="color:var(--text-faint);">Buscando información sobre ${escapeHtml(artist)}…</div>`;
   } else if(wikiResult && wikiResult.extract){
     aboutHtml = `<div class="artist-note-card">
-        ${wikiResult.thumbnail? `<div class="artist-banner"><img src="${wikiResult.thumbnail}" loading="lazy"></div>` : ''}
+        ${(artImg||wikiResult.thumbnail)? `<div class="artist-banner"><img src="${artImg||wikiResult.thumbnail}" loading="lazy"></div>` : ''}
         <div class="artist-note">${escapeHtml(wikiResult.extract)}</div>
         <div class="wiki-source">Fuente: <a href="${wikiResult.pageUrl}" target="_blank" style="color:var(--text-faint);text-decoration:underline;">Wikipedia</a></div>
       </div>`;
@@ -3512,6 +3576,10 @@ function renderArtistSectionBody(el, artist, wikiResult, loading, songResult, so
     aboutHtml = note
       ? `<div class="artist-note">${escapeHtml(note)}</div><button class="artist-note-edit" onclick="editArtistNote('${encodeURIComponent(artist)}')">Editar nota</button>`
       : `${offlineMsg}<button class="artist-note-edit" onclick="editArtistNote('${encodeURIComponent(artist)}')">+ Añadir una nota vos mismo</button>`;
+  }
+
+  if(artImg && !(!loading && wikiResult && wikiResult.extract)){
+    aboutHtml = `<div class="artist-banner" style="border-radius:10px;margin-bottom:12px;"><img src="${artImg}" loading="lazy"></div>` + aboutHtml;
   }
 
   const moreHtml = more.length
