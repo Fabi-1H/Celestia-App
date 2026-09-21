@@ -133,8 +133,8 @@ header.top{
 .tab.active{background:var(--text);color:#0A0A0B;border-color:var(--text);}
 
 main{flex:1;overflow-y:auto;padding:6px 20px 160px;}
-@keyframes fadeSlideIn{0%{opacity:.55;transform:translateY(16px);} 100%{opacity:1;transform:translateY(0);}}
-main.anim{animation:fadeSlideIn .42s cubic-bezier(.22,1,.36,1);}
+@keyframes fadeSlideIn{0%{opacity:.92;transform:translateY(12px);} 100%{opacity:1;transform:translateY(0);}}
+main.anim{animation:fadeSlideIn .6s cubic-bezier(.22,1,.36,1);}
 .section-title{
   font-family:var(--font-head);
   font-size:19px; font-weight:700; margin:22px 0 12px;
@@ -177,7 +177,7 @@ main.anim{animation:fadeSlideIn .42s cubic-bezier(.22,1,.36,1);}
 
 .hgrid{display:flex;gap:12px;overflow-x:auto;padding-bottom:4px;margin:0 -20px;padding-left:20px;padding-right:20px;}
 .card{
-  flex:0 0 132px; cursor:pointer; transition:transform .12s ease;
+  flex:0 0 132px; cursor:pointer;
 }
 .card:active{transform:scale(.96);}
 .card .art{
@@ -422,7 +422,7 @@ nav.bottom button.active{color:var(--accent);}
 .toggle-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0 16px;}
 .switch{width:42px;height:24px;border-radius:20px;background:var(--line);position:relative;cursor:pointer;}
 .switch.on{background:var(--accent);}
-.switch .knob{width:18px;height:18px;border-radius:50%;background:#fff;position:absolute;top:3px;left:3px;transition:left .15s;}
+.switch .knob{width:18px;height:18px;border-radius:50%;background:#fff;position:absolute;top:3px;left:3px;transition:left .4s cubic-bezier(.22,1,.36,1);}
 .switch.on .knob{left:21px;}
 
 /* stat bar for history */
@@ -458,7 +458,7 @@ nav.bottom button.active{color:var(--accent);}
 .stats-headline{font-family:var(--font-head);font-size:34px;font-weight:700;line-height:1.16;margin:0 0 22px;}
 .stats-headline .accent-num{color:var(--accent);}
 .stats-divider{height:1px;background:var(--line);margin-bottom:10px;}
-.stats-rank-row{display:flex;align-items:center;padding:12px 0;cursor:pointer;transition:transform .15s ease;}
+.stats-rank-row{display:flex;align-items:center;padding:12px 0;cursor:pointer;}
 .stats-rank-row:active{transform:scale(.985);}
 .stats-rank-row .rk{width:44px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-weight:800;font-size:20px;line-height:1;}
 .stats-rank-row .rk svg{display:block;}
@@ -567,29 +567,28 @@ nav.bottom button.active{color:var(--accent);}
 
 /* ANIMACIONES de botones (álbum y artista) */
 @keyframes spPop{0%{transform:scale(.7);}55%{transform:scale(1.28);}100%{transform:scale(1);}}
-.pop{animation:spPop .42s cubic-bezier(.34,1.56,.64,1);}
+.pop{animation:spPop .6s cubic-bezier(.34,1.3,.64,1);}
 @keyframes spPulse{0%,100%{box-shadow:0 6px 18px var(--accent-glow);}50%{box-shadow:0 6px 30px rgba(201,201,201,.42);}}
 .sp-play.playing{animation:spPulse 2.2s ease-in-out infinite;}
 @keyframes swapL{0%{opacity:0;transform:translateX(26px);}100%{opacity:1;transform:translateX(0);}}
 @keyframes swapR{0%{opacity:0;transform:translateX(-26px);}100%{opacity:1;transform:translateX(0);}}
 .swap-l{animation:swapL .34s cubic-bezier(.22,1,.36,1);}
 .swap-r{animation:swapR .34s cubic-bezier(.22,1,.36,1);}
-.sp-ic,.sp-play,.sp-check,.ar-follow,.sp-back,.ar-back,.ar-more,.ar-tabs button{transition:transform .16s cubic-bezier(.34,1.56,.64,1),color .22s ease,background-color .22s ease,border-color .22s ease,opacity .22s ease;}
-.sp-ic:active,.sp-check:active,.ar-follow:active,.sp-back:active,.ar-back:active,.ar-more:active,.ar-tabs button:active{transform:scale(.84);}
+.sp-ic,.sp-play,.sp-check,.ar-follow,.sp-back,.ar-back,.ar-more,.ar-tabs button{transition:transform .45s cubic-bezier(.22,1,.36,1),color .22s ease,background-color .22s ease,border-color .22s ease,opacity .22s ease;}
+.sp-ic:active,.sp-check:active,.ar-follow:active,.sp-back:active,.ar-back:active,.ar-more:active,.ar-tabs button:active{transform:scale(.9);}
 .sp-play:active{transform:scale(.88);}
-.sp-row{transition:background-color .15s ease, transform .15s ease;}
 .sp-row:active{transform:scale(.985);}
 .sp-row .mt .t{transition:color .25s ease;}
 .sp-thumb{transition:transform .2s ease;}
 .sp-thumb:active{transform:scale(.94);}
-.ar-follow{transition:transform .16s cubic-bezier(.34,1.56,.64,1),color .22s ease,border-color .22s ease,background-color .22s ease;}
+.ar-follow{transition:transform .45s cubic-bezier(.22,1,.36,1),color .22s ease,border-color .22s ease,background-color .22s ease;}
 
 /* BARRA SUPERIOR QUE APARECE AL BAJAR */
 .sp-sticky{position:sticky;top:calc(-6px - env(safe-area-inset-top));z-index:30;height:calc(54px + env(safe-area-inset-top));margin:calc(-6px - env(safe-area-inset-top)) -20px calc(-54px - env(safe-area-inset-top));padding:env(safe-area-inset-top) 12px 0;display:flex;align-items:center;gap:10px;pointer-events:none;--p:0;}
 .sp-sticky::before{content:'';position:absolute;inset:0;background:var(--bg);opacity:var(--p);}
 .sp-sticky>*{position:relative;}
-.sp-sticky .sb-back{pointer-events:auto;width:40px;height:40px;border-radius:50%;background:rgba(0,0,0,.4);border:none;color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform .16s cubic-bezier(.34,1.56,.64,1);}
-.sp-sticky .sb-back:active{transform:scale(.84);}
+.sp-sticky .sb-back{pointer-events:auto;width:40px;height:40px;border-radius:50%;background:rgba(0,0,0,.4);border:none;color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform .45s cubic-bezier(.22,1,.36,1);}
+.sp-sticky .sb-back:active{transform:scale(.9);}
 .sp-sticky .sb-title{flex:1;min-width:0;font-weight:700;font-size:16.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:var(--p);transform:translateY(calc((1 - var(--p)) * 8px));}
 .sp-sticky .sb-play{width:38px;height:38px;border-radius:50%;background:var(--accent);color:var(--accent-ink);border:none;display:flex;align-items:center;justify-content:center;opacity:var(--p);transform:scale(calc(.6 + .4 * var(--p)));pointer-events:none;}
 .sp-sticky .sb-play svg{width:20px;height:20px;}
@@ -610,7 +609,7 @@ nav.bottom button.active{color:var(--accent);}
 .spm-art img{width:100%;height:100%;object-fit:cover;display:block;}
 .spm-head .t{font-size:19px;font-weight:600;line-height:1.2;}
 .spm-head .s{font-size:15px;color:var(--text-dim);margin-top:3px;}
-.spm-opt{display:flex;align-items:center;gap:22px;width:100%;padding:15px 20px;background:none;border:none;color:var(--text);font-size:17.5px;text-align:left;font-family:var(--font-body);transition:background-color .15s ease, transform .15s ease;}
+.spm-opt{display:flex;align-items:center;gap:22px;width:100%;padding:15px 20px;background:none;border:none;color:var(--text);font-size:17.5px;text-align:left;font-family:var(--font-body);}
 .spm-opt:active{background:rgba(255,255,255,.07);transform:scale(.98);}
 .spm-ic{width:28px;height:28px;display:flex;align-items:center;justify-content:center;color:var(--text-dim);flex-shrink:0;}
 .spm-ic .sp-checkfill{width:28px;height:28px;}
@@ -621,8 +620,8 @@ nav.bottom button.active{color:var(--accent);}
 .overlay.show .spm-opt,.overlay.show .spm-head{animation:spmIn .38s cubic-bezier(.22,1,.36,1) both;animation-delay:calc(var(--i,0) * 35ms + 60ms);}
 .spm-empty{padding:18px 20px;color:var(--text-dim);font-size:14px;}
 .sp-check.out{transform:scale(0);opacity:0;}
-.ar-hero .ar-cam{position:absolute;top:calc(14px + env(safe-area-inset-top));right:14px;z-index:2;width:42px;height:42px;border-radius:50%;background:rgba(0,0,0,.45);border:none;color:#fff;display:flex;align-items:center;justify-content:center;transition:transform .16s cubic-bezier(.34,1.56,.64,1);}
-.ar-hero .ar-cam:active{transform:scale(.84);}
+.ar-hero .ar-cam{position:absolute;top:calc(14px + env(safe-area-inset-top));right:14px;z-index:2;width:42px;height:42px;border-radius:50%;background:rgba(0,0,0,.45);border:none;color:#fff;display:flex;align-items:center;justify-content:center;transition:transform .45s cubic-bezier(.22,1,.36,1);}
+.ar-hero .ar-cam:active{transform:scale(.9);}
 .icon-btn.active-accent{color:var(--accent);}
 .queue-now-label{font-size:11.5px;font-weight:700;color:var(--text-faint);text-transform:uppercase;letter-spacing:.04em;margin:6px 0 4px;}
 .queue-sub{color:var(--text-dim);font-size:13px;margin:2px 0 14px;}
@@ -644,6 +643,25 @@ nav.bottom button.active{color:var(--accent);}
 .toast.show{opacity:1;}
 
 .hidden-input{display:none;}
+
+/* ============ ANIMACIÓN SUAVE Y LENTA EN TODOS LOS BOTONES ============ */
+:root{--ease-soft:cubic-bezier(.22,1,.36,1);}
+button:not(.sb-play):not(#_), .btn, .chip, .tab, .see-all, .switch,
+.row, .sp-row, .stats-rank-row, .app-settings-row, .sheet-option, .spm-opt, .quick-item, .card,
+.artist-more-card, .lyrics-card, .stats-card[onclick], .drawer-circle-item, .drawer-profile, .sp-byline{
+  transition:transform .45s var(--ease-soft), background-color .4s ease, color .4s ease, border-color .4s ease, box-shadow .4s ease, opacity .4s ease;
+}
+/* al tocar: se hunde rápido; al soltar: vuelve despacio */
+button:not(.sb-play):not(#_):active, .chip:active, .tab:active, .see-all:active, .switch:active{transform:scale(.9);transition-duration:.16s;}
+.btn:active, .row:active, .sp-row:active, .stats-rank-row:active, .app-settings-row:active, .sheet-option:active, .spm-opt:active,
+.quick-item:active, .card:active, .artist-more-card:active, .lyrics-card:active, .stats-card[onclick]:active,
+.drawer-circle-item:active, .drawer-profile:active, .sp-byline:active{transform:scale(.97);transition-duration:.16s;}
+.row:active, .sp-row:active, .stats-rank-row:active, .app-settings-row:active, .sheet-option:active, .spm-opt:active{background-color:rgba(255,255,255,.05);}
+nav.bottom button svg{transition:transform .5s var(--ease-soft);}
+nav.bottom button.active svg{transform:translateY(-2px) scale(1.12);}
+/* el botón que se toca y se redibuja "asienta" suavemente en vez de aparecer de golpe */
+@keyframes settle{0%{transform:scale(.88);}100%{transform:scale(1);}}
+.settle{animation:settle .65s var(--ease-soft);}
 </style>
 </head>
 <body>
@@ -1620,6 +1638,67 @@ async function manualArtSearch(){
   if(r && !r.total) showToast('Todo tiene imagen o no hay nada que buscar');
 }
 
+
+/* ============ SIN PARPADEO AL REDIBUJAR + CONTINUIDAD DE LOS BOTONES ============ */
+(function(){
+  // si el HTML nuevo es idéntico al que ya está en pantalla, no se toca nada (cero parpadeo)
+  const main = document.getElementById('main');
+  const d = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML');
+  Object.defineProperty(main, 'innerHTML', {
+    configurable:true,
+    get(){ return d.get.call(this); },
+    set(v){
+      if(this.__lastHTML === v && this.childElementCount > 0 && activeTab!=='search') return;
+      this.__lastHTML = v;
+      d.set.call(this, v);
+    }
+  });
+})();
+let __press = null;
+const __STATE_CLS = new Set(['active','on','playing','pop','settle','out','liked','top','today']);
+function baseCls(c){ return String(c||'').split(/\s+/).filter(x=>x && !__STATE_CLS.has(x)).join(' '); }
+document.addEventListener('click', (e)=>{
+  const main = document.getElementById('main');
+  const el = e.target.closest ? e.target.closest('button,[onclick]') : null;
+  if(!el || !main.contains(el)){ __press = null; return; }
+  const par = el.parentElement;
+  const sw = el.classList.contains('switch') ? el : el.querySelector('.switch');
+  __press = {
+    el, on: el.getAttribute('onclick')||'', cls: baseCls(el.className), txt: (el.textContent||'').trim().slice(0,40),
+    swOn: sw ? sw.classList.contains('on') : null,
+    sib: par ? [...par.children].map(c=>c.className) : [],
+    t: Date.now()
+  };
+}, true);
+function settleUI(){
+  const p = __press;
+  if(!p || Date.now()-p.t > 800 || window.__lastRenderNavigated) return;
+  if(p.el.isConnected) return; // sigue vivo: su transición de CSS ya lo anima
+  const main = document.getElementById('main');
+  const cands = [...main.querySelectorAll('button,[onclick]')].filter(c=>(c.getAttribute('onclick')||'')===p.on && baseCls(c.className)===p.cls);
+  if(!cands.length) return;
+  const c = cands.find(x=>(x.textContent||'').trim().slice(0,40)===p.txt) || cands[0];
+  // 1) los hermanos que cambiaron de estado (pestañas, chips...) se animan desde su estado anterior
+  const par = c.parentElement;
+  const morph = [];
+  if(par && par.children.length===p.sib.length){
+    [...par.children].forEach((k,i)=>{ if(k.className!==p.sib[i]) morph.push([k, k.className, p.sib[i]]); });
+  }
+  // 2) interruptores: el círculo se desliza
+  const sw = c.classList.contains('switch') ? c : c.querySelector('.switch');
+  const swNow = sw ? sw.classList.contains('on') : null;
+  if(sw && p.swOn!==null && swNow!==p.swOn) morph.push([sw, sw.className, p.swOn ? 'switch on' : 'switch']);
+  if(morph.length){
+    morph.forEach(([k,to,from])=>{ k.className = from; });
+    void main.offsetWidth;
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{ morph.forEach(([k,to])=>{ k.className = to; }); }));
+  }
+  // 3) el propio botón asienta
+  c.classList.add('settle');
+  c.addEventListener('animationend', ()=>c.classList.remove('settle'), {once:true});
+  __press = null;
+}
+
 function guessFromFilename(name){
   const clean = name.replace(/\.[^/.]+$/,'');
   const parts = clean.split(' - ');
@@ -1701,12 +1780,20 @@ function showTab(tab){
 }
 
 function render(soft){
+  const r = renderCore(soft);
+  try{ settleUI(); }catch(e){}
+  return r;
+}
+function renderCore(soft){
   const main = document.getElementById('main');
-  window.__softNow = (soft===true);
   const navKey = activeTab+'|'+(activeTab==='albumDetail'?window.currentAlbumIdx:'')+'|'+(activeTab==='artistDetail'?window.currentArtist:'');
-  if(navKey!==window.__lastNavKey){ window.__lastNavKey = navKey; main.scrollTop = 0; } // pantalla nueva: siempre arranca arriba
-  main.onscroll = null; // la barra que aparece al bajar la vuelve a enganchar cada pantalla que la usa // refresco silencioso: sin animación de entrada de la página
-  if(soft!==true){ main.classList.remove('anim'); void main.offsetWidth; main.classList.add('anim'); }
+  const navChanged = navKey!==window.__lastNavKey;
+  if(navChanged){ window.__lastNavKey = navKey; main.scrollTop = 0; } // pantalla nueva: siempre arranca arriba
+  window.__lastRenderNavigated = navChanged;
+  const animate = (soft!==true) && navChanged; // refrescar la misma pantalla = cambio silencioso, sin parpadeo
+  window.__softNow = !animate;
+  main.onscroll = null; // la barra que aparece al bajar la vuelve a enganchar cada pantalla que la usa
+  if(animate){ main.classList.remove('anim'); void main.offsetWidth; main.classList.add('anim'); }
   const detailScreens = ['playlistDetail','artistDetail','albumDetail','likedDetail','profile','appSettings','recentAdded','statsDetail','history','recent'];
   const isDetail = detailScreens.includes(activeTab);
   document.querySelector('header.top').style.display = isDetail ? 'none' : 'flex';
@@ -2183,7 +2270,7 @@ function artistBodyHTML(a, rowAnim){
   const pop = getArtistPopular(a);
   const expr = `artistpop:${encA(a)}`;
   if(tab==='albums'){
-    const albumsOf = getAlbums().map((al,idx)=>({al,idx})).filter(x=>x.akey(al.artist)===akey(a));
+    const albumsOf = getAlbums().map((al,idx)=>({al,idx})).filter(x=>akey(x.al.artist)===akey(a));
     return albumsOf.length
       ? `<div class="ar-h">Álbumes</div><div class="hgrid" style="flex-wrap:wrap;margin:0;padding:0;">${albumsOf.map(({al,idx})=>`
           <div class="card" onclick="openAlbum(${idx})">
