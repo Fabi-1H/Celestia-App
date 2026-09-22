@@ -207,8 +207,8 @@ main.anim{animation:fadeSlideIn .6s cubic-bezier(.22,1,.36,1);}
 .row .rank{width:22px;text-align:center;font-family:var(--font-head);font-weight:700;color:var(--text-faint);font-size:15px;}
 .row .num{width:22px;text-align:center;color:var(--text-faint);font-size:13px;}
 .row-menu{color:var(--text-dim);padding:8px;background:none;border:none;}
-.queue-row{transition:transform .15s;}
-.queue-row.dragging{transition:none;z-index:5;position:relative;background:var(--surface-2);border-radius:8px;box-shadow:0 6px 16px rgba(0,0,0,.4);}
+.queue-row{transition:transform .4s var(--ease-soft);}
+.queue-row.dragging{transition:none;z-index:5;position:relative;background:var(--surface-2);border-radius:8px;box-shadow:0 8px 22px rgba(0,0,0,.5);transform:scale(1.02);}
 .queue-drag-handle{color:var(--text-faint);padding:8px;background:none;border:none;touch-action:none;cursor:grab;flex-shrink:0;}
 
 .list-header{display:flex;align-items:center;gap:12px;color:var(--text-dim);font-size:11.5px;text-transform:none;padding:4px 4px 6px;border-bottom:1px solid var(--line);margin-bottom:6px;}
@@ -721,6 +721,9 @@ nav.bottom button.active svg{transform:translateY(-2px) scale(1.12);}
 .btn-pill:active, .picker-done:active, .picker-x:active{transform:scale(.94);transition-duration:.16s;}
 #newMsgBody{padding:0 20px;}
 .app-settings-row[style*="cursor:default"]:active{transform:none;background-color:transparent;}
+
+@keyframes queueRemoveOut{0%{opacity:1;transform:translateX(0);max-height:70px;}100%{opacity:0;transform:translateX(-40px);max-height:0;padding-top:0;padding-bottom:0;margin:0;}}
+.queue-row.removing{animation:queueRemoveOut .38s var(--ease-soft) forwards;overflow:hidden;pointer-events:none;}
 </style>
 </head>
 <body>
@@ -1310,13 +1313,14 @@ function dataURItoBlobURL(dataURI){
 async function idbPutTrack(record){
   try{
     const db = await idbOpen();
-    return new Promise((resolve,reject)=>{
+    return await new Promise((resolve,reject)=>{
       const tx = db.transaction(CELESTIA_DB_STORE, 'readwrite');
       tx.objectStore(CELESTIA_DB_STORE).put(record);
-      tx.oncomplete = ()=> resolve();
+      tx.oncomplete = ()=> resolve(true);
       tx.onerror = ()=> reject(tx.error);
+      tx.onabort = ()=> reject(tx.error);
     });
-  }catch(e){}
+  }catch(e){ return false; } // el llamador decide qué hacer si no se pudo guardar
 }
 async function idbGetAllTracks(){
   try{
@@ -1392,15 +1396,23 @@ async function loadState(){
     (await idbGetAllArt()).forEach(r=>{ if(r && r.key && r.data){ artistImages[akey(r.key)] = String(r.data).startsWith('data:')? dataURItoBlobURL(r.data) : r.data; if(r.manual) artistManual[akey(r.key)] = true; } });
   }catch(e){}
   const savedTracks = await idbGetAllTracks();
+  const broken = [];
   for(const rec of savedTracks){
-    const url = URL.createObjectURL(rec.blob);
-    tracks.push({
-      id: rec.id, file: null, name: rec.name, url,
-      title: rec.title, artist: rec.artist, album: rec.album,
-      cover: rec.cover? dataURItoBlobURL(rec.cover) : null, duration: rec.duration || 0,
-      liked: !!rec.liked, lyrics: rec.lyrics || '', composer: rec.composer || '', isPodcast: !!rec.isPodcast, addedAt: rec.addedAt || 0
-    });
+    // Un registro individual dañado (por ejemplo de una versión anterior con este error)
+    // ya no interrumpe la carga de las demás canciones: se salta y sigue con las siguientes.
+    try{
+      if(!(rec.blob instanceof Blob) || !rec.blob.size) throw new Error('blob inválido');
+      const url = URL.createObjectURL(rec.blob);
+      tracks.push({
+        id: rec.id, file: null, name: rec.name, url,
+        title: rec.title, artist: rec.artist, album: rec.album,
+        cover: rec.cover? dataURItoBlobURL(rec.cover) : null, duration: rec.duration || 0,
+        liked: !!rec.liked, lyrics: rec.lyrics || '', composer: rec.composer || '', isPodcast: !!rec.isPodcast, addedAt: rec.addedAt || 0
+      });
+    }catch(e){ broken.push(rec.id); }
   }
+  broken.forEach(id=>idbDeleteTrack(id)); // limpia lo que ya estaba roto para que no se vuelva a intentar
+  if(broken.length) console.warn('Celestia: '+broken.length+' canción(es) guardada(s) previamente no se pudieron leer y se quitaron.');
 }
 async function saveProfileState(){ lsSet('miku:profile', profile); }
 async function saveOverrides(){ lsSet('miku:meta-overrides', metaOverrides); }
@@ -1437,6 +1449,7 @@ async function handleImportedFiles(fileList){
 
   const CONCURRENCY = 3;
   let done = 0, next = 0, lastRender = 0;
+  const failedFiles = [];
   const update = (name)=>{
     countEl.textContent = done+' / '+total;
     barEl.style.width = Math.round((done/total)*100)+'%';
@@ -1446,7 +1459,10 @@ async function handleImportedFiles(fileList){
     while(next < total){
       const f = audioFiles[next++];
       fileEl.textContent = f.name.replace(/\.[^/.]+$/,'');
-      try{ await addTrackFromFile(f); }catch(e){ /* un archivo dañado no detiene el resto */ }
+      try{
+        const r = await addTrackFromFile(f);
+        if(r && r.ok===false) failedFiles.push(r.name || f.name);
+      }catch(e){ failedFiles.push(f.name); } // un archivo dañado no detiene el resto
       done++;
       update();
       const now = Date.now();
@@ -1458,8 +1474,14 @@ async function handleImportedFiles(fileList){
 
   update('');
   progressEl.classList.add('done');
-  titleEl.textContent = 'Importación completa';
-  fileEl.textContent = total+' canción(es) lista(s)'+(skipped? ' · '+skipped+' archivo(s) omitidos':'');
+  const ok = total - failedFiles.length;
+  titleEl.textContent = failedFiles.length? 'Importación incompleta' : 'Importación completa';
+  fileEl.textContent = ok+' canción(es) lista(s)'+(skipped? ' · '+skipped+' archivo(s) omitidos':'')+(failedFiles.length? ' · '+failedFiles.length+' no se pudieron guardar':'');
+  if(failedFiles.length){
+    showToast(failedFiles.length===1
+      ? `No se pudo guardar "${failedFiles[0]}" — vuelve a intentar importarla`
+      : `${failedFiles.length} canciones no se guardaron — vuelve a intentarlo, o revisa el espacio libre del dispositivo`);
+  }
   renderSoft();
   await new Promise(r=>setTimeout(r,700));
   const art = await fetchMissingArt(true); // busca carátulas y fotos de artistas de lo recién importado
@@ -1925,15 +1947,27 @@ function guessFromFilename(name){
   return {artist:'Artista desconocido', title:clean};
 }
 
-function addTrackFromFile(file){
-  return new Promise((resolve)=>{
-    const id = 't_'+file.name+'_'+file.size;
-    if(tracks.some(t=>t.id===id)){ resolve(); return; } // ya importada anteriormente
-    const url = URL.createObjectURL(file);
-    const base = { id, file, name: file.name, url, title:null, artist:null, album:null, cover:null, duration:0, liked:false, lyrics:'', composer:'', isPodcast:false, addedAt: Date.now() };
-    let settled = false;
+async function addTrackFromFile(file){
+  const id = 't_'+file.name+'_'+file.size;
+  if(tracks.some(t=>t.id===id)) return {ok:true, skipped:true}; // ya importada anteriormente
 
-    const finish = (tag)=>{
+  // Copiamos los bytes del archivo a un Blob propio ANTES de seguir. Algunos selectores
+  // de Android ("Archivos", Google Drive, etc., a diferencia de elegir una carpeta) entregan
+  // un archivo cuyo acceso puede volverse inválido poco después de cerrarse el selector.
+  // Si eso pasa, mejor detectarlo aquí y avisar, en vez de guardar una referencia rota que
+  // hace que la canción desaparezca al volver a abrir la app.
+  let storageBlob;
+  try{
+    storageBlob = new Blob([await file.arrayBuffer()], {type: file.type || 'application/octet-stream'});
+  }catch(e){
+    return {ok:false, name:file.name};
+  }
+  const url = URL.createObjectURL(storageBlob);
+  const base = { id, file:null, name: file.name, url, title:null, artist:null, album:null, cover:null, duration:0, liked:false, lyrics:'', composer:'', isPodcast:false, addedAt: Date.now() };
+
+  return await new Promise((resolve)=>{
+    let settled = false;
+    const finish = async (tag)=>{
       if(settled) return; settled = true;
       const guess = guessFromFilename(file.name);
       const ov = metaOverrides[file.name] || {};
@@ -1953,12 +1987,20 @@ function addTrackFromFile(file){
           base.cover = dataURItoBlobURL(coverForStorage); // referencia corta: no vuelve a insertar el base64 completo en cada redibujo
         }catch(e){} // carátula corrupta o demasiado pesada: seguimos sin ella
       }
-      tracks.push(base);
-      idbPutTrack({
-        id: base.id, blob: file, name: base.name, title: base.title, artist: base.artist,
+      // Se confirma en el almacenamiento del dispositivo antes de darla por importada;
+      // si falla (o el dispositivo se queda sin espacio), no queda "importada a medias".
+      let saved = await idbPutTrack({
+        id: base.id, blob: storageBlob, name: base.name, title: base.title, artist: base.artist,
         album: base.album, cover: coverForStorage, lyrics: base.lyrics, composer: base.composer,
         isPodcast: base.isPodcast, liked: base.liked, duration: 0, addedAt: base.addedAt
       });
+      if(!saved) saved = await idbPutTrack({ // un solo reintento, por si fue un tropiezo puntual
+        id: base.id, blob: storageBlob, name: base.name, title: base.title, artist: base.artist,
+        album: base.album, cover: coverForStorage, lyrics: base.lyrics, composer: base.composer,
+        isPodcast: base.isPodcast, liked: base.liked, duration: 0, addedAt: base.addedAt
+      });
+      if(!saved){ resolve({ok:false, name:file.name}); return; }
+      tracks.push(base);
       const probe = new Audio();
       probe.preload = 'metadata';
       probe.addEventListener('loadedmetadata', ()=>{
@@ -1966,13 +2008,13 @@ function addTrackFromFile(file){
         idbUpdateTrackFields(base.id, {duration: base.duration});
       }, {once:true});
       probe.src = url;
-      resolve();
+      resolve({ok:true});
     };
 
     if(window.jsmediatags){
       // Si la lectura de metadatos se traba (tag corrupto, formato raro, etc.),
       // no dejamos que bloquee el resto de la importación para siempre.
-      const timeoutId = setTimeout(()=> finish(null), 9000);
+      const timeoutId = setTimeout(()=> { finish(null); }, 9000);
       try{
         window.jsmediatags.read(file, {
           onSuccess: (t)=>{
@@ -2846,10 +2888,12 @@ function refreshPlaylistRows(){
 }
 function togglePlaylistEditMode(){ plEditMode = !plEditMode; render(); }
 function removePlaylistTrackAt(pos){
+  const row = document.querySelector(`#plTrackList .pl-row[data-pos="${pos}"]`);
   const p = playlists.find(pl=>pl.id===currentPlaylistViewId);
   p.trackIds.splice(pos,1);
   savePlaylists();
-  refreshPlaylistRows();
+  if(row){ row.classList.add('removing'); row.addEventListener('animationend', refreshPlaylistRows, {once:true}); }
+  else refreshPlaylistRows();
 }
 let plDrag = null;
 function startPlaylistDrag(e, pos){
@@ -2862,6 +2906,7 @@ function startPlaylistDrag(e, pos){
   rowEl.classList.add('dragging');
   document.addEventListener('pointermove', onPlaylistDragMove);
   document.addEventListener('pointerup', onPlaylistDragEnd);
+  document.addEventListener('pointercancel', onPlaylistDragEnd);
 }
 function onPlaylistDragMove(e){
   if(!plDrag) return;
@@ -2885,16 +2930,19 @@ function onPlaylistDragEnd(){
   if(!plDrag) return;
   document.removeEventListener('pointermove', onPlaylistDragMove);
   document.removeEventListener('pointerup', onPlaylistDragEnd);
-  const {pos, newPos} = plDrag;
+  document.removeEventListener('pointercancel', onPlaylistDragEnd);
+  const {pos, newPos, rowEl} = plDrag;
   if(newPos!==pos){
     const p = playlists.find(pl=>pl.id===currentPlaylistViewId);
     const [moved] = p.trackIds.splice(pos,1);
     p.trackIds.splice(newPos,0,moved);
     savePlaylists();
   }
-  plDrag.rowEl.classList.remove('dragging');
+  rowEl.style.transition = 'transform .3s var(--ease-soft)';
+  rowEl.classList.remove('dragging');
+  rowEl.style.transform = '';
   plDrag = null;
-  refreshPlaylistRows();
+  setTimeout(refreshPlaylistRows, newPos!==pos ? 160 : 0);
 }
 
 let playlistMenuId = null;
@@ -3744,6 +3792,7 @@ function startQueueDrag(e, pos){
   rowEl.classList.add('dragging');
   document.addEventListener('pointermove', onQueueDragMove);
   document.addEventListener('pointerup', onQueueDragEnd);
+  document.addEventListener('pointercancel', onQueueDragEnd);
 }
 function onQueueDragMove(e){
   if(!queueDrag) return;
@@ -3767,19 +3816,26 @@ function onQueueDragEnd(){
   if(!queueDrag) return;
   document.removeEventListener('pointermove', onQueueDragMove);
   document.removeEventListener('pointerup', onQueueDragEnd);
-  const {pos, newPos, upcomingStart} = queueDrag;
+  document.removeEventListener('pointercancel', onQueueDragEnd);
+  const {pos, newPos, upcomingStart, rowEl} = queueDrag;
   if(newPos!==pos){
     const fromIdx = upcomingStart+pos, toIdx = upcomingStart+newPos;
     const [moved] = currentQueue.splice(fromIdx,1);
     currentQueue.splice(toIdx,0,moved);
   }
-  queueDrag.rowEl.classList.remove('dragging');
+  rowEl.style.transition = 'transform .3s var(--ease-soft)';
+  rowEl.classList.remove('dragging');
+  rowEl.style.transform = '';
   queueDrag = null;
-  renderQueueList();
+  setTimeout(renderQueueList, newPos!==pos ? 160 : 0); // deja terminar el "asentado" antes de redibujar la lista
 }
 function removeFromQueue(i){
+  const row = document.querySelector(`.queue-row[data-qi="${i}"]`);
   currentQueue.splice(i,1);
-  renderQueueList();
+  if(row){
+    row.classList.add('removing');
+    row.addEventListener('animationend', renderQueueList, {once:true});
+  } else renderQueueList();
 }
 function jumpToQueueIndex(i){
   currentIndex = i;
