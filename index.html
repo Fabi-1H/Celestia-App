@@ -744,6 +744,9 @@ nav.bottom button.active svg{transform:translateY(-2px) scale(1.12);}
 .pl-select-row .meta{flex:1;min-width:0;}
 .pl-select-row .t{font-size:15.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .pl-select-row .s{font-size:12.5px;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;}
+
+#queueUndoBtn:not(:disabled), #queueRedoBtn:not(:disabled){opacity:1;}
+#queueUndoBtn, #queueRedoBtn{transition:opacity .3s ease, transform .45s var(--ease-soft);}
 </style>
 </head>
 <body>
@@ -1071,7 +1074,13 @@ nav.bottom button.active svg{transform:translateY(-2px) scale(1.12);}
   <div class="overlay" id="overlayQueue"><div class="sheet">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;">
       <h3 style="margin:0;">Fila de reproducción</h3>
-      <div style="display:flex;align-items:center;gap:6px;">
+      <div style="display:flex;align-items:center;gap:2px;" id="queueEditTools">
+        <button id="queueUndoBtn" onclick="queueEditUndo()" style="background:none;border:none;color:var(--text);padding:6px;display:none;opacity:.35;" disabled>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5M4 9h10a6 6 0 010 12h-2"/></svg>
+        </button>
+        <button id="queueRedoBtn" onclick="queueEditRedo()" style="background:none;border:none;color:var(--text);padding:6px;display:none;opacity:.35;margin-right:4px;" disabled>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14l5-5-5-5M20 9H10a6 6 0 000 12h2"/></svg>
+        </button>
         <button class="queue-edit-btn" id="queueEditBtn" onclick="toggleQueueEdit()">Editar</button>
         <button onclick="closeOverlay('overlayQueue')" style="background:none;border:none;color:var(--text);padding:6px;">✕</button>
       </div>
@@ -3087,6 +3096,7 @@ function startPlaylistDrag(e, pos){
   const rows = Array.from(document.querySelectorAll('#plTrackList .pl-row'));
   const rowEl = rows[pos];
   if(!rowEl) return;
+  rows.forEach(r=>{ r.style.animation = 'none'; }); // mismo arreglo que en la fila de reproducción
   const rect = rowEl.getBoundingClientRect();
   plDrag = { startY: e.clientY, pos, newPos: pos, rowHeight: rect.height, rowEl, rows };
   rowEl.classList.add('dragging');
@@ -3949,11 +3959,56 @@ function seekTo(pct){ if(audio.duration) audio.currentTime = audio.duration*(pct
 /* ============ COLA DE REPRODUCCIÓN ============ */
 let queueEditMode = false;
 function openQueue(){ queueEditMode = false; renderQueueList(); document.getElementById('overlayQueue').classList.add('show'); }
-function toggleQueueEdit(){ queueEditMode = !queueEditMode; renderQueueList(); }
+let queueEditHistory = [];
+let queueEditHistoryPos = 0;
+function toggleQueueEdit(){
+  queueEditMode = !queueEditMode;
+  const u = document.getElementById('queueUndoBtn'), r = document.getElementById('queueRedoBtn'), btn = document.getElementById('queueEditBtn');
+  u.style.display = queueEditMode? '' : 'none';
+  r.style.display = queueEditMode? '' : 'none';
+  btn.textContent = queueEditMode? 'Guardar' : 'Editar';
+  if(queueEditMode){
+    queueEditHistory = [currentQueue.slice(currentIndex+1).map(t=>t.id)];
+    queueEditHistoryPos = 0;
+  }
+  updateQueueEditButtons();
+  renderQueueList();
+}
+function pushQueueEditHistory(){
+  const snap = currentQueue.slice(currentIndex+1).map(t=>t.id);
+  queueEditHistory = queueEditHistory.slice(0, queueEditHistoryPos+1); // un cambio nuevo borra el "rehacer" pendiente
+  queueEditHistory.push(snap);
+  queueEditHistoryPos = queueEditHistory.length-1;
+  updateQueueEditButtons();
+}
+function updateQueueEditButtons(){
+  const u = document.getElementById('queueUndoBtn'), r = document.getElementById('queueRedoBtn');
+  if(!u || !r) return;
+  u.disabled = queueEditHistoryPos<=0;
+  r.disabled = queueEditHistoryPos>=queueEditHistory.length-1;
+}
+function applyQueueEditSnapshot(ids){
+  const byId = {}; currentQueue.forEach(t=>byId[t.id]=t);
+  const newUpcoming = ids.map(id=>byId[id]).filter(Boolean);
+  currentQueue = currentQueue.slice(0, currentIndex+1).concat(newUpcoming);
+  if(!shuffleOn) setQueueOriginalOrder();
+  updateQueueEditButtons();
+  renderQueueList();
+}
+function queueEditUndo(){
+  if(queueEditHistoryPos<=0) return;
+  queueEditHistoryPos--;
+  applyQueueEditSnapshot(queueEditHistory[queueEditHistoryPos]);
+}
+function queueEditRedo(){
+  if(queueEditHistoryPos>=queueEditHistory.length-1) return;
+  queueEditHistoryPos++;
+  applyQueueEditSnapshot(queueEditHistory[queueEditHistoryPos]);
+}
 function renderQueueList(){
   if(queueDrag) return; // no reconstruir la lista mientras el usuario está arrastrando una canción
   const box = document.getElementById('queueList');
-  document.getElementById('queueEditBtn').textContent = queueEditMode? 'Listo':'Editar';
+  document.getElementById('queueEditBtn').textContent = queueEditMode? 'Guardar':'Editar';
   if(!currentTrack){ box.innerHTML = `<p style="color:var(--text-dim);font-size:13px;">Nada reproduciéndose.</p>`; return; }
   const upcoming = currentQueue.map((t,i)=>({t,i})).filter(x=>x.i>currentIndex);
   const svgPause = `<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>`;
@@ -3991,6 +4046,11 @@ function startQueueDrag(e, pos){
   const rows = Array.from(document.querySelectorAll('#queueList .queue-row'));
   const rowEl = rows[pos];
   if(!rowEl) return;
+  // Si alguna fila todavía tiene la animación de "entrada" corriendo (rowEditIn), esa animación
+  // le gana a cualquier transform que le pongamos por JS mientras dure — la fila arrastrada
+  // parecía "teletransportarse" en vez de deslizarse porque su desplazamiento en vivo quedaba
+  // invisible hasta que la animación terminaba. La apagamos en todas antes de arrastrar.
+  rows.forEach(r=>{ r.style.animation = 'none'; });
   const rect = rowEl.getBoundingClientRect();
   queueDrag = {
     startY: e.clientY,
@@ -4033,6 +4093,7 @@ function onQueueDragEnd(){
     const [moved] = currentQueue.splice(fromIdx,1);
     currentQueue.splice(toIdx,0,moved);
     if(!shuffleOn) setQueueOriginalOrder();
+    if(queueEditMode) pushQueueEditHistory();
   }
   rowEl.style.transition = 'transform .3s var(--ease-soft)';
   rowEl.classList.remove('dragging');
@@ -4044,6 +4105,7 @@ function removeFromQueue(i){
   const row = document.querySelector(`.queue-row[data-qi="${i}"]`);
   currentQueue.splice(i,1);
   if(!shuffleOn) setQueueOriginalOrder();
+  if(queueEditMode) pushQueueEditHistory();
   if(row){
     row.style.animation = ''; // quita la animación de "entrada" (rowEditIn) para que no le gane a la de salida
     row.classList.add('removing');
