@@ -728,6 +728,22 @@ nav.bottom button.active svg{transform:translateY(-2px) scale(1.12);}
 
 @keyframes queueRemoveOut{0%{opacity:1;transform:translateX(0);max-height:70px;}100%{opacity:0;transform:translateX(-40px);max-height:0;padding-top:0;padding-bottom:0;margin:0;}}
 .queue-row.removing{animation:queueRemoveOut .38s var(--ease-soft) forwards;overflow:hidden;pointer-events:none;}
+
+/* SELECCIÓN MÚLTIPLE EN PLAYLIST */
+.pl-select-bar{position:fixed;left:0;right:0;bottom:0;background:var(--surface-2);border-top:1px solid var(--line);padding:10px 8px calc(10px + env(safe-area-inset-bottom));display:flex;z-index:120;transform:translateY(100%);transition:transform .4s var(--ease-soft);}
+.pl-select-bar.show{transform:translateY(0);}
+.pl-select-bar button{flex:1;background:none;border:none;color:var(--text);display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10.5px;font-weight:600;padding:6px 2px;opacity:.4;transition:opacity .25s ease, transform .4s var(--ease-soft);}
+.pl-select-bar button.on{opacity:1;}
+.pl-select-bar button.danger.on{color:#F87171;}
+.pl-select-bar button.on:active{transform:scale(.92);}
+.pl-check{width:24px;height:24px;border-radius:6px;border:1.6px solid var(--text-faint);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:transparent;transition:background-color .25s ease, border-color .25s ease, color .25s ease, transform .45s var(--ease-soft);}
+.pl-check.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);}
+.pl-select-row{display:flex;align-items:center;gap:14px;padding:8px 0;cursor:pointer;}
+.pl-select-row:active .pl-check{transform:scale(.88);}
+.pl-select-row .art{width:46px;height:46px;border-radius:6px;overflow:hidden;flex-shrink:0;background:var(--surface-2);}
+.pl-select-row .meta{flex:1;min-width:0;}
+.pl-select-row .t{font-size:15.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pl-select-row .s{font-size:12.5px;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;}
 </style>
 </head>
 <body>
@@ -2923,6 +2939,10 @@ function renderPlaylistDetail(main){
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
         ${plEditMode?'Listo':'Editar'}
       </button>` : ''}
+      ${pt.length>1? `<button class="btn secondary" onclick="togglePlaylistSelectMode()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+        ${plSelectMode?'Cancelar':'Seleccionar'}
+      </button>` : ''}
       ${pt.length>1? `<button class="btn secondary" onclick="document.getElementById('overlaySortPlaylist').classList.add('show')">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h10M3 12h7M3 17h4M17 4v16M17 4l-3 3M17 4l3 3M17 20l-3-3M17 20l3-3" stroke-linecap="round"/></svg>
         Ordenar
@@ -2941,7 +2961,32 @@ function renderPlaylistDetail(main){
       </button>
     </div>
     ${pt.length===0? `<div class="empty" style="padding:30px 10px;"><p>Aún no hay canciones aquí. Usa "Añadir canciones" para empezar.</p></div>` :
-      plEditMode
+      plSelectMode
+        ? `<div style="display:flex;align-items:center;justify-content:space-between;margin:4px 0 10px;">
+             <span id="plSelectCount" style="font-size:13px;color:var(--text-dim);">${plSelected.size} elemento(s) seleccionado(s)</span>
+             <button id="plSelectAll" class="see-all" onclick="plSelectAllToggle()">${plSelected.size===pt.length? 'Ninguno':'Todos'}</button>
+           </div>
+           <div id="plTrackList">${pt.map((t,pos)=>`
+            <div class="pl-select-row" data-id="${escapeHtml(t.id)}" onclick="togglePlSelect('${jsq(t.id)}')" style="animation:rowEditIn .38s ease both;animation-delay:${Math.min(pos*0.035,0.4)}s;">
+              <div class="pl-check ${plSelected.has(t.id)?'on':''}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+              <div class="art">${trackArt(t,46)}</div>
+              <div class="meta"><div class="t">${escapeHtml(t.title)}</div><div class="s">${escapeHtml(t.artist)}</div></div>
+            </div>`).join('')}</div>
+           <div class="pl-select-bar show">
+             <button class="needs-sel ${plSelected.size?'on':''}" onclick="plSelMoveToEnd(true)">
+               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg>
+               Mover al principio
+             </button>
+             <button class="needs-sel ${plSelected.size?'on':''}" onclick="plSelMoveToEnd(false)">
+               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg>
+               Mover al final
+             </button>
+             <button class="needs-sel danger ${plSelected.size?'on':''}" onclick="plSelDelete()">
+               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13a2 2 0 002 2h6a2 2 0 002-2l1-13"/></svg>
+               Eliminar
+             </button>
+           </div>`
+        : plEditMode
         ? `<div id="plTrackList">${pt.map((t,pos)=>`
             <div class="row queue-row pl-row" data-pos="${pos}" style="animation:rowEditIn .38s ease both;animation-delay:${Math.min(pos*0.035,0.4)}s;">
               <div class="art">${trackArt(t,46)}</div>
@@ -2957,7 +3002,10 @@ function renderPlaylistDetail(main){
   applyHeaderGradient('plHeaderBg', pt[0]);
 }
 let plEditMode = false;
+let plSelectMode = false;
+let plSelected = new Set();
 function refreshPlaylistRows(){
+  if(plDrag) return; // no reconstruir la lista mientras el usuario está arrastrando una canción
   const p = playlists.find(pl=>pl.id===currentPlaylistViewId);
   if(!p) return;
   const pt = p.trackIds.map(id=>tracks.find(t=>t.id===id)).filter(Boolean);
@@ -2984,7 +3032,47 @@ function refreshPlaylistRows(){
     countEl.textContent = `${pt.length} canción(es)${totalSec? ' • '+fmtDurationTotal(totalSec):''}`;
   }
 }
-function togglePlaylistEditMode(){ plEditMode = !plEditMode; render(); }
+function togglePlaylistEditMode(){ plEditMode = !plEditMode; if(plEditMode){ plSelectMode = false; plSelected = new Set(); } render(); }
+function togglePlaylistSelectMode(){
+  plSelectMode = !plSelectMode;
+  if(plSelectMode) plEditMode = false; else plSelected = new Set();
+  render();
+}
+function togglePlSelect(id){
+  if(plSelected.has(id)) plSelected.delete(id); else plSelected.add(id);
+  const row = document.querySelector(`.pl-select-row[data-id="${jsq(id)}"] .pl-check`);
+  if(row){ row.classList.toggle('on', plSelected.has(id)); popEl(row); }
+  document.querySelectorAll('.pl-select-bar button.needs-sel').forEach(b=>b.classList.toggle('on', plSelected.size>0));
+  const h = document.getElementById('plSelectCount'); if(h) h.textContent = plSelected.size+(plSelected.size===1?' elemento seleccionado':' elementos seleccionados');
+  const all = document.getElementById('plSelectAll');
+  if(all){ const p = playlists.find(pl=>pl.id===currentPlaylistViewId); all.textContent = (p && plSelected.size===p.trackIds.length && p.trackIds.length>0) ? 'Ninguno' : 'Todos'; }
+}
+function plSelectAllToggle(){
+  const p = playlists.find(pl=>pl.id===currentPlaylistViewId); if(!p) return;
+  if(plSelected.size===p.trackIds.length) plSelected = new Set(); else plSelected = new Set(p.trackIds);
+  render();
+}
+function plSelMoveToEnd(atStart){
+  if(!plSelected.size) return;
+  const p = playlists.find(pl=>pl.id===currentPlaylistViewId); if(!p) return;
+  const chosen = p.trackIds.filter(id=>plSelected.has(id));
+  const rest = p.trackIds.filter(id=>!plSelected.has(id));
+  p.trackIds = atStart ? chosen.concat(rest) : rest.concat(chosen);
+  savePlaylists();
+  showToast(atStart? 'Movidas al principio' : 'Movidas al final');
+  plSelectMode = false; plSelected = new Set();
+  render();
+}
+function plSelDelete(){
+  if(!plSelected.size) return;
+  const p = playlists.find(pl=>pl.id===currentPlaylistViewId); if(!p) return;
+  const n = plSelected.size;
+  p.trackIds = p.trackIds.filter(id=>!plSelected.has(id));
+  savePlaylists();
+  showToast(n===1? 'Canción eliminada de la playlist' : n+' canciones eliminadas de la playlist');
+  plSelectMode = false; plSelected = new Set();
+  render();
+}
 function removePlaylistTrackAt(pos){
   const row = document.querySelector(`#plTrackList .pl-row[data-pos="${pos}"]`);
   const p = playlists.find(pl=>pl.id===currentPlaylistViewId);
@@ -3863,6 +3951,7 @@ let queueEditMode = false;
 function openQueue(){ queueEditMode = false; renderQueueList(); document.getElementById('overlayQueue').classList.add('show'); }
 function toggleQueueEdit(){ queueEditMode = !queueEditMode; renderQueueList(); }
 function renderQueueList(){
+  if(queueDrag) return; // no reconstruir la lista mientras el usuario está arrastrando una canción
   const box = document.getElementById('queueList');
   document.getElementById('queueEditBtn').textContent = queueEditMode? 'Listo':'Editar';
   if(!currentTrack){ box.innerHTML = `<p style="color:var(--text-dim);font-size:13px;">Nada reproduciéndose.</p>`; return; }
