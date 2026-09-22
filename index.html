@@ -663,13 +663,14 @@ nav.bottom button.active svg{transform:translateY(-2px) scale(1.12);}
 .settle{animation:settle .65s var(--ease-soft);}
 
 /* ============ SIGUIENDO / ELEGIR ARTISTAS / MENSAJES / CONFIGURACIÓN ============ */
-.tab-seg{display:flex;align-items:stretch;flex-shrink:0;}
-#tabsBar .tab-seg .tab-follow{max-width:0;padding-left:0;padding-right:0;opacity:1;overflow:hidden;border-width:0;position:relative;transition:max-width .55s var(--ease-soft), padding .55s var(--ease-soft), background-color .4s ease, color .4s ease, border-color .4s ease;}
+.tab-seg{position:relative;display:flex;align-items:stretch;flex-shrink:0;background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:3px;}
+.tab-seg-thumb{position:absolute;top:3px;bottom:3px;left:3px;width:60px;background:var(--text);border-radius:16px;z-index:0;opacity:0;transition:left .55s var(--ease-soft), width .55s var(--ease-soft), opacity .3s ease;}
+.tab-seg-btn{position:relative;z-index:1;background:none;border:none;padding:7px 16px;font-size:13px;font-weight:600;font-family:inherit;color:var(--text-dim);white-space:nowrap;cursor:pointer;transition:color .4s ease, max-width .55s var(--ease-soft), padding .55s var(--ease-soft);}
+.tab-seg-btn.active{color:#0A0A0B;}
+#tabsBar .tab-seg .tab-follow{max-width:0;padding-left:0;padding-right:0;overflow:hidden;}
 #tabsBar .tab-seg .tab-follow .tf-inner{display:block;white-space:nowrap;transform:translateX(-46px);transition:transform .55s var(--ease-soft);}
-#tabsBar .tab-seg.open .tab-follow{max-width:130px;padding-left:16px;padding-right:16px;border-width:1px;border-radius:0 20px 20px 0;}
+#tabsBar .tab-seg.open .tab-follow{max-width:130px;padding-left:16px;padding-right:16px;}
 #tabsBar .tab-seg.open .tab-follow .tf-inner{transform:translateX(0);}
-#tabsBar .tab-seg .tab:first-child{position:relative;z-index:1;}
-.tab-seg.open .tab:first-child{border-radius:20px 0 0 20px;border-right-width:0;}
 .fol-card{background:var(--surface-2);border-radius:14px;padding:26px 20px 24px;margin-top:8px;display:flex;flex-direction:column;align-items:center;text-align:center;}
 .fol-avs{display:flex;justify-content:center;align-items:center;margin-bottom:20px;height:70px;}
 .fol-av{width:46px;height:46px;border-radius:50%;overflow:hidden;border:2px solid var(--surface-2);margin-left:-10px;background:var(--surface);display:flex;align-items:center;justify-content:center;color:var(--text-faint);flex-shrink:0;}
@@ -719,7 +720,7 @@ nav.bottom button.active svg{transform:translateY(-2px) scale(1.12);}
 .set-tile .st{font-size:10.5px;}
 .set-tile.on{background:var(--surface-hover);color:var(--accent);box-shadow:inset 0 0 0 1.5px var(--accent);}
 .set-tile:not(.on) .tt{color:var(--text);}
-.tab-seg .tab, .set-tile, .msg-row, .pk-item, .drawer-msgs-new, .btn-pill, .picker-done, .picker-x{transition:transform .45s var(--ease-soft), background-color .4s ease, color .4s ease, border-color .4s ease, box-shadow .4s ease, opacity .4s ease;}
+.set-tile, .msg-row, .pk-item, .drawer-msgs-new, .btn-pill, .picker-done, .picker-x{transition:transform .45s var(--ease-soft), background-color .4s ease, color .4s ease, border-color .4s ease, box-shadow .4s ease, opacity .4s ease;}
 .set-tile:active, .msg-row:active, .pk-item:active, .drawer-msgs-new:active{transform:scale(.96);transition-duration:.16s;}
 .btn-pill:active, .picker-done:active, .picker-x:active{transform:scale(.94);transition-duration:.16s;}
 #newMsgBody{padding:0 20px;}
@@ -741,8 +742,9 @@ nav.bottom button.active svg{transform:translateY(-2px) scale(1.12);}
   <div class="tabs" id="tabsBar">
     <div class="tab active" data-tab="home" onclick="showTab('home')">Inicio</div>
     <div class="tab-seg" id="tabSeg">
-      <div class="tab" data-tab="songs" onclick="showTab('songs')">Canciones</div>
-      <div class="tab tab-follow" data-tab="following" onclick="showTab('following')"><span class="tf-inner">Siguiendo</span></div>
+      <div class="tab-seg-thumb" id="tabSegThumb"></div>
+      <button class="tab-seg-btn" data-tab="songs" onclick="showTab('songs')">Canciones</button>
+      <button class="tab-seg-btn tab-follow" data-tab="following" onclick="showTab('following')"><span class="tf-inner">Siguiendo</span></button>
     </div>
     <div class="tab" data-tab="podcasts" onclick="showTab('podcasts')">Podcast</div>
   </div>
@@ -1578,6 +1580,17 @@ async function applyCover(list, url){
     idbUpdateTrackFields(t.id, {cover: stored});
   });
 }
+async function applyAlbumCover(list, url){
+  const dataURI = await fetchImageAsDataURI(url, 600);
+  const stored = dataURI || url;
+  const shown = dataURI ? dataURItoBlobURL(dataURI) : url;
+  // a diferencia de applyCover, aquí SÍ se reemplaza una portada que ya tuviera la canción
+  // (normalmente la miniatura del propio archivo, que muchas veces es solo de una canción o de un video)
+  list.forEach(t=>{ t.cover = shown; idbUpdateTrackFields(t.id, {cover: stored}); });
+}
+function albumAutoDoneSet(){ return lsGet('celestia:album-autodone', {}); }
+function isAlbumAutoDone(key){ return !!albumAutoDoneSet()[key]; }
+function markAlbumAutoDone(key){ const m = albumAutoDoneSet(); m[key] = true; lsSet('celestia:album-autodone', m); }
 async function applyArtistImage(name, url){
   const key = akey(name);
   if(artistManual[key]) return; // la foto elegida a mano manda
@@ -1613,15 +1626,18 @@ async function setAlbumImageManual(idx, file){
   const blobUrl = dataURItoBlobURL(dataURI);
   al.tracks.forEach(t=>{ t.cover = blobUrl; idbUpdateTrackFields(t.id, {cover: dataURI}); });
   const man = albumManualSet(); man[albumKeyOf(al.artist,al.album)] = true; lsSet('celestia:album-manual', man);
+  markAlbumAutoDone('al|'+artNorm(al.artist)+'|'+artNorm(al.album));
   renderSoft();
   if(currentTrack && akey(currentTrack.artist)===akey(al.artist) && (currentTrack.album||'').trim().toLowerCase()===al.album.trim().toLowerCase()) updatePlayerUI();
   showToast('Portada de '+al.album+' actualizada');
 }
 async function resetAlbumImage(idx){
   const al = getAlbums()[idx]; if(!al) return;
+  const albumKey = 'al|'+artNorm(al.artist)+'|'+artNorm(al.album);
   const man = albumManualSet(); delete man[albumKeyOf(al.artist,al.album)]; lsSet('celestia:album-manual', man);
+  const done = albumAutoDoneSet(); delete done[albumKey]; lsSet('celestia:album-autodone', done);
   al.tracks.forEach(t=>{ t.cover = null; idbUpdateTrackFields(t.id, {cover: null}); });
-  const miss = lsGet('celestia:art-miss', {}); delete miss['al|'+artNorm(al.artist)+'|'+artNorm(al.album)]; lsSet('celestia:art-miss', miss);
+  const miss = lsGet('celestia:art-miss', {}); delete miss[albumKey]; lsSet('celestia:art-miss', miss);
   renderSoft();
   if(currentTrack && akey(currentTrack.artist)===akey(al.artist) && (currentTrack.album||'').trim().toLowerCase()===al.album.trim().toLowerCase()) updatePlayerUI();
   if(artOnlineEnabled() && netAllowed()){ showToast('Buscando la portada automática…'); fetchMissingArt(true); }
@@ -1691,12 +1707,21 @@ async function fetchMissingArt(showCard){
   const now = Date.now(), COOL = 7*24*3600*1000;
   const jobs = [];
   const groups = {};
+  // canciones sueltas sin álbum conocido: solo se buscan mientras no tengan ya alguna miniatura
   musicTracks().forEach(t=>{
-    if(t.cover || isUnknownName(t.artist)) return;
-    const unknownAlbum = isUnknownName(t.album);
-    const key = unknownAlbum ? 'so|'+artNorm(t.artist)+'|'+artNorm(t.title) : 'al|'+artNorm(t.artist)+'|'+artNorm(t.album);
-    if(!groups[key]) groups[key] = {key, unknownAlbum, artist:t.artist, album:t.album, title:t.title, tracks:[]};
+    if(t.cover || isUnknownName(t.artist) || !isUnknownName(t.album)) return;
+    const key = 'so|'+artNorm(t.artist)+'|'+artNorm(t.title);
+    if(!groups[key]) groups[key] = {key, unknownAlbum:true, artist:t.artist, album:t.album, title:t.title, tracks:[]};
     groups[key].tracks.push(t);
+  });
+  // álbumes con nombre conocido: se buscan siempre, aunque los archivos ya traigan una miniatura
+  // propia (a menudo de una sola canción, o de un video), porque lo que queremos es la portada
+  // oficial del álbum — igual que con la foto de los artistas. Una vez encontrada, no se repite.
+  getAlbums().forEach(al=>{
+    if(isUnknownName(al.artist) || isUnknownName(al.album)) return;
+    const key = 'al|'+artNorm(al.artist)+'|'+artNorm(al.album);
+    if(isAlbumManual(al.artist, al.album) || isAlbumAutoDone(key)) return;
+    groups[key] = {key, unknownAlbum:false, artist:al.artist, album:al.album, title:null, tracks: al.tracks};
   });
   Object.values(groups).forEach(g=>{ if(!(miss[g.key] && now-miss[g.key]<COOL)) jobs.push({type:'cover', g, label:g.unknownAlbum? g.title : g.album}); });
   getArtists().forEach(a=>{
@@ -1736,8 +1761,11 @@ async function fetchMissingArt(showCard){
         anyOk = true;
         if(r.url){ url = r.url; break; }
       }
-      if(url && !isAlbumManual(g.artist,g.album)){ await applyCover(g.tracks, url); stats.covers++; dirty = true; }
-      else if(anyOk && allOk) miss[g.key] = Date.now();
+      if(url){
+        if(g.unknownAlbum) await applyCover(g.tracks, url);
+        else { await applyAlbumCover(g.tracks, url); markAlbumAutoDone(g.key); }
+        stats.covers++; dirty = true;
+      } else if(anyOk && allOk) miss[g.key] = Date.now();
       return anyOk;
     }
     const r = await deezerArtistImage(j.a);
@@ -1868,8 +1896,30 @@ function toggleMode(key, msgOn, msgOff){
 function syncTabsBar(){
   document.querySelectorAll('#tabsBar .tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===activeTab));
   const seg = document.getElementById('tabSeg');
-  if(seg) seg.classList.toggle('open', activeTab==='songs' || activeTab==='following');
+  if(!seg) return;
+  const wasOpen = seg.classList.contains('open');
+  const isOpen = activeTab==='songs' || activeTab==='following';
+  seg.classList.toggle('open', isOpen);
+  document.querySelectorAll('#tabSeg .tab-seg-btn').forEach(b=>b.classList.toggle('active', b.dataset.tab===activeTab));
+  // la primera vez (o si la sección estaba cerrada) la píldora se coloca sin animar, para que no "viaje" desde cero
+  positionTabThumb(!wasOpen && isOpen ? false : (wasOpen!==isOpen));
 }
+function positionTabThumb(skipAnim){
+  const seg = document.getElementById('tabSeg'), thumb = document.getElementById('tabSegThumb');
+  if(!seg || !thumb) return;
+  const go = ()=>{
+    const active = seg.querySelector('.tab-seg-btn.active');
+    const target = active || seg.querySelector('.tab-seg-btn');
+    if(!target) return;
+    if(skipAnim){ thumb.style.transition = 'none'; }
+    thumb.style.left = target.offsetLeft+'px';
+    thumb.style.width = target.offsetWidth+'px';
+    thumb.style.opacity = active ? '1' : '0'; // solo se ve cuando Canciones o Siguiendo es lo que estás viendo
+    if(skipAnim){ void thumb.offsetWidth; thumb.style.transition = ''; }
+  };
+  requestAnimationFrame(go);
+}
+window.addEventListener('resize', ()=>positionTabThumb(true));
 
 /* ============ SIGUIENDO ============ */
 function followingList(){ return lsGet('celestia:following', []); }
@@ -2940,7 +2990,7 @@ function removePlaylistTrackAt(pos){
   const p = playlists.find(pl=>pl.id===currentPlaylistViewId);
   p.trackIds.splice(pos,1);
   savePlaylists();
-  if(row){ row.classList.add('removing'); row.addEventListener('animationend', refreshPlaylistRows, {once:true}); }
+  if(row){ row.style.animation = ''; row.classList.add('removing'); row.addEventListener('animationend', refreshPlaylistRows, {once:true}); }
   else refreshPlaylistRows();
 }
 let plDrag = null;
@@ -3906,6 +3956,7 @@ function removeFromQueue(i){
   currentQueue.splice(i,1);
   if(!shuffleOn) setQueueOriginalOrder();
   if(row){
+    row.style.animation = ''; // quita la animación de "entrada" (rowEditIn) para que no le gane a la de salida
     row.classList.add('removing');
     row.addEventListener('animationend', renderQueueList, {once:true});
   } else renderQueueList();
