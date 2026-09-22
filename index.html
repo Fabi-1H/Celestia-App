@@ -664,8 +664,11 @@ nav.bottom button.active svg{transform:translateY(-2px) scale(1.12);}
 
 /* ============ SIGUIENDO / ELEGIR ARTISTAS / MENSAJES / CONFIGURACIÓN ============ */
 .tab-seg{display:flex;align-items:stretch;flex-shrink:0;}
-.tab-seg .tab-follow{max-width:0;padding-left:0;padding-right:0;opacity:0;overflow:hidden;border-width:0;transition:max-width .6s var(--ease-soft), padding .6s var(--ease-soft), opacity .45s ease, background-color .4s ease, color .4s ease, border-color .4s ease;}
-.tab-seg.open .tab-follow{max-width:130px;padding-left:16px;padding-right:16px;opacity:1;border-width:1px;border-radius:0 20px 20px 0;}
+#tabsBar .tab-seg .tab-follow{max-width:0;padding-left:0;padding-right:0;opacity:1;overflow:hidden;border-width:0;position:relative;transition:max-width .55s var(--ease-soft), padding .55s var(--ease-soft), background-color .4s ease, color .4s ease, border-color .4s ease;}
+#tabsBar .tab-seg .tab-follow .tf-inner{display:block;white-space:nowrap;transform:translateX(-46px);transition:transform .55s var(--ease-soft);}
+#tabsBar .tab-seg.open .tab-follow{max-width:130px;padding-left:16px;padding-right:16px;border-width:1px;border-radius:0 20px 20px 0;}
+#tabsBar .tab-seg.open .tab-follow .tf-inner{transform:translateX(0);}
+#tabsBar .tab-seg .tab:first-child{position:relative;z-index:1;}
 .tab-seg.open .tab:first-child{border-radius:20px 0 0 20px;border-right-width:0;}
 .fol-card{background:var(--surface-2);border-radius:14px;padding:26px 20px 24px;margin-top:8px;display:flex;flex-direction:column;align-items:center;text-align:center;}
 .fol-avs{display:flex;justify-content:center;align-items:center;margin-bottom:20px;height:70px;}
@@ -739,7 +742,7 @@ nav.bottom button.active svg{transform:translateY(-2px) scale(1.12);}
     <div class="tab active" data-tab="home" onclick="showTab('home')">Inicio</div>
     <div class="tab-seg" id="tabSeg">
       <div class="tab" data-tab="songs" onclick="showTab('songs')">Canciones</div>
-      <div class="tab tab-follow" data-tab="following" onclick="showTab('following')">Siguiendo</div>
+      <div class="tab tab-follow" data-tab="following" onclick="showTab('following')"><span class="tf-inner">Siguiendo</span></div>
     </div>
     <div class="tab" data-tab="podcasts" onclick="showTab('podcasts')">Podcast</div>
   </div>
@@ -1206,6 +1209,7 @@ nav.bottom button.active svg{transform:translateY(-2px) scale(1.12);}
 
   <input type="file" id="fileInput" class="hidden-input" multiple accept="audio/*">
   <input type="file" id="artistImgInput" class="hidden-input" accept="image/*">
+  <input type="file" id="albumImgInput" class="hidden-input" accept="image/*">
   <input type="file" id="folderInput" class="hidden-input" multiple webkitdirectory>
   <div class="toast" id="toast"></div>
   <div id="importProgress">
@@ -1584,6 +1588,45 @@ async function applyArtistImage(name, url){
   idbPutArt(key, stored, false);
   refreshPlayerArtist(name);
 }
+function albumKeyOf(artist,album){ return (album||'').trim().toLowerCase()+'|||'+akey(artist); }
+function albumManualSet(){ return lsGet('celestia:album-manual', {}); }
+function isAlbumManual(artist,album){ return !!albumManualSet()[albumKeyOf(artist,album)]; }
+function pickAlbumImage(idx){
+  window.__pickAlbumIdx = idx;
+  const inp = document.getElementById('albumImgInput'); inp.value=''; inp.click();
+}
+document.getElementById('albumImgInput').addEventListener('change', async (e)=>{
+  const f = e.target.files && e.target.files[0];
+  if(f && window.__pickAlbumIdx!=null) await setAlbumImageManual(window.__pickAlbumIdx, f);
+});
+async function setAlbumImageManual(idx, file){
+  const al = getAlbums()[idx]; if(!al) return;
+  let dataURI;
+  try{
+    const bmp = await createImageBitmap(file);
+    const sc = Math.min(1, 700/Math.max(bmp.width,bmp.height));
+    const c = document.createElement('canvas');
+    c.width = Math.max(1,Math.round(bmp.width*sc)); c.height = Math.max(1,Math.round(bmp.height*sc));
+    c.getContext('2d').drawImage(bmp,0,0,c.width,c.height);
+    dataURI = c.toDataURL('image/jpeg',0.88);
+  }catch(e){ showToast('No se pudo leer esa imagen'); return; }
+  const blobUrl = dataURItoBlobURL(dataURI);
+  al.tracks.forEach(t=>{ t.cover = blobUrl; idbUpdateTrackFields(t.id, {cover: dataURI}); });
+  const man = albumManualSet(); man[albumKeyOf(al.artist,al.album)] = true; lsSet('celestia:album-manual', man);
+  renderSoft();
+  if(currentTrack && akey(currentTrack.artist)===akey(al.artist) && (currentTrack.album||'').trim().toLowerCase()===al.album.trim().toLowerCase()) updatePlayerUI();
+  showToast('Portada de '+al.album+' actualizada');
+}
+async function resetAlbumImage(idx){
+  const al = getAlbums()[idx]; if(!al) return;
+  const man = albumManualSet(); delete man[albumKeyOf(al.artist,al.album)]; lsSet('celestia:album-manual', man);
+  al.tracks.forEach(t=>{ t.cover = null; idbUpdateTrackFields(t.id, {cover: null}); });
+  const miss = lsGet('celestia:art-miss', {}); delete miss['al|'+artNorm(al.artist)+'|'+artNorm(al.album)]; lsSet('celestia:art-miss', miss);
+  renderSoft();
+  if(currentTrack && akey(currentTrack.artist)===akey(al.artist) && (currentTrack.album||'').trim().toLowerCase()===al.album.trim().toLowerCase()) updatePlayerUI();
+  if(artOnlineEnabled() && netAllowed()){ showToast('Buscando la portada automática…'); fetchMissingArt(true); }
+  else showToast('Portada manual quitada');
+}
 function refreshPlayerArtist(name){
   if(currentTrack && akey(currentTrack.artist)===akey(name) && document.getElementById('playerArtistSection')) renderPlayerArtistSection();
 }
@@ -1693,7 +1736,7 @@ async function fetchMissingArt(showCard){
         anyOk = true;
         if(r.url){ url = r.url; break; }
       }
-      if(url){ await applyCover(g.tracks, url); stats.covers++; dirty = true; }
+      if(url && !isAlbumManual(g.artist,g.album)){ await applyCover(g.tracks, url); stats.covers++; dirty = true; }
       else if(anyOk && allOk) miss[g.key] = Date.now();
       return anyOk;
     }
@@ -2409,6 +2452,8 @@ function renderCollMenu(){
     const all = collTracks().length && collTracks().every(t=>t.liked);
     h += spmOpt(SP_ICON.share,'Compartir','collShare()',n++);
     h += spmOpt(all? SP_ICON.checkFill : SP_ICON.checkOff, all? 'Quitar de Tus me gusta' : 'Añadir a Tus me gusta','collLikeAll()',n++,{on:all});
+    h += spmOpt(SP_ICON.image,'Cambiar portada del álbum','collPickAlbumImage()',n++);
+    if(isAlbumManual(c.artist, getAlbums()[c.idx].album)) h += spmOpt(SP_ICON.refresh,'Volver a la portada automática','collResetAlbumImage()',n++);
     h += spmOpt(SP_ICON.dl,'Descargar','collDownload()',n++);
     h += spmOpt(SP_ICON.user,'Ir al artista','collGoArtist()',n++);
     h += spmOpt(SP_ICON.queue,'Agregar a la fila','collQueue()',n++);
@@ -2448,6 +2493,7 @@ function collQueue(){
   closeOverlay('overlayCollMenu');
   if(!currentTrack){ playCollection(window.__collCtx.kind==='album' ? 'album:'+window.__collCtx.idx : 'artistpop:'+encA(window.__collCtx.artist)); return; }
   currentQueue.splice(currentIndex+1, 0, ...list);
+  if(!shuffleOn) setQueueOriginalOrder();
   showToast(list.length+' canción(es) añadidas a la fila');
   if(document.getElementById('overlayQueue').classList.contains('show')) renderQueueList();
 }
@@ -2456,6 +2502,8 @@ function collRadio(){
   playCollection(c.kind==='album' ? 'radio:album:'+c.idx : 'radio:artist:'+encA(c.artist));
 }
 function collPickImage(){ closeOverlay('overlayCollMenu'); pickArtistImage(window.__collCtx.artist); }
+function collPickAlbumImage(){ closeOverlay('overlayCollMenu'); pickAlbumImage(window.__collCtx.idx); }
+function collResetAlbumImage(){ closeOverlay('overlayCollMenu'); resetAlbumImage(window.__collCtx.idx); }
 function collResetImage(){ closeOverlay('overlayCollMenu'); resetArtistImage(window.__collCtx.artist); }
 function collFollow(){ closeOverlay('overlayCollMenu'); toggleFollowArtist(encA(window.__collCtx.artist)); }
 function collBlock(){
@@ -3095,6 +3143,7 @@ function artistPlayTotals(){
   return tot;
 }
 function registerPlay(track){
+  if(track.isPodcast) return; // los podcasts no cuentan en estadísticas de reproducción
   const w = currentWeekBucket();
   w.plays[track.id] = (w.plays[track.id]||0)+1;
   const an = (track.artist||'').replace(/\s+/g,' ').trim();
@@ -3110,7 +3159,7 @@ function logPlayEvent(track){
 }
 let listenSaveTimer = null;
 function addListenSeconds(sec){
-  if(isPrivateSession()) return;
+  if(isPrivateSession() || (currentTrack && currentTrack.isPodcast)) return;
   const w = currentWeekBucket();
   w.totalSeconds = (w.totalSeconds||0) + sec;
   if(!w.daySeconds) w.daySeconds = [0,0,0,0,0,0,0];
@@ -3489,7 +3538,29 @@ function playTrack(id, queueExpr){
   currentQueue = buildQueue(queueExpr||'all');
   currentIndex = currentQueue.findIndex(t=>t.id===id);
   if(currentIndex<0){ currentQueue=[tracks.find(t=>t.id===id)]; currentIndex=0; }
+  setQueueOriginalOrder();
+  if(shuffleOn) reshuffleQueueForToggle(); // si el aleatorio ya estaba activo, la cola arranca revuelta
   loadCurrent(true);
+}
+let queueOriginalOrder = [];
+function setQueueOriginalOrder(){ queueOriginalOrder = currentQueue.map(t=>t.id); }
+function reshuffleQueueForToggle(){
+  if(!currentQueue.length || currentIndex<0) return;
+  const upcoming = currentQueue.slice(currentIndex+1);
+  if(!upcoming.length) return;
+  let newUpcoming;
+  if(shuffleOn){
+    newUpcoming = shuffledCopy(upcoming);
+  } else {
+    const idsSet = new Set(upcoming.map(t=>t.id));
+    const byId = {}; upcoming.forEach(t=>byId[t.id]=t);
+    const ordered = [];
+    queueOriginalOrder.forEach(id=>{ if(idsSet.has(id)){ ordered.push(byId[id]); idsSet.delete(id); } });
+    idsSet.forEach(id=>ordered.push(byId[id])); // canciones agregadas después, no estaban en el orden original
+    newUpcoming = ordered;
+  }
+  currentQueue = currentQueue.slice(0, currentIndex+1).concat(newUpcoming);
+  if(document.getElementById('overlayQueue').classList.contains('show')) renderQueueList();
 }
 function loadCurrent(autoplay){
   currentTrack = currentQueue[currentIndex];
@@ -3822,6 +3893,7 @@ function onQueueDragEnd(){
     const fromIdx = upcomingStart+pos, toIdx = upcomingStart+newPos;
     const [moved] = currentQueue.splice(fromIdx,1);
     currentQueue.splice(toIdx,0,moved);
+    if(!shuffleOn) setQueueOriginalOrder();
   }
   rowEl.style.transition = 'transform .3s var(--ease-soft)';
   rowEl.classList.remove('dragging');
@@ -3832,6 +3904,7 @@ function onQueueDragEnd(){
 function removeFromQueue(i){
   const row = document.querySelector(`.queue-row[data-qi="${i}"]`);
   currentQueue.splice(i,1);
+  if(!shuffleOn) setQueueOriginalOrder();
   if(row){
     row.classList.add('removing');
     row.addEventListener('animationend', renderQueueList, {once:true});
@@ -3882,6 +3955,7 @@ function cancelSleepTimer(){
 }
 function toggleShuffle(){
   shuffleOn=!shuffleOn;
+  reshuffleQueueForToggle();
   const b1=document.getElementById('shuffleBtn'); if(b1) b1.classList.toggle('on',shuffleOn);
   const b2=document.getElementById('plShuffleBtn'); if(b2){ b2.classList.toggle('active-accent',shuffleOn); popEl(b2); }
   const b3=document.getElementById('miniShuffleBtn'); if(b3) b3.classList.toggle('on',shuffleOn);
