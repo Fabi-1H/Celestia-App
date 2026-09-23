@@ -747,6 +747,15 @@ nav.bottom button.active svg{transform:translateY(-2px) scale(1.12);}
 
 #queueUndoBtn:not(:disabled), #queueRedoBtn:not(:disabled){opacity:1;}
 #queueUndoBtn, #queueRedoBtn{transition:opacity .3s ease, transform .45s var(--ease-soft);}
+
+@keyframes tabOutL{to{opacity:0;transform:translateX(-22px);}}
+@keyframes tabOutR{to{opacity:0;transform:translateX(22px);}}
+@keyframes tabInL{from{opacity:0;transform:translateX(-22px);}to{opacity:1;transform:translateX(0);}}
+@keyframes tabInR{from{opacity:0;transform:translateX(22px);}to{opacity:1;transform:translateX(0);}}
+main.tab-out-l{animation:tabOutL .13s ease forwards;}
+main.tab-out-r{animation:tabOutR .13s ease forwards;}
+main.tab-in-l{animation:tabInL .34s var(--ease-soft);}
+main.tab-in-r{animation:tabInR .34s var(--ease-soft);}
 </style>
 </head>
 <body>
@@ -762,7 +771,7 @@ nav.bottom button.active svg{transform:translateY(-2px) scale(1.12);}
     <div class="tab active" data-tab="home" onclick="showTab('home')">Inicio</div>
     <div class="tab-seg" id="tabSeg">
       <div class="tab-seg-thumb" id="tabSegThumb"></div>
-      <button class="tab-seg-btn" data-tab="songs" onclick="showTab('songs')">Canciones</button>
+      <button class="tab-seg-btn" data-tab="songs" onclick="showTab('songs')">Música</button>
       <button class="tab-seg-btn tab-follow" data-tab="following" onclick="showTab('following')"><span class="tf-inner">Siguiendo</span></button>
     </div>
     <div class="tab" data-tab="podcasts" onclick="showTab('podcasts')">Podcast</div>
@@ -2134,7 +2143,7 @@ async function addTrackFromFile(file){
       // no dejamos que bloquee el resto de la importación para siempre.
       const timeoutId = setTimeout(()=> { finish(null); }, 9000);
       try{
-        window.jsmediatags.read(file, {
+        readTagsQueued(file, {
           onSuccess: (t)=>{
             clearTimeout(timeoutId);
             const tg = t.tags;
@@ -2148,15 +2157,48 @@ async function addTrackFromFile(file){
     } else { finish(null); }
   });
 }
+let __tagReadQueue = Promise.resolve();
+function readTagsQueued(file, callbacks){
+  // jsmediatags no está pensado para leer varios archivos EN PARALELO a la vez; hacerlo así puede
+  // hacer que una lectura se pierda o nunca llame a onSuccess/onError, dejando esa canción a medias
+  // (o directamente cortando ahí la importación de las que faltan). Las ponemos en fila, una por una.
+  const run = ()=> new Promise((resolve)=>{
+    window.jsmediatags.read(file, {
+      onSuccess: (t)=>{ callbacks.onSuccess(t); resolve(); },
+      onError: (e)=>{ callbacks.onError(e); resolve(); }
+    });
+  });
+  const p = __tagReadQueue.then(run, run);
+  __tagReadQueue = p;
+  return p;
+}
 
 /* ============ NAVEGACIÓN DE TABS ============ */
+const TAB_ORDER = ['home','songs','following','podcasts'];
 function showTab(tab){
+  const oldTab = activeTab;
   activeTab = tab;
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===tab));
   const navTab = (tab==='following') ? 'home' : tab; // Siguiendo vive dentro de Inicio
   document.querySelectorAll('nav.bottom button').forEach(b=>b.classList.toggle('active', b.dataset.tab===navTab || (navTab!=='home'&&navTab!=='search'&&b.dataset.tab==='playlists')));
   document.getElementById('tabsBar').style.display = (tab==='search'||tab==='history'||tab==='playlists')? 'none':'flex';
-  render();
+  const oldIdx = TAB_ORDER.indexOf(oldTab), newIdx = TAB_ORDER.indexOf(tab);
+  const dir = (oldIdx>=0 && newIdx>=0 && newIdx!==oldIdx) ? (newIdx>oldIdx?1:-1) : 0;
+  const main = document.getElementById('main');
+  if(dir!==0 && main.childElementCount){
+    // el contenido de la pestaña anterior se va hacia un lado y el de la nueva entra por el otro,
+    // como en Spotify — en vez de reemplazarse de golpe
+    main.classList.remove('anim','tab-in-l','tab-in-r');
+    void main.offsetWidth;
+    main.classList.add(dir>0 ? 'tab-out-l' : 'tab-out-r');
+    setTimeout(()=>{
+      main.classList.remove('tab-out-l','tab-out-r');
+      window.__tabSlideDir = dir;
+      render();
+    }, 130);
+  } else {
+    render();
+  }
 }
 
 function render(soft){
@@ -2174,7 +2216,11 @@ function renderCore(soft){
   window.__softNow = !animate;
   main.onscroll = null; // la barra que aparece al bajar la vuelve a enganchar cada pantalla que la usa
   syncTabsBar();
-  if(animate){ main.classList.remove('anim'); void main.offsetWidth; main.classList.add('anim'); }
+  if(animate){
+    const dir = window.__tabSlideDir; window.__tabSlideDir = null;
+    main.classList.remove('anim','tab-in-l','tab-in-r'); void main.offsetWidth;
+    main.classList.add(dir===1 ? 'tab-in-r' : dir===-1 ? 'tab-in-l' : 'anim');
+  }
   const detailScreens = ['messages','playlistDetail','artistDetail','albumDetail','likedDetail','profile','appSettings','recentAdded','statsDetail','history','recent'];
   const isDetail = detailScreens.includes(activeTab);
   document.querySelector('header.top').style.display = isDetail ? 'none' : 'flex';
@@ -2913,13 +2959,15 @@ function renderPlaylistDetail(main){
   const p = playlists.find(pl=>pl.id===currentPlaylistViewId);
   const pt = p.trackIds.map(id=>tracks.find(t=>t.id===id)).filter(Boolean);
   const totalSec = pt.reduce((s,t)=>s+(t.duration||0),0);
-  main.innerHTML = `
+  const expr = 'playlist:'+p.id;
+  const active = window.__curExpr===expr && !!isPlaying;
+  main.innerHTML = stickyBarHTML(p.name, expr, active) + `
     <div class="pl-header-bg" id="plHeaderBg">
     <button class="icon-btn" style="margin:20px 0 4px" onclick="showTab('playlists')">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
     </button>
     <div style="display:flex;justify-content:center;margin:6px 0 18px;">${playlistCollage(p,pt)}</div>
-    <div style="font-family:var(--font-head);font-size:27px;font-weight:700;line-height:1.15;margin-bottom:10px;">${escapeHtml(p.name)}</div>
+    <div id="plTitleMain" style="font-family:var(--font-head);font-size:27px;font-weight:700;line-height:1.15;margin-bottom:10px;">${escapeHtml(p.name)}</div>
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
       <div class="mini-av" style="width:22px;height:22px;">${avatarHTML()}</div>
       <span style="font-size:13px;font-weight:700;">${escapeHtml(profile.name||'Tú')}</span>
@@ -2934,9 +2982,7 @@ function renderPlaylistDetail(main){
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3h4v4M21 3l-7 7M3 21l6-6M3 3h4l14 18h4"/></svg>
       </button>
       <div style="flex:1;"></div>
-      <button class="play-fab" onclick="playTrack('${pt[0]? pt[0].id:''}','playlist:${p.id}')" ${pt.length? '':'disabled style="opacity:.4"'}>
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="#fff"><path d="M7 5l12 7-12 7V5z"/></svg>
-      </button>
+      <button class="play-fab" id="spPlayBtn" data-expr="${expr}" data-state="${active}" onclick="onSpPlay('${expr}')" style="color:#fff;" ${pt.length? '':'disabled style="opacity:.4"'}>${active?SP_ICON.pause:SP_ICON.play}</button>
     </div>
     </div>
     <div class="pl-pills-row">
@@ -3009,6 +3055,7 @@ function renderPlaylistDetail(main){
             </div>`).join('')}</div>`
         : `<div id="plTrackList">${pt.map((t,pos)=>trackRow(t,{showAlbum:false, playlistId:p.id, queueExpr:`'playlist:${p.id}'`, animStyle:`animation:rowEditIn .38s ease both;animation-delay:${Math.min(pos*0.035,0.4)}s;`})).join('')}</div>`}`;
   applyHeaderGradient('plHeaderBg', pt[0]);
+  bindStickyBar(main, '#plTitleMain');
 }
 let plEditMode = false;
 let plSelectMode = false;
@@ -3878,6 +3925,7 @@ function lrcIndexAt(t){
   for(let i=0;i<currentTrackLRC.length;i++){ if(currentTrackLRC[i].time<=t) idx=i; else break; }
   return idx;
 }
+let lastOverlayLrcIdx = -999;
 function updateLRCNow(){
   if(!currentTrackLRC || !currentTrackLRC.length) return;
   const idx = lrcIndexAt(audio.currentTime);
@@ -3889,16 +3937,26 @@ function updateLRCNow(){
   }
   if(idx!==lastCardLrcIdx){ lastCardLrcIdx = idx; updateLyricsCardActiveLine(idx); }
   if(document.getElementById('overlayLyrics').classList.contains('show') && document.getElementById('lyricsSyncedView').style.display!=='none'){
-    document.querySelectorAll('.lrc-line.active').forEach(e=>e.classList.remove('active'));
-    if(idx>=0){
-      const lineEl = document.getElementById('lrc_'+idx);
-      const scrollBox = document.getElementById('lyricsScroll');
-      if(lineEl && scrollBox){
-        lineEl.classList.add('active');
-        const target = lineEl.offsetTop - (scrollBox.clientHeight/2) + (lineEl.clientHeight/2);
-        animateScrollTo(scrollBox, Math.max(0, target), 550);
+    // Antes esto se repetía en CADA actualización de tiempo (varias veces por segundo), aunque la
+    // línea activa fuera la misma, y cada llamada relanzaba su propia animación de scroll de 550ms
+    // sin cancelar la anterior. Con el audio avanzando más rápido que esas animaciones, se acumulaban
+    // varias corriendo a la vez peleando por la posición — eso era el temblor. Ahora solo se dispara
+    // cuando la línea activa de verdad cambia.
+    if(idx!==lastOverlayLrcIdx){
+      lastOverlayLrcIdx = idx;
+      document.querySelectorAll('.lrc-line.active').forEach(e=>e.classList.remove('active'));
+      if(idx>=0){
+        const lineEl = document.getElementById('lrc_'+idx);
+        const scrollBox = document.getElementById('lyricsScroll');
+        if(lineEl && scrollBox){
+          lineEl.classList.add('active');
+          const target = lineEl.offsetTop - (scrollBox.clientHeight/2) + (lineEl.clientHeight/2);
+          animateScrollTo(scrollBox, Math.max(0, target), 550);
+        }
       }
     }
+  } else {
+    lastOverlayLrcIdx = -999; // se reinicia al cerrar, para que al volver a abrir se reubique de una
   }
 }
 function onAudioError(e){
@@ -4231,7 +4289,9 @@ function updateLyricsCardActiveLine(idx){
 function animateScrollTo(el, targetTop, duration){
   const startTop = el.scrollTop, change = targetTop-startTop, startTime = performance.now();
   if(Math.abs(change)<1) return;
+  const myRun = (el.__scrollRun = (el.__scrollRun||0) + 1); // cancela cualquier animación de scroll anterior sobre este mismo elemento
   function step(now){
+    if(el.__scrollRun !== myRun) return; // otra llamada más nueva tomó el control; esta se detiene
     const t = Math.min(1, (now-startTime)/duration);
     const eased = 1-Math.pow(1-t,3); // ease-out, se siente suave y no brusca
     el.scrollTop = startTop + change*eased;
@@ -4662,6 +4722,7 @@ function renderSyncedLyrics(){
   if(!currentTrackLRC || !currentTrackLRC.length){ box.innerHTML=''; return; }
   box.innerHTML = currentTrackLRC.map((l,i)=>`<p class="lrc-line" id="lrc_${i}">${escapeHtml(l.text||'♪')}</p>`).join('');
   const idx = Math.max(0, lrcIndexAt(audio.currentTime));
+  lastOverlayLrcIdx = idx; // updateLRCNow ya no necesita repetir este mismo posicionamiento en el próximo tick
   const lineEl = document.getElementById('lrc_'+idx);
   const scrollBox = document.getElementById('lyricsScroll');
   if(lineEl && scrollBox){
