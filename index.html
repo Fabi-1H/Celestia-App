@@ -127,7 +127,8 @@ header.top{
 .tabs{display:flex;gap:8px;padding:10px 20px 4px;overflow-x:auto;}
 .tab{
   padding:7px 16px;border-radius:20px;border:1px solid var(--line);
-  background:var(--surface); color:var(--text-dim); font-size:13px; font-weight:600;
+  background:var(--surface); color:var(--text-dim); font-size:13px; font-weight:600; line-height:1.15;
+  display:flex;align-items:center;justify-content:center;
   white-space:nowrap; cursor:pointer; transition:background-color .18s ease, color .18s ease, border-color .18s ease;
 }
 .tab.active{background:var(--text);color:#0A0A0B;border-color:var(--text);}
@@ -665,7 +666,7 @@ nav.bottom button.active svg{transform:translateY(-2px) scale(1.12);}
 /* ============ SIGUIENDO / ELEGIR ARTISTAS / MENSAJES / CONFIGURACIÓN ============ */
 .tab-seg{position:relative;display:flex;align-items:stretch;flex-shrink:0;background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:3px;}
 .tab-seg-thumb{position:absolute;top:3px;bottom:3px;left:3px;width:60px;background:var(--text);border-radius:16px;z-index:0;opacity:0;transition:left .55s var(--ease-soft), width .55s var(--ease-soft), opacity .3s ease;}
-.tab-seg-btn{position:relative;z-index:1;background:none;border:none;padding:7px 16px;font-size:13px;font-weight:600;font-family:inherit;color:var(--text-dim);white-space:nowrap;cursor:pointer;transition:color .4s ease, max-width .55s var(--ease-soft), padding .55s var(--ease-soft);}
+.tab-seg-btn{position:relative;z-index:1;background:none;border:none;padding:7px 16px;font-size:13px;font-weight:600;line-height:1.15;font-family:inherit;color:var(--text-dim);white-space:nowrap;cursor:pointer;transition:color .4s ease, max-width .55s var(--ease-soft), padding .55s var(--ease-soft);}
 .tab-seg-btn.active{color:#0A0A0B;}
 #tabsBar .tab-seg .tab-follow{max-width:0;padding-left:0;padding-right:0;overflow:hidden;}
 #tabsBar .tab-seg .tab-follow .tf-inner{display:block;white-space:nowrap;transform:translateX(-46px);transition:transform .55s var(--ease-soft);}
@@ -1539,6 +1540,8 @@ async function handleImportedFiles(fileList){
     window.__ipHideTimer = setTimeout(()=>progressEl.classList.remove('show'), 1200);
     if(art && art.offline) showToast('Sin internet: las imágenes se buscarán cuando te conectes');
   }
+  await new Promise(r=>setTimeout(r,700));
+  await fetchMissingLyrics(true); // luego busca la letra sincronizada de lo recién importado
 }
 document.getElementById('fileInput').addEventListener('change', (e)=>{ handleImportedFiles(e.target.files); e.target.value=''; });
 document.getElementById('folderInput').addEventListener('change', (e)=>{ handleImportedFiles(e.target.files); e.target.value=''; });
@@ -1846,7 +1849,7 @@ async function fetchMissingArt(showCard){
   }
   return stats;
 }
-window.addEventListener('online', ()=>{ setTimeout(()=>fetchMissingArt(true), 800); });
+window.addEventListener('online', ()=>{ setTimeout(()=>fetchMissingArt(true), 800); setTimeout(()=>fetchMissingLyrics(true), 1600); });
 function toggleArtOnline(){
   lsSet('celestia:art-online', !artOnlineEnabled());
   render();
@@ -3289,13 +3292,25 @@ function deletePlaylist(id){
 
 /* ============ BÚSQUEDA ============ */
 function renderSearch(main){
+  // Un refresco de fondo (por ejemplo mientras se buscan carátulas o letras) puede volver a dibujar
+  // esta pantalla; si el usuario ya estaba escribiendo una búsqueda, no se la borramos ni le quitamos
+  // el foco de un tirón.
+  const prevInput = document.getElementById('searchInput');
+  const prevValue = prevInput ? prevInput.value : '';
+  const prevFocused = prevInput && document.activeElement===prevInput;
+  const prevCursor = prevFocused ? [prevInput.selectionStart, prevInput.selectionEnd] : null;
   main.innerHTML = `
     <div class="search-box" style="margin-top:14px;">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
-      <input id="searchInput" placeholder="Canciones, artistas o álbumes" oninput="doSearch(this.value)" autofocus>
+      <input id="searchInput" placeholder="Canciones, artistas o álbumes" oninput="doSearch(this.value)" value="${escapeHtml(prevValue)}">
     </div>
     <div id="searchResults"></div>`;
-  document.getElementById('searchInput').focus();
+  const input = document.getElementById('searchInput');
+  if(prevValue) doSearch(prevValue);
+  if(!window.__softNow || prevFocused){
+    input.focus();
+    if(prevCursor) input.setSelectionRange(prevCursor[0], prevCursor[1]);
+  }
 }
 function doSearch(q){
   const box = document.getElementById('searchResults');
@@ -3671,10 +3686,12 @@ function renderAppSettings(main){
       ${row(ic('<path d="M4 21V14M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/>'),'Reproducción','Ecualizador y crossfade entre canciones',"openEQ()")}
       ${row(ic('<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/>'),'Imágenes desde internet','Busca carátulas de álbumes y fotos de artistas al importar. Solo se envían los nombres del artista y del álbum.',"toggleArtOnline()",`<div class="switch ${artOnlineEnabled()?'on':''}"><div class="knob"></div></div>`)}
       ${row(ic('<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>'),'Buscar imágenes ahora','Reintenta con toda tu biblioteca, incluso lo que no se encontró antes',"manualArtSearch()")}
+      ${row(ic('<path d="M9 18V5l12-2v13M9 9l12-2"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>'),'Letras sincronizadas','Busca la letra de tus canciones al importar. Solo se envían el título y el artista.',"toggleLyricsOnline()",`<div class="switch ${lyricsOnlineEnabled()?'on':''}"><div class="knob"></div></div>`)}
+      ${row(ic('<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>'),'Buscar letras ahora','Reintenta con toda tu biblioteca, incluso lo que no se encontró antes',"manualLyricsSearch()")}
       ${row(ic('<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>'),'Almacenamiento y datos','Borrar estadísticas de reproducción guardadas en este dispositivo',"confirmClearHistory()")}
       ${row(ic('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'),'Apariencia','Temas y colores personalizados',"showToast('Apariencia — próximamente')",'<span class="badge">Próximamente</span>')}
       ${row(ic('<path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/>'),'Notificaciones','Controles del reproductor en la barra de notificaciones',"showToast('Notificaciones — próximamente')",'<span class="badge">Próximamente</span>')}
-      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes, solo se consultan nombres de artistas y álbumes.',null)}
+      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
     </div>
   `;
 }
@@ -3773,6 +3790,7 @@ function loadCurrent(autoplay){
   audio.src = currentTrack.url;
   audio.currentTime = 0;
   lastListenTick = null;
+  fetchLyricsNowPlaying(currentTrack);
   playCounted = false;
   if(eqState.enabled || crossfadeState.enabled) ensureEQGraph(); // el audio normal no pasa por Web Audio, así sigue sonando en segundo plano
   const chain = chainFor(audio);
@@ -3852,7 +3870,7 @@ function startCrossfade(){
   }, totalMs/steps);
 }
 
-function onAudioPlay(e){ if(e.target!==audio) return; isPlaying=true; updatePlayIcons(); if('mediaSession' in navigator) navigator.mediaSession.playbackState='playing'; }
+function onAudioPlay(e){ if(e.target!==audio) return; isPlaying=true; consecutivePlayErrors=0; updatePlayIcons(); if('mediaSession' in navigator) navigator.mediaSession.playbackState='playing'; }
 function onAudioPause(e){ if(e.target!==audio) return; isPlaying=false; updatePlayIcons(); if('mediaSession' in navigator) navigator.mediaSession.playbackState='paused'; clearTimeout(listenSaveTimer); saveHistory(); }
 function onAudioEnded(e){
   if(e.target!==audio) return;
@@ -3993,11 +4011,22 @@ function updateLRCNow(){
     if(lyricsUserScrolling){ lyricsUserScrolling = false; clearTimeout(lyricsUserScrollTimer); const rb=document.getElementById('lyricsResumeBtn'); if(rb) rb.classList.remove('show'); }
   }
 }
+let consecutivePlayErrors = 0;
 function onAudioError(e){
   if(e.target!==audio) return;
   if(crossfading) return;
   showToast('No se pudo reproducir "'+(currentTrack? currentTrack.title:'este archivo')+'" — formato no compatible');
   if(!currentQueue.length || currentQueue.length<2){ updatePlayIcons(); return; }
+  consecutivePlayErrors++;
+  if(consecutivePlayErrors>=8){
+    // Si varias canciones seguidas fallan, algo más grave pasa (memoria llena, archivos dañados en
+    // bloque, etc.); seguir saltando a la siguiente sin parar solo gastaría batería sin sonar nunca.
+    consecutivePlayErrors = 0;
+    showToast('Varias canciones seguidas no se pudieron reproducir — se detuvo la reproducción');
+    audio.pause();
+    updatePlayIcons();
+    return;
+  }
   if(shuffleOn){ currentIndex = Math.floor(Math.random()*currentQueue.length); }
   else { currentIndex = (currentIndex+1) % currentQueue.length; }
   loadCurrent(true);
@@ -4792,31 +4821,131 @@ async function saveLyrics(){
 async function fetchSyncedLyricsAuto(){
   if(!currentTrack) return;
   showToast('Buscando letra sincronizada…');
+  const r = await fetchLyricsFor(currentTrack.artist, currentTrack.title);
+  if(r.synced){
+    document.getElementById('lyricsText').value = r.synced;
+    showToast('¡Letra sincronizada encontrada!');
+  } else if(r.plain){
+    document.getElementById('lyricsText').value = r.plain;
+    showToast('Se encontró letra, pero sin sincronizar');
+  } else if(r.error){
+    showToast('No se pudo buscar — revisá tu conexión');
+  } else {
+    showToast('No se encontró letra para esta canción');
+  }
+}
+function fetchLyricsNowPlaying(t){
+  // Prioriza la canción que se acaba de poner a sonar, en vez de esperarle su turno en el lote general.
+  if(!t || t.lyrics || t.isPodcast || isUnknownName(t.artist) || isUnknownName(t.title)) return;
+  if(!lyricsOnlineEnabled() || !netAllowed()) return;
+  const key = 'ly|'+artNorm(t.artist)+'|'+artNorm(t.title);
+  const miss = lsGet('celestia:lyrics-miss', {});
+  if(miss[key] && Date.now()-miss[key]<7*24*3600*1000) return;
+  fetchLyricsFor(t.artist, t.title).then(r=>{
+    const text = r.synced || r.plain;
+    if(text){ t.lyrics = text; idbUpdateTrackFields(t.id, {lyrics:text}); refreshLyricsIfCurrent(t.id); }
+    else if(!r.error){ miss[key] = Date.now(); lsSet('celestia:lyrics-miss', miss); }
+  });
+}
+async function fetchLyricsFor(artist, title){
   try{
-    const url = `https://lrclib.net/api/search?track_name=${encodeURIComponent(currentTrack.title)}&artist_name=${encodeURIComponent(currentTrack.artist)}`;
+    const url = `https://lrclib.net/api/search?track_name=${encodeURIComponent(title)}&artist_name=${encodeURIComponent(artist)}`;
     const res = await fetch(url);
     if(!res.ok) throw new Error('respuesta no válida');
     const results = await res.json();
     const withSynced = results.find(r=>r.syncedLyrics);
-    if(withSynced){
-      document.getElementById('lyricsText').value = withSynced.syncedLyrics;
-      showToast('¡Letra sincronizada encontrada!');
-      return;
-    }
+    if(withSynced) return {synced: withSynced.syncedLyrics};
     const withPlain = results.find(r=>r.plainLyrics);
-    if(withPlain){
-      document.getElementById('lyricsText').value = withPlain.plainLyrics;
-      showToast('Se encontró letra, pero sin sincronizar');
-      return;
-    }
-    showToast('No se encontró letra para esta canción');
-  }catch(e){
-    showToast('No se pudo buscar — revisá tu conexión');
-  }
+    if(withPlain) return {plain: withPlain.plainLyrics};
+    return {};
+  }catch(e){ return {error:true}; }
 }
 function searchLyricsWeb(){
   const q = encodeURIComponent(currentTrack.artist+' '+currentTrack.title+' letra');
   window.open('https://www.google.com/search?q='+q, '_blank');
+}
+
+/* ============ LETRA SINCRONIZADA: BÚSQUEDA AUTOMÁTICA (igual que carátulas y fotos de artista) ============ */
+function lyricsOnlineEnabled(){ return lsGet('celestia:lyrics-online', true) !== false; }
+function toggleLyricsOnline(){
+  lsSet('celestia:lyrics-online', !lyricsOnlineEnabled());
+  render();
+  if(lyricsOnlineEnabled()) fetchMissingLyrics(true);
+}
+function refreshLyricsIfCurrent(trackId){
+  if(!currentTrack || currentTrack.id!==trackId) return;
+  refreshLRCCache();
+  lastCardLrcIdx = -999; lastOverlayLrcIdx = -999;
+  if(document.getElementById('overlayLyrics').classList.contains('show')){
+    if(currentTrackLRC) showLyricsReadingMode(); // ya hay letra sincronizada: pasa de "sin letra" a la vista sincronizada sola
+  }
+}
+let lyricsRunning = false;
+async function fetchMissingLyrics(showCard){
+  if(lyricsRunning || !lyricsOnlineEnabled()) return null;
+  if(!netAllowed()) return {offline:true, total:0};
+  const miss = lsGet('celestia:lyrics-miss', {});
+  const now = Date.now(), COOL = 7*24*3600*1000;
+  const jobs = musicTracks().filter(t=>{
+    if(t.lyrics || isUnknownName(t.artist) || isUnknownName(t.title)) return false;
+    const key = 'ly|'+artNorm(t.artist)+'|'+artNorm(t.title);
+    return !(miss[key] && now-miss[key]<COOL);
+  });
+  const total = jobs.length;
+  if(!total) return {found:0, total:0};
+
+  lyricsRunning = true;
+  const progressEl = document.getElementById('importProgress');
+  const titleEl = document.getElementById('importProgressTitle');
+  const countEl = document.getElementById('importProgressCount');
+  const fileEl = document.getElementById('importProgressFile');
+  const barEl = document.getElementById('importProgressBar');
+  if(showCard){
+    clearTimeout(window.__ipHideTimer);
+    progressEl.classList.remove('done');
+    titleEl.textContent = 'Buscando letras sincronizadas';
+    countEl.textContent = '0 / '+total;
+    fileEl.textContent = 'Solo se envían título y artista…';
+    barEl.style.width = '0%';
+    progressEl.classList.add('show');
+  }
+  let found = 0, done = 0, next = 0, consecFail = 0, aborted = false, dirty = false, lastRender = 0;
+  async function worker(){
+    while(next < total && !aborted){
+      const t = jobs[next++];
+      if(showCard) fileEl.textContent = t.title;
+      const key = 'ly|'+artNorm(t.artist)+'|'+artNorm(t.title);
+      const r = await fetchLyricsFor(t.artist, t.title);
+      if(r.error){ consecFail++; if(consecFail>=6){ aborted=true; break; } }
+      else{
+        consecFail = 0;
+        const text = r.synced || r.plain;
+        if(text){ t.lyrics = text; idbUpdateTrackFields(t.id, {lyrics:text}); found++; dirty=true; refreshLyricsIfCurrent(t.id); }
+        else miss[key] = Date.now();
+      }
+      done++;
+      if(showCard){ countEl.textContent = done+' / '+total; barEl.style.width = Math.round(done/total*100)+'%'; }
+      if(dirty && Date.now()-lastRender>1200){ lastRender=Date.now(); dirty=false; renderSoft(); }
+      await new Promise(r=>setTimeout(r,150)); // no saturamos el servicio gratuito
+    }
+  }
+  await Promise.all([worker(), worker()]);
+  lsSet('celestia:lyrics-miss', miss);
+  lyricsRunning = false;
+  renderSoft();
+  if(showCard){
+    progressEl.classList.add('done');
+    titleEl.textContent = aborted? 'No se pudo conectar' : (found? 'Letras listas' : 'Sin letras nuevas');
+    fileEl.textContent = aborted? 'Se reintentará cuando haya conexión' : (found? found+' canción(es) con letra nueva' : 'No se encontró nada nuevo por ahora');
+    window.__ipHideTimer = setTimeout(()=>progressEl.classList.remove('show'), aborted?2200:1800);
+  }
+  return {found, total, aborted};
+}
+function manualLyricsSearch(){
+  if(!lyricsOnlineEnabled()){ showToast('Activa primero "Buscar letras sincronizadas"'); return; }
+  if(!netAllowed()){ showToast('Sin conexión a internet'); return; }
+  lsSet('celestia:lyrics-miss', {});
+  fetchMissingLyrics(true).then(r=>{ if(r && !r.total) showToast('Todas tus canciones ya tienen letra, o no hay nada que buscar'); });
 }
 
 /* ============ ECUALIZADOR + CROSSFADE ============ */
@@ -5085,6 +5214,7 @@ function showToast(msg){
   });
   render();
   setTimeout(()=>fetchMissingArt(true), 1500); // completa imágenes que falten (solo si hay conexión)
+  setTimeout(()=>fetchMissingLyrics(true), 3000); // y letras sincronizadas de lo que falte
 })();
 </script>
 </body>
