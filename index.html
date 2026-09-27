@@ -1933,6 +1933,16 @@ function netAllowed(){
   if(isDataSaver()){ const c = navigator.connection; if(c && c.type && !['wifi','ethernet'].includes(c.type)) return false; }
   return true;
 }
+// Para letras usamos esta variante SIN navigator.onLine: en el WebView de Android (Capacitor)
+// navigator.onLine puede reportar "sin conexión" aunque sí haya internet, y eso hacía que la
+// búsqueda automática de letras nunca se intentara (mientras que el botón manual, que no
+// consulta navigator.onLine, sí funcionaba). Si en verdad no hay conexión, fetchLyricsFor ya
+// falla sola de forma controlada (try/catch) y el lote se corta solo tras varios fallos seguidos.
+function netAllowedForLyrics(){
+  if(isOfflineMode()) return false;
+  if(isDataSaver()){ const c = navigator.connection; if(c && c.type && !['wifi','ethernet'].includes(c.type)) return false; }
+  return true;
+}
 function toggleMode(key, msgOn, msgOff){
   const on = !lsGet(key,false);
   lsSet(key, on);
@@ -4837,7 +4847,7 @@ async function fetchSyncedLyricsAuto(){
 function fetchLyricsNowPlaying(t){
   // Prioriza la canción que se acaba de poner a sonar, en vez de esperarle su turno en el lote general.
   if(!t || t.lyrics || t.isPodcast || isUnknownName(t.artist) || isUnknownName(t.title)) return;
-  if(!lyricsOnlineEnabled() || !netAllowed()) return;
+  if(!lyricsOnlineEnabled() || !netAllowedForLyrics()) return;
   const key = 'ly|'+artNorm(t.artist)+'|'+artNorm(t.title);
   const miss = lsGet('celestia:lyrics-miss', {});
   if(miss[key] && Date.now()-miss[key]<7*24*3600*1000) return;
@@ -4883,7 +4893,7 @@ function refreshLyricsIfCurrent(trackId){
 let lyricsRunning = false;
 async function fetchMissingLyrics(showCard){
   if(lyricsRunning || !lyricsOnlineEnabled()) return null;
-  if(!netAllowed()) return {offline:true, total:0};
+  if(!netAllowedForLyrics()) return {offline:true, total:0};
   const miss = lsGet('celestia:lyrics-miss', {});
   const now = Date.now(), COOL = 7*24*3600*1000;
   const jobs = musicTracks().filter(t=>{
@@ -4943,7 +4953,7 @@ async function fetchMissingLyrics(showCard){
 }
 function manualLyricsSearch(){
   if(!lyricsOnlineEnabled()){ showToast('Activa primero "Buscar letras sincronizadas"'); return; }
-  if(!netAllowed()){ showToast('Sin conexión a internet'); return; }
+  if(!netAllowedForLyrics()){ showToast('Sin conexión a internet'); return; }
   lsSet('celestia:lyrics-miss', {});
   fetchMissingLyrics(true).then(r=>{ if(r && !r.total) showToast('Todas tus canciones ya tienen letra, o no hay nada que buscar'); });
 }
