@@ -1434,7 +1434,7 @@ async function idbUpdateTrackFields(id, patch){
 async function loadState(){
   metaOverrides = lsGet('miku:meta-overrides', {});
   artistNotes = lsGet('celestia:artist-notes', {});
-  wikiCache = lsGet('celestia:wiki-cache-v2', {}); // v2: invalida resultados viejos de la búsqueda sin fallback
+  wikiCache = lsGet('celestia:wiki-cache-v2', {});
   songWikiCache = lsGet('celestia:song-wiki-cache', {});
   playlists = lsGet('miku:playlists', []);
   historyWeeks = lsGet('miku:history', []);
@@ -4385,24 +4385,49 @@ function renderMini(){
 }
 const WIKI_CACHE_DAYS = 30;      // cuánto guardamos un resultado exitoso antes de volver a buscar
 const WIKI_NOTFOUND_COOLDOWN_DAYS = 7; // cuánto esperamos antes de reintentar un artista sin resultados
-async function wikiSearchTitles(artist){
+// Subimos este número cada vez que mejoramos cómo se elige/valida el resultado de Wikipedia.
+// Una entrada guardada con una versión distinta se vuelve a revisar en segundo plano la próxima
+// vez que se abre esa canción/artista — pero seguimos mostrando el dato viejo mientras tanto
+// (incluso sin internet), en vez de dejarlo en blanco hasta que haya conexión de nuevo.
+const WIKI_MATCH_VERSION = 2;
+function wikiEntryNeedsRecheck(entry){ return !entry || entry.v !== WIKI_MATCH_VERSION; }
+const MUSIC_HINT_WORDS = ['cancion','sencillo','single','album','banda','grupo musical','cantante','musico',
+  'rapero','cantautor','dueto','duo','discografia','song','band','singer','musician','songwriter',
+  'released','recorded','rock','pop','hip hop','reggaeton','indie','discography'];
+function looksMusical(extract){
+  const e = normLyricStr(extract);
+  return MUSIC_HINT_WORDS.some(k=>e.includes(k));
+}
+function mentionsArtist(extract, artist){
+  // Comprueba que el resumen realmente hable de ESTA canción/artista, y no de un libro,
+  // película o persona homónima (esto es justo lo que pasaba con canciones como "Arabella").
+  const e = normLyricStr(extract), a = normLyricStr(artist);
+  if(!e || !a) return false;
+  if(e.includes(a)) return true;
+  const words = a.split(' ').filter(w=>w.length>2);
+  if(!words.length) return false;
+  const hits = words.filter(w=>e.includes(w)).length;
+  return hits/words.length >= 0.7;
+}
+async function wikiSearchTitles(query, lang='es'){
   if(!netAllowed()) return [];
   try{
-    const url = `https://es.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(artist)}&format=json&origin=*&srlimit=3`;
+    const url = `https://${lang}.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&format=json&origin=*&srlimit=4`;
     const res = await fetch(url);
     if(!res.ok) return [];
     const data = await res.json();
     return (data.query && data.query.search)? data.query.search.map(r=>r.title) : [];
   }catch(e){ return []; }
 }
-async function fetchWikiSummaryByTitle(title){
+async function fetchWikiSummaryByTitle(title, lang='es', validate=null){
   if(!netAllowed()) return null;
   try{
-    const url = `https://es.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`;
+    const url = `https://${lang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`;
     const res = await fetch(url);
     if(!res.ok) return null;
     const data = await res.json();
     if(data.type==='disambiguation' || !data.extract) return null;
+    if(validate && !validate(data.extract)) return null; // no "suena" a lo que buscamos: la descartamos
     return {
       extract: data.extract,
       thumbnail: data.thumbnail? data.thumbnail.source : null,
@@ -4411,28 +4436,56 @@ async function fetchWikiSummaryByTitle(title){
   }catch(e){ return null; }
 }
 async function fetchWikiSummary(artist){
-  // Probamos primero el título tal cual (rápido, funciona la mayoría de las veces),
-  // y si falla o cae en una página de desambiguación, buscamos el título correcto.
-  const direct = await fetchWikiSummaryByTitle(artist);
-  if(direct) return direct;
-  const candidates = await wikiSearchTitles(artist);
-  for(const title of candidates){
-    const result = await fetchWikiSummaryByTitle(title);
-    if(result) return result;
-  }
-  return null;
-}
-async function fetchSongWikiSummary(title, artist){
-  // Las canciones suelen tener su propia página, distinta a la del artista
-  // (ej. "Bad (canción)"), así que probamos variantes típicas antes de buscar.
-  const directCandidates = [`${title} (canción)`, `${title} (song)`, title];
-  for(const c of directCandidates){
-    const r = await fetchWikiSummaryByTitle(c);
+  // 1) el nombre tal cual en español, pero exigiendo que el resumen "suene" a música
+  //    (para no quedarnos con una persona, lugar u objeto que se llame igual).
+  const esDirect = await fetchWikiSummaryByTitle(artist, 'es', looksMusical);
+  if(esDirect) return esDirect;
+  // 2) búsqueda en español con pistas de que es músico/banda, validando cada candidato
+  const esCandidates = await wikiSearchTitles(`${artist} banda música cantante`, 'es');
+  for(const t of esCandidates){
+    const r = await fetchWikiSummaryByTitle(t, 'es', looksMusical);
     if(r) return r;
   }
-  const searchResults = await wikiSearchTitles(`${title} ${artist} canción`);
-  for(const t of searchResults){
-    const r = await fetchWikiSummaryByTitle(t);
+  // 3) Wikipedia en inglés: documenta muchísimos más artistas y bandas que la española
+  const enDirect = await fetchWikiSummaryByTitle(artist, 'en', looksMusical);
+  if(enDirect) return enDirect;
+  const enCandidates = await wikiSearchTitles(`${artist} band musician singer`, 'en');
+  for(const t of enCandidates){
+    const r = await fetchWikiSummaryByTitle(t, 'en', looksMusical);
+    if(r) return r;
+  }
+  // 4) último recurso, sin exigir palabras musicales: mejor mostrar algo que nada
+  //    para artistas muy nuevos o de nicho que Wikipedia describe de forma escueta.
+  return (await fetchWikiSummaryByTitle(artist, 'es')) || (await fetchWikiSummaryByTitle(artist, 'en'));
+}
+async function fetchSongWikiSummary(title, artist){
+  // Variantes de título típicas de Wikipedia para canciones, de más a menos específica.
+  // Estas ya incluyen "canción"/"song" en el propio título, así que son bastante seguras.
+  const namedCandidates = [
+    [`${title} (canción de ${artist})`, 'es'],
+    [`${title} (canción)`, 'es'],
+    [`${title} (${artist} song)`, 'en'],
+    [`${title} (song)`, 'en'],
+  ];
+  for(const [c, lang] of namedCandidates){
+    const r = await fetchWikiSummaryByTitle(c, lang);
+    if(r) return r;
+  }
+  // Título a secas: solo lo aceptamos si el resumen realmente menciona al artista,
+  // para no traer un libro, película o persona que se llame igual.
+  const bareEs = await fetchWikiSummaryByTitle(title, 'es', extract=>mentionsArtist(extract, artist));
+  if(bareEs) return bareEs;
+  const bareEn = await fetchWikiSummaryByTitle(title, 'en', extract=>mentionsArtist(extract, artist));
+  if(bareEn) return bareEn;
+  // Búsqueda por texto libre, validando igual cada candidato antes de aceptarlo
+  const esSearch = await wikiSearchTitles(`${title} ${artist} canción`, 'es');
+  for(const t of esSearch){
+    const r = await fetchWikiSummaryByTitle(t, 'es', extract=>mentionsArtist(extract, artist));
+    if(r) return r;
+  }
+  const enSearch = await wikiSearchTitles(`${title} ${artist} song`, 'en');
+  for(const t of enSearch){
+    const r = await fetchWikiSummaryByTitle(t, 'en', extract=>mentionsArtist(extract, artist));
     if(r) return r;
   }
   return null;
@@ -4446,31 +4499,46 @@ function renderPlayerArtistSection(){
   const songKey = title+'|||'+artist;
 
   const artistCached = wikiCache[artist];
-  const artistFresh = artistCached && (Date.now()-artistCached.ts) < (artistCached.notFound? WIKI_NOTFOUND_COOLDOWN_DAYS : WIKI_CACHE_DAYS)*86400000;
+  const artistHasContent = artistCached && !artistCached.notFound;
+  const artistFresh = artistCached && !wikiEntryNeedsRecheck(artistCached) && (Date.now()-artistCached.ts) < (artistCached.notFound? WIKI_NOTFOUND_COOLDOWN_DAYS : WIKI_CACHE_DAYS)*86400000;
   const songCached = songWikiCache[songKey];
-  const songFresh = songCached && (Date.now()-songCached.ts) < (songCached.notFound? WIKI_NOTFOUND_COOLDOWN_DAYS : WIKI_CACHE_DAYS)*86400000;
+  const songHasContent = songCached && !songCached.notFound;
+  const songFresh = songCached && !wikiEntryNeedsRecheck(songCached) && (Date.now()-songCached.ts) < (songCached.notFound? WIKI_NOTFOUND_COOLDOWN_DAYS : WIKI_CACHE_DAYS)*86400000;
 
-  renderArtistSectionBody(el, artist, artistFresh? artistCached : null, !artistFresh, songFresh? songCached : null, !songFresh);
+  // Mostramos de una lo que ya tengamos guardado (aunque esté vencido o pendiente de revisar
+  // con el algoritmo nuevo), para que siga sirviendo sin conexión; el mensaje de "buscando…"
+  // solo aparece si no hay absolutamente nada guardado todavía.
+  renderArtistSectionBody(el, artist,
+    artistHasContent? artistCached : null, !artistFresh && !artistHasContent,
+    songHasContent? songCached : null, !songFresh && !songHasContent);
 
   if(!artistFresh){
     fetchWikiSummary(artist).then(result=>{
-      wikiCache[artist] = result? {...result, ts:Date.now()} : {notFound:true, ts:Date.now()};
+      if(result){ wikiCache[artist] = {...result, ts:Date.now(), v:WIKI_MATCH_VERSION}; }
+      else if(netAllowed()){ wikiCache[artist] = {notFound:true, ts:Date.now(), v:WIKI_MATCH_VERSION}; }
+      // si no hubo conexión real para intentarlo, no tocamos lo que ya había guardado:
+      // se reintenta solo la próxima vez que se abra con internet.
       saveWikiCache();
       if(currentTrack && (currentTrack.artist||'').trim()===artist){
+        const shown = wikiCache[artist] && !wikiCache[artist].notFound ? wikiCache[artist] : null;
         const sc = songWikiCache[songKey];
-        const sf = sc && (Date.now()-sc.ts) < (sc.notFound? WIKI_NOTFOUND_COOLDOWN_DAYS : WIKI_CACHE_DAYS)*86400000;
-        renderArtistSectionBody(el, artist, result, false, sf? sc : null, !sf);
+        const scHasContent = sc && !sc.notFound;
+        const sf = sc && !wikiEntryNeedsRecheck(sc) && (Date.now()-sc.ts) < (sc.notFound? WIKI_NOTFOUND_COOLDOWN_DAYS : WIKI_CACHE_DAYS)*86400000;
+        renderArtistSectionBody(el, artist, shown, false, scHasContent? sc : null, !sf && !scHasContent);
       }
     });
   }
   if(!songFresh){
     fetchSongWikiSummary(title, artist).then(result=>{
-      songWikiCache[songKey] = result? {...result, ts:Date.now()} : {notFound:true, ts:Date.now()};
+      if(result){ songWikiCache[songKey] = {...result, ts:Date.now(), v:WIKI_MATCH_VERSION}; }
+      else if(netAllowed()){ songWikiCache[songKey] = {notFound:true, ts:Date.now(), v:WIKI_MATCH_VERSION}; }
       saveSongWikiCache();
       if(currentTrack && (currentTrack.title||'').trim()===title && (currentTrack.artist||'').trim()===artist){
+        const shown = songWikiCache[songKey] && !songWikiCache[songKey].notFound ? songWikiCache[songKey] : null;
         const ac = wikiCache[artist];
-        const af = ac && (Date.now()-ac.ts) < (ac.notFound? WIKI_NOTFOUND_COOLDOWN_DAYS : WIKI_CACHE_DAYS)*86400000;
-        renderArtistSectionBody(el, artist, af? ac : null, !af, result, false);
+        const acHasContent = ac && !ac.notFound;
+        const af = ac && !wikiEntryNeedsRecheck(ac) && (Date.now()-ac.ts) < (ac.notFound? WIKI_NOTFOUND_COOLDOWN_DAYS : WIKI_CACHE_DAYS)*86400000;
+        renderArtistSectionBody(el, artist, acHasContent? ac : null, !af && !acHasContent, shown, false);
       }
     });
   }
