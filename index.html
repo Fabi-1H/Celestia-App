@@ -4846,16 +4846,33 @@ async function fetchSyncedLyricsAuto(){
 }
 function fetchLyricsNowPlaying(t){
   // Prioriza la canción que se acaba de poner a sonar, en vez de esperarle su turno en el lote general.
-  if(!t || t.lyrics || t.isPodcast || isUnknownName(t.artist) || isUnknownName(t.title)) return;
+  if(!t || isLRC(t.lyrics) || t.isPodcast || isUnknownName(t.artist) || isUnknownName(t.title)) return;
   if(!lyricsOnlineEnabled() || !netAllowedForLyrics()) return;
   const key = 'ly|'+artNorm(t.artist)+'|'+artNorm(t.title);
   const miss = lsGet('celestia:lyrics-miss', {});
   if(miss[key] && Date.now()-miss[key]<7*24*3600*1000) return;
   fetchLyricsFor(t.artist, t.title).then(r=>{
-    const text = r.synced || r.plain;
-    if(text){ t.lyrics = text; idbUpdateTrackFields(t.id, {lyrics:text}); refreshLyricsIfCurrent(t.id); }
+    if(r.synced){ t.lyrics = r.synced; idbUpdateTrackFields(t.id, {lyrics:r.synced}); refreshLyricsIfCurrent(t.id); }
+    else if(r.plain && !t.lyrics){ t.lyrics = r.plain; idbUpdateTrackFields(t.id, {lyrics:r.plain}); refreshLyricsIfCurrent(t.id); }
     else if(!r.error){ miss[key] = Date.now(); lsSet('celestia:lyrics-miss', miss); }
   });
+}
+function normLyricStr(s){
+  return (s||'').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'') // quita acentos
+    .replace(/\(.*?\)|\[.*?\]/g,' ') // quita "(remastered)", "(live)", "[explicit]", etc.
+    .replace(/feat\.?|ft\.?/g,' ')
+    .replace(/[^a-z0-9]+/g,' ').trim();
+}
+function lyricStrSim(a,b){
+  a = normLyricStr(a); b = normLyricStr(b);
+  if(!a || !b) return 0;
+  if(a===b) return 1;
+  if(a.includes(b) || b.includes(a)) return 0.75;
+  const wa = new Set(a.split(' ')), wb = new Set(b.split(' '));
+  let shared = 0; wa.forEach(w=>{ if(w.length>1 && wb.has(w)) shared++; });
+  const denom = Math.max(wa.size, wb.size) || 1;
+  return shared/denom*0.6;
 }
 async function fetchLyricsFor(artist, title){
   try{
@@ -4863,10 +4880,18 @@ async function fetchLyricsFor(artist, title){
     const res = await fetch(url);
     if(!res.ok) throw new Error('respuesta no válida');
     const results = await res.json();
-    const withSynced = results.find(r=>r.syncedLyrics);
-    if(withSynced) return {synced: withSynced.syncedLyrics};
-    const withPlain = results.find(r=>r.plainLyrics);
-    if(withPlain) return {plain: withPlain.plainLyrics};
+    if(!results || !results.length) return {};
+    // En vez de quedarnos con el primer resultado que tenga letra, elegimos el que más se
+    // parece de verdad al artista y título buscados (así evitamos covers, versiones en vivo
+    // o canciones de otro artista con título parecido que a veces trae la búsqueda de lrclib).
+    const scored = results.map(r=>({
+      r, score: lyricStrSim(r.artistName, artist)*1 + lyricStrSim(r.trackName, title)*1.2
+    })).sort((a,b)=>b.score-a.score);
+    const bestSynced = scored.find(x=>x.r.syncedLyrics && x.score>0.5);
+    if(bestSynced) return {synced: bestSynced.r.syncedLyrics};
+    const bestPlain = scored.find(x=>x.r.plainLyrics && x.score>0.5);
+    if(bestPlain) return {plain: bestPlain.r.plainLyrics};
+    // si nada superó el umbral de parecido, preferimos no traer nada a traer la letra de otra canción
     return {};
   }catch(e){ return {error:true}; }
 }
@@ -4897,7 +4922,7 @@ async function fetchMissingLyrics(showCard){
   const miss = lsGet('celestia:lyrics-miss', {});
   const now = Date.now(), COOL = 7*24*3600*1000;
   const jobs = musicTracks().filter(t=>{
-    if(t.lyrics || isUnknownName(t.artist) || isUnknownName(t.title)) return false;
+    if(isLRC(t.lyrics) || isUnknownName(t.artist) || isUnknownName(t.title)) return false;
     const key = 'ly|'+artNorm(t.artist)+'|'+artNorm(t.title);
     return !(miss[key] && now-miss[key]<COOL);
   });
@@ -4929,8 +4954,8 @@ async function fetchMissingLyrics(showCard){
       if(r.error){ consecFail++; if(consecFail>=6){ aborted=true; break; } }
       else{
         consecFail = 0;
-        const text = r.synced || r.plain;
-        if(text){ t.lyrics = text; idbUpdateTrackFields(t.id, {lyrics:text}); found++; dirty=true; refreshLyricsIfCurrent(t.id); }
+        if(r.synced){ t.lyrics = r.synced; idbUpdateTrackFields(t.id, {lyrics:r.synced}); found++; dirty=true; refreshLyricsIfCurrent(t.id); }
+        else if(r.plain && !t.lyrics){ t.lyrics = r.plain; idbUpdateTrackFields(t.id, {lyrics:r.plain}); found++; dirty=true; refreshLyricsIfCurrent(t.id); }
         else miss[key] = Date.now();
       }
       done++;
