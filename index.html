@@ -4846,7 +4846,8 @@ async function fetchSyncedLyricsAuto(){
 }
 function fetchLyricsNowPlaying(t){
   // Prioriza la canción que se acaba de poner a sonar, en vez de esperarle su turno en el lote general.
-  if(!t || isLRC(t.lyrics) || t.isPodcast || isUnknownName(t.artist) || isUnknownName(t.title)) return;
+  if(!t || t.isPodcast || isUnknownName(t.artist) || isUnknownName(t.title)) return;
+  if(isLRC(t.lyrics) && lyricsMatchRecheckDone()) return;
   if(!lyricsOnlineEnabled() || !netAllowedForLyrics()) return;
   const key = 'ly|'+artNorm(t.artist)+'|'+artNorm(t.title);
   const miss = lsGet('celestia:lyrics-miss', {});
@@ -4916,18 +4917,27 @@ function refreshLyricsIfCurrent(trackId){
   }
 }
 let lyricsRunning = false;
+// Subimos este número cada vez que mejoramos qué tan bien elige fetchLyricsFor entre varios
+// resultados. La primera vez que corre la búsqueda automática después de eso, revisa TAMBIÉN
+// las canciones que ya tenían letra sincronizada (por si esa letra vieja quedó mal elegida) —
+// después vuelve a saltarse las que ya están sincronizadas, como siempre, para no golpear el
+// servicio gratuito en cada apertura de la app.
+const LYRICS_MATCH_VERSION = 2;
+function lyricsMatchRecheckDone(){ return lsGet('celestia:lyrics-match-v', 0) >= LYRICS_MATCH_VERSION; }
 async function fetchMissingLyrics(showCard){
   if(lyricsRunning || !lyricsOnlineEnabled()) return null;
   if(!netAllowedForLyrics()) return {offline:true, total:0};
+  const recheckAll = !lyricsMatchRecheckDone();
   const miss = lsGet('celestia:lyrics-miss', {});
   const now = Date.now(), COOL = 7*24*3600*1000;
   const jobs = musicTracks().filter(t=>{
-    if(isLRC(t.lyrics) || isUnknownName(t.artist) || isUnknownName(t.title)) return false;
+    if(isUnknownName(t.artist) || isUnknownName(t.title)) return false;
+    if(isLRC(t.lyrics) && !recheckAll) return false;
     const key = 'ly|'+artNorm(t.artist)+'|'+artNorm(t.title);
     return !(miss[key] && now-miss[key]<COOL);
   });
   const total = jobs.length;
-  if(!total) return {found:0, total:0};
+  if(!total){ if(recheckAll) lsSet('celestia:lyrics-match-v', LYRICS_MATCH_VERSION); return {found:0, total:0}; }
 
   lyricsRunning = true;
   const progressEl = document.getElementById('importProgress');
@@ -4966,6 +4976,7 @@ async function fetchMissingLyrics(showCard){
   }
   await Promise.all([worker(), worker()]);
   lsSet('celestia:lyrics-miss', miss);
+  if(recheckAll && !aborted) lsSet('celestia:lyrics-match-v', LYRICS_MATCH_VERSION);
   lyricsRunning = false;
   renderSoft();
   if(showCard){
