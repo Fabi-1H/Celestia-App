@@ -1337,19 +1337,43 @@ let crossfading = false;
 let crossfadeState = {enabled:false, seconds:6};
 
 /* ============ PERSISTENCIA ============ */
+function safePlay(el){ try{ const p = el.play(); if(p && p.catch) p.catch(()=>{}); }catch(e){} } // evita errores sin capturar (autoplay bloqueado, fuente cambiada a mitad)
 function lsGet(key, fallback){
   try{ const v = localStorage.getItem(key); return v!==null ? JSON.parse(v) : fallback; }
   catch(e){ return fallback; }
 }
 function lsSet(key, value){
-  try{ localStorage.setItem(key, JSON.stringify(value)); }catch(e){}
+  let str;
+  try{ str = JSON.stringify(value); localStorage.setItem(key, str); return true; }
+  catch(e){
+    if(str===undefined) return false;
+    // Cuota llena: antes el guardado fallaba en silencio y se perdían playlists o historial al reiniciar.
+    // Ahora se liberan primero las cachés que se pueden volver a generar y se reintenta una vez.
+    try{ pruneCaches(); localStorage.setItem(key, str); return true; }
+    catch(e2){
+      if(!window.__lsFullWarned){ window.__lsFullWarned = true; try{ showToast('Almacenamiento casi lleno: libera espacio para no perder cambios'); }catch(_){} }
+      return false;
+    }
+  }
+}
+function pruneCaches(){
+  ['celestia:art-miss','celestia:lyrics-miss'].forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
+  const trim = (obj, keep)=>{
+    const ks = Object.keys(obj||{}); if(ks.length<=keep) return;
+    ks.sort((a,b)=>(((obj[b]||{}).ts)||0)-(((obj[a]||{}).ts)||0));
+    ks.slice(keep).forEach(k=>{ delete obj[k]; });
+  };
+  try{ trim(wikiCache, 60); localStorage.setItem('celestia:wiki-cache-v2', JSON.stringify(wikiCache)); }catch(e){ try{ localStorage.removeItem('celestia:wiki-cache-v2'); }catch(_){} }
+  try{ trim(songWikiCache, 60); localStorage.setItem('celestia:song-wiki-cache', JSON.stringify(songWikiCache)); }catch(e){ try{ localStorage.removeItem('celestia:song-wiki-cache'); }catch(_){} }
 }
 
 /* ---- IndexedDB: guarda los archivos de audio reales para no tener que re-importarlos ---- */
 const CELESTIA_DB_NAME = 'celestia-db';
 const CELESTIA_DB_STORE = 'tracks';
+let __idbP = null;
 function idbOpen(){
-  return new Promise((resolve, reject)=>{
+  if(__idbP) return __idbP; // antes se abría una conexión nueva (y nunca se cerraba) en CADA operación
+  __idbP = new Promise((resolve, reject)=>{
     const req = indexedDB.open(CELESTIA_DB_NAME, 2);
     req.onupgradeneeded = ()=>{
       const db = req.result;
@@ -1360,9 +1384,15 @@ function idbOpen(){
         db.createObjectStore('artimg', {keyPath:'key'}); // fotos de artistas descargadas de internet
       }
     };
-    req.onsuccess = ()=> resolve(req.result);
-    req.onerror = ()=> reject(req.error);
+    req.onsuccess = ()=>{
+      const db = req.result;
+      db.onversionchange = ()=>{ try{ db.close(); }catch(e){} __idbP = null; };
+      db.onclose = ()=>{ __idbP = null; };
+      resolve(db);
+    };
+    req.onerror = ()=>{ __idbP = null; reject(req.error); };
   });
+  return __idbP;
 }
 function dataURItoBlobURL(dataURI){
   try{
@@ -1704,11 +1734,11 @@ async function setPlaylistCoverManual(id, file){
   let dataURI;
   try{
     const bmp = await createImageBitmap(file);
-    const sc = Math.min(1, 700/Math.max(bmp.width,bmp.height));
+    const sc = Math.min(1, 512/Math.max(bmp.width,bmp.height));
     const c = document.createElement('canvas');
     c.width = Math.max(1,Math.round(bmp.width*sc)); c.height = Math.max(1,Math.round(bmp.height*sc));
     c.getContext('2d').drawImage(bmp,0,0,c.width,c.height);
-    dataURI = c.toDataURL('image/jpeg',0.88);
+    dataURI = c.toDataURL('image/jpeg',0.85);
   }catch(e){ showToast('No se pudo leer esa imagen'); return; }
   p.cover = dataURI;
   await savePlaylists();
@@ -2129,7 +2159,7 @@ function shareNowPlaying(){
 }
 function shareMyWeek(){
   const w = historyWeeks[historyWeeks.length-1];
-  const list = w ? songPlaysList(w).slice(0,5) : [];
+  const list = (w && w.weekKey===isoWeekKey()) ? songPlaysList(w).slice(0,5) : [];
   if(!list.length){ showToast('Aún no tienes reproducciones esta semana'); return; }
   shareStatsText(`Mi semana en Celestia (${compactRange(w)})\n` + list.map((x,i)=>`${i+1}. ${x.t.title} — ${x.t.artist}`).join('\n'));
 }
@@ -2208,7 +2238,7 @@ async function addTrackFromFile(file){
     if(window.jsmediatags){
       // Si la lectura de metadatos se traba (tag corrupto, formato raro, etc.),
       // no dejamos que bloquee el resto de la importación para siempre.
-      const timeoutId = setTimeout(()=> { finish(null); }, 9000);
+      const timeoutId = setTimeout(()=> { finish(null); }, 20000); // red de seguridad: el límite real está en la cola
       try{
         readTagsQueued(file, {
           onSuccess: (t)=>{
@@ -2230,10 +2260,14 @@ function readTagsQueued(file, callbacks){
   // hacer que una lectura se pierda o nunca llame a onSuccess/onError, dejando esa canción a medias
   // (o directamente cortando ahí la importación de las que faltan). Las ponemos en fila, una por una.
   const run = ()=> new Promise((resolve)=>{
-    window.jsmediatags.read(file, {
-      onSuccess: (t)=>{ callbacks.onSuccess(t); resolve(); },
-      onError: (e)=>{ callbacks.onError(e); resolve(); }
-    });
+    let finished = false, tm = null;
+    const end = (fn, arg)=>{ if(finished) return; finished = true; clearTimeout(tm); try{ fn(arg); }catch(e){} resolve(); };
+    // si un archivo hace que jsmediatags no responda nunca, la fila SIGUE con el siguiente
+    // en vez de quedarse esperando para siempre (eso hacía que las demás perdieran sus datos)
+    tm = setTimeout(()=> end(callbacks.onError, new Error('timeout')), 7000);
+    try{
+      window.jsmediatags.read(file, { onSuccess: (t)=>end(callbacks.onSuccess, t), onError: (e)=>end(callbacks.onError, e) });
+    }catch(e){ end(callbacks.onError, e); }
   });
   const p = __tagReadQueue.then(run, run);
   __tagReadQueue = p;
@@ -2329,10 +2363,10 @@ function trackArt(t, size){
 }
 
 function trackRow(t, opts={}){
-  return `<div class="row ${currentTrack && currentTrack.id===t.id?'playing':''}" ${opts.animStyle?`style="${opts.animStyle}"`:''} onclick="playTrack('${t.id}', ${opts.queueExpr||"'all'"})">
+  return `<div class="row ${currentTrack && currentTrack.id===t.id?'playing':''}" ${opts.animStyle?`style="${opts.animStyle}"`:''} onclick="playTrack('${jsq(t.id)}', ${opts.queueExpr||"'all'"})">
     <div class="art">${trackArt(t,46)}</div>
     <div class="meta"><div class="t">${escapeHtml(t.title)}</div><div class="s">${escapeHtml(t.artist)} ${opts.showAlbum?'• '+escapeHtml(t.album):''}</div></div>
-    <button class="row-menu" onclick="event.stopPropagation();openTrackMenu('${t.id}', '${opts.playlistId||''}')">
+    <button class="row-menu" onclick="event.stopPropagation();openTrackMenu('${jsq(t.id)}', '${opts.playlistId||''}')">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
     </button>
   </div>`;
@@ -2444,10 +2478,10 @@ function renderPodcasts(main){
     return;
   }
   main.innerHTML = `<div class="section-title">Tus podcasts</div>` +
-    pods.map(t=>`<div class="row" onclick="playTrack('${t.id}','podcasts')">
+    pods.map(t=>`<div class="row" onclick="playTrack('${jsq(t.id)}','podcasts')">
       <div class="art">${trackArt(t,46)}</div>
       <div class="meta"><div class="t">${escapeHtml(t.title)}</div><div class="s">Podcast • ${escapeHtml(t.artist)}</div></div>
-      <button class="row-menu" onclick="event.stopPropagation();openTrackMenu('${t.id}', '')">
+      <button class="row-menu" onclick="event.stopPropagation();openTrackMenu('${jsq(t.id)}', '')">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
       </button>
     </div>`).join('');
@@ -3337,7 +3371,7 @@ function renderSongPickerList(q){
   if(!list.length){ box.innerHTML = `<p style="color:var(--text-dim);font-size:13px;padding:10px 4px;">Sin resultados.</p>`; return; }
   box.innerHTML = list.map(t=>{
     const added = p.trackIds.includes(t.id);
-    return `<div class="row" onclick="toggleSongInPlaylist('${t.id}')">
+    return `<div class="row" onclick="toggleSongInPlaylist('${jsq(t.id)}')">
       <div class="art">${trackArt(t,46)}</div>
       <div class="meta"><div class="t">${escapeHtml(t.title)}</div><div class="s">${escapeHtml(t.artist)}</div></div>
       <div style="color:${added?'var(--accent)':'var(--text-faint)'};font-size:20px;font-weight:700;flex-shrink:0;">${added?'✓':'+'}</div>
@@ -3365,6 +3399,7 @@ async function createPlaylistPrompt(){
 function deletePlaylist(id){
   if(!confirm('¿Eliminar esta playlist?')) return;
   playlists = playlists.filter(p=>p.id!==id); savePlaylists();
+  if(profile.featured && profile.featured.includes(id)){ profile.featured = profile.featured.filter(x=>x!==id); saveProfileState(); }
   showTab('playlists');
 }
 
@@ -3415,6 +3450,11 @@ function weekRangeLabel(d=new Date()){
   const sunday = new Date(monday); sunday.setDate(monday.getDate()+6);
   return `${monday.getDate()} de ${MONTHS_ES[monday.getMonth()]} – ${sunday.getDate()} de ${MONTHS_ES[sunday.getMonth()]}`;
 }
+function weeksAgo(w){
+  const a = isoWeekMonday(isoWeekKey()), b = isoWeekMonday(w && w.weekKey);
+  return (a && b) ? Math.max(0, Math.round((a-b)/(7*86400000))) : 0;
+}
+function weekTabLabel(w){ const n = weeksAgo(w); return n===0 ? 'Esta semana' : (n===1 ? 'Semana pasada' : 'Hace '+n+' semanas'); }
 function currentWeekBucket(){
   const key = isoWeekKey();
   let w = historyWeeks.find(x=>x.weekKey===key);
@@ -3467,7 +3507,7 @@ function addListenSeconds(sec){
 }
 function topTracksThisWeek(n){
   const w = historyWeeks[historyWeeks.length-1];
-  if(!w) return [];
+  if(!w || w.weekKey!==isoWeekKey()) return []; // si esta semana aún no hay reproducciones, no mostrar las de otra
   return Object.entries(w.plays).sort((a,b)=>b[1]-a[1]).slice(0,n)
     .map(([id,count])=>({track: tracks.find(t=>t.id===id), count})).filter(x=>x.track && !x.track.isPodcast);
 }
@@ -3483,7 +3523,7 @@ function renderHistory(main){
   const weeksOrdered = [...historyWeeks].reverse();
   window.__histWeekIdx = window.__histWeekIdx ?? 0;
   const w = weeksOrdered[window.__histWeekIdx] || weeksOrdered[0];
-  const weekLabel = window.__histWeekIdx===0?'Esta semana':(window.__histWeekIdx===1?'Semana pasada':'Hace 2 semanas');
+  const weekLabel = weekTabLabel(w);
   const songs = Object.entries(w.plays).sort((a,b)=>b[1]-a[1]).map(([id,c])=>({t:tracks.find(x=>x.id===id),c})).filter(x=>x.t && !x.t.isPodcast);
   const artistsArr = mergedArtistPlays(w);
   const maxSong = songs[0]?songs[0].c:1;
@@ -3493,7 +3533,7 @@ function renderHistory(main){
 
   main.innerHTML = `
     <div class="stats-header">${backBtn}<div class="stats-title">Estadísticas de reproducción</div></div>
-    <div class="week-tabs" style="margin-top:14px;">${weeksOrdered.map((wk,i)=>`<button class="${i===window.__histWeekIdx?'active':''}" onclick="window.__histWeekIdx=${i};render()">${i===0?'Esta semana':(i===1?'Semana pasada':'Hace 2 semanas')}</button>`).join('')}</div>
+    <div class="week-tabs" style="margin-top:14px;">${weeksOrdered.map((wk,i)=>`<button class="${i===window.__histWeekIdx?'active':''}" onclick="window.__histWeekIdx=${i};render()">${weekTabLabel(wk)}</button>`).join('')}</div>
     <div class="stats-week-title">${weekLabel}</div>
     <div class="stats-week-range">${w.rangeLabel||''}</div>
 
@@ -3514,7 +3554,7 @@ function renderHistory(main){
     ${songs.length? songs.slice(0,5).map((s,i)=>`
       <div class="stat-bar-row">
         <div class="n">${i+1}</div>
-        <div class="track" onclick="playTrack('${s.t.id}','all')" style="cursor:pointer">
+        <div class="track" onclick="playTrack('${jsq(s.t.id)}','all')" style="cursor:pointer">
           <div style="font-size:13.5px;font-weight:600;">${escapeHtml(s.t.title)}</div>
           <div class="bar-bg"><div class="bar-fill" style="width:${(s.c/maxSong*100)}%"></div></div>
         </div>
@@ -3873,7 +3913,7 @@ function loadCurrent(autoplay){
   if(eqState.enabled || crossfadeState.enabled) ensureEQGraph(); // el audio normal no pasa por Web Audio, así sigue sonando en segundo plano
   const chain = chainFor(audio);
   if(chain) chain.gain.gain.value = 1;
-  if(autoplay){ resumeAudioCtx(); audio.play(); }
+  if(autoplay){ resumeAudioCtx(); safePlay(audio); }
   updatePlayerUI();
   renderMini();
   updateMediaSessionMetadata();
@@ -3882,7 +3922,7 @@ function loadCurrent(autoplay){
 }
 function togglePlay(){
   if(!currentTrack){ if(tracks.length){ playTrack(tracks[0].id,'all'); } return; }
-  if(audio.paused){ resumeAudioCtx(); audio.play(); } else { audio.pause(); }
+  if(audio.paused){ resumeAudioCtx(); safePlay(audio); } else { audio.pause(); }
 }
 function peekNextTrack(){
   if(!currentQueue.length) return null;
@@ -3918,7 +3958,7 @@ function startCrossfade(){
   incoming.src = nextT.url;
   incoming.currentTime = 0;
   if(incomingChain) incomingChain.gain.gain.value = 0;
-  incoming.play();
+  safePlay(incoming);
   const totalMs = Math.max(1,crossfadeState.seconds)*1000;
   const steps = 30;
   let step = 0;
@@ -3961,7 +4001,7 @@ function onAudioEnded(e){
     updatePlayIcons();
     return;
   }
-  if(repeatMode===1){ audio.currentTime=0; playCounted=false; resumeAudioCtx(); audio.play(); return; }
+  if(repeatMode===1){ audio.currentTime=0; playCounted=false; resumeAudioCtx(); safePlay(audio); return; }
   const nextT = peekNextTrack();
   if(nextT){ nextTrack(); } else { updatePlayIcons(); }
 }
@@ -3969,7 +4009,7 @@ let lastListenTick = null;
 let playCounted = false;
 function onAudioTimeUpdate(e){
   if(e.target!==audio) return;
-  const pct = audio.duration? (audio.currentTime/audio.duration*100):0;
+  const pct = (audio.duration && isFinite(audio.duration))? (audio.currentTime/audio.duration*100):0;
   document.getElementById('miniBar').style.width = pct+'%';
   document.getElementById('seek').value = pct;
   document.getElementById('seek').style.background = `linear-gradient(to right, #fff 0%, #fff ${pct}%, var(--line) ${pct}%, var(--line) 100%)`;
@@ -4093,6 +4133,7 @@ let consecutivePlayErrors = 0;
 function onAudioError(e){
   if(e.target!==audio) return;
   if(crossfading) return;
+  if(!currentTrack) return; // se vació el audio a propósito (excluir/clasificar): no es un error real
   showToast('No se pudo reproducir "'+(currentTrack? currentTrack.title:'este archivo')+'" — formato no compatible');
   if(!currentQueue.length || currentQueue.length<2){ updatePlayIcons(); return; }
   consecutivePlayErrors++;
@@ -4120,7 +4161,7 @@ function onAudioError(e){
 /* ============ CONTROL EN NOTIFICACIONES (MediaSession) ============ */
 function setupMediaSession(){
   if(!('mediaSession' in navigator)) return;
-  navigator.mediaSession.setActionHandler('play', ()=>{ resumeAudioCtx(); audio.play(); });
+  navigator.mediaSession.setActionHandler('play', ()=>{ resumeAudioCtx(); safePlay(audio); });
   navigator.mediaSession.setActionHandler('pause', ()=>audio.pause());
   navigator.mediaSession.setActionHandler('previoustrack', prevTrack);
   navigator.mediaSession.setActionHandler('nexttrack', nextTrack);
@@ -4679,7 +4720,7 @@ function renderArtistSectionBody(el, artist, wikiResult, loading, songResult, so
 
   const moreHtml = more.length
     ? `<div class="artist-more-scroll">${more.map(t=>`
-        <div class="artist-more-card" onclick="playTrack('${t.id}','artist:${encodeURIComponent(artist)}')">
+        <div class="artist-more-card" onclick="playTrack('${jsq(t.id)}','artist:${encodeURIComponent(artist)}')">
           <div class="art">${trackArt(t,96)}</div>
           <div class="t">${escapeHtml(t.title)}</div>
         </div>`).join('')}</div>`
