@@ -805,10 +805,33 @@ body:not(.is-playing) #playerArt{transform:scale(.9);}
 .search-box.srch-gray input{font-size:16.5px;}
 .search-box.srch-gray input::placeholder{color:var(--text-dim);opacity:.9;}
 .srch-rec-title{font-family:var(--font-head);font-size:24px;font-weight:700;margin:18px 0 10px;}
-.rec-chk,.rec-x{background:none;border:none;padding:7px;display:flex;color:var(--text-dim);cursor:pointer;flex-shrink:0;}
-.rec-chk.on{color:var(--accent);}
+.rec-x{background:none;border:none;padding:7px;display:flex;color:var(--text-dim);cursor:pointer;flex-shrink:0;}
 .srch-chip{padding:7px 16px;border-radius:20px;border:1px solid var(--line);background:var(--surface);color:var(--text-dim);font-size:13px;font-weight:600;white-space:nowrap;cursor:pointer;}
 .srch-chip.active{background:var(--text);color:#0A0A0B;border-color:var(--text);}
+
+/* ===== escala tipográfica única (como Spotify): mismos tamaños en todas las pantallas ===== */
+:root{--fs-screen:24px;--fs-section:22px;--fs-title:16.5px;--fs-sub:14px;--fs-card:14px;--fs-card-s:13px;--fs-chip:14px;--fs-menu:17px;--fs-input:16px;--fs-nav:11px;--art-row:48px;}
+.srch-title,.home-greet,.lib-title{font-size:var(--fs-screen);}
+.section-title,.srch-rec-title,.fol-t,.ar-h,.stats-week-title{font-size:var(--fs-section);}
+.section-title .see-all{font-size:13px;}
+.row .meta .t,.sp-row .mt .t,.pl-select-row .t,.stats-rank-row .meta .t,.msg-row .t,.app-settings-row .t{font-size:var(--fs-title);font-weight:500;}
+.row .meta .s,.sp-row .mt .s,.pl-select-row .s,.stats-rank-row .meta .s,.msg-row .s,.app-settings-row .s{font-size:var(--fs-sub);}
+.row .art,.sp-row .rart{width:var(--art-row);height:var(--art-row);}
+.row{padding:6px 4px;gap:14px;}
+.sp-row{padding:6px 0;gap:14px;}
+.card .t,.quick-item .name{font-size:var(--fs-card);}
+.card .s{font-size:var(--fs-card-s);}
+.tab,.tab-seg-btn,.srch-chip,.pl-pills-row .btn,.btn,.btn-pill{font-size:var(--fs-chip);}
+.sheet-option,.drawer-menu button{font-size:16px;}
+.spm-opt{font-size:var(--fs-menu);}
+.spm-head .t{font-size:18px;}
+.spm-head .s{font-size:var(--fs-sub);}
+.search-box input,.picker-search input,.set-search input,.field input,.field textarea,.search-box.srch-gray input,.search-box.pl-search input{font-size:var(--fs-input);}
+.toast,.empty p{font-size:14px;}
+nav.bottom button{font-size:var(--fs-nav);}
+#mini .meta .t{font-size:13.5px;}
+#mini .meta .s{font-size:12px;}
+@media (max-width:380px){.sp-actions{gap:12px;}.sp-ic{padding:2px;}.sp-play{width:54px;height:54px;}} /* en pantallas de 360 px el botón de reproducir del álbum quedaba cortado */
 </style>
 </head>
 <body>
@@ -3529,7 +3552,7 @@ function renderSearch(main){
   const box = document.getElementById('searchResults');
   // lo que abres desde los resultados queda en "Recientes" (como en Spotify, son elementos, no textos)
   box.addEventListener('click', e=>{
-    if(e.target.closest('.row-menu,.rec-x,.rec-chk')) return;
+    if(e.target.closest('.row-menu,.rec-x')) return;
     const r = e.target.closest('[data-rk],[data-tid]'); if(!r) return;
     const k = r.dataset.rk || 'song', id = r.dataset.rid || r.dataset.tid;
     if(id) addRecentItem(k, id);
@@ -3583,26 +3606,16 @@ function addRecentItem(k, id){
   lsSet('celestia:recent-items', l.slice(0,20));
 }
 function removeRecentItem(i){ const l = getRecentItems(); l.splice(i,1); lsSet('celestia:recent-items', l); doSearch(''); }
-function toggleLikeRecent(id){
-  const t = tracks.find(x=>x.id===id); if(!t) return;
-  t.liked = !t.liked; idbUpdateTrackFields(t.id,{liked:t.liked}); buzz(14);
-  if(currentTrack && currentTrack.id===t.id) updatePlayIcons();
-  showToast(t.liked ? 'Agregado a Tus me gusta' : 'Quitado de Tus me gusta');
-  doSearch('');
-}
 function setSearchFilter(f){ searchFilter = f; doSearch(currentSearchText()); }
 function currentSearchText(){ const inp = document.getElementById('searchInput'); return inp ? inp.value : ''; }
-const SRCH_CHECK = `<svg width="26" height="26" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="currentColor"/><path d="M7 12.5l3.2 3.2L17 9" fill="none" stroke="#000" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-const SRCH_PLUS = `<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10.2"/><path d="M12 7.5v9M7.5 12h9"/></svg>`;
 const SRCH_X = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>`;
 function recentRowHTML(r, i){
   const xb = `<button class="rec-x" onclick="event.stopPropagation();removeRecentItem(${i})">${SRCH_X}</button>`;
   const ea = escapeHtml(r.id), own = escapeHtml(profile.name||'Tú');
   if(r.k==='song'){
     const t = tracks.find(x=>x.id===r.id && !x.isPodcast); if(!t) return '';
-    return `<div class="row" data-rk="song" data-rid="${ea}" onclick="playTrack('${jsq(t.id)}','all')"><div class="art">${trackArt(t,46)}</div>
-      <div class="meta"><div class="t">${escapeHtml(t.title)}</div><div class="s">Canción • ${escapeHtml(t.artist)}</div></div>
-      <button class="rec-chk ${t.liked?'on':''}" onclick="event.stopPropagation();toggleLikeRecent('${jsq(t.id)}')">${t.liked?SRCH_CHECK:SRCH_PLUS}</button>${xb}</div>`;
+    return `<div class="row ${currentTrack && currentTrack.id===t.id ? 'playing' : ''}" data-tid="${ea}" data-rk="song" data-rid="${ea}" onclick="playTrack('${jsq(t.id)}','all')"><div class="art">${trackArt(t,48)}</div>
+      <div class="meta"><div class="t">${escapeHtml(t.title)}</div><div class="s">Canción • ${escapeHtml(t.artist)}</div></div>${xb}</div>`;
   }
   if(r.k==='artist'){
     if(!getArtists().includes(r.id)) return '';
@@ -4024,7 +4037,7 @@ function renderAppSettings(main){
       ${row(ic('<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>'),'Almacenamiento y datos','Borrar estadísticas de reproducción guardadas en este dispositivo',"confirmClearHistory()")}
       ${row(ic('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'),'Apariencia','Temas y colores personalizados',"showToast('Apariencia — próximamente')",'<span class="badge">Próximamente</span>')}
       ${row(ic('<path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/>'),'Notificaciones','Controles del reproductor en la barra de notificaciones',"showToast('Notificaciones — próximamente')",'<span class="badge">Próximamente</span>')}
-      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
+      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.10.04-d) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
     </div>
   `;
 }
