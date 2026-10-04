@@ -782,6 +782,33 @@ body:not(.is-playing) #playerArt{transform:scale(.9);}
 .srch-recent button{background:none;border:none;color:var(--text-dim);font-size:16px;padding:6px 8px;}
 .srch-recent:active{background:rgba(255,255,255,.06);}
 .srch-chips{margin:14px 0 4px;}
+
+/* ===== buscador estilo Spotify ===== */
+.srch-top{display:flex;align-items:center;gap:14px;margin:6px 0 18px;}
+.srch-title{font-family:var(--font-head);font-size:25px;font-weight:700;}
+.srch-fake{display:flex;align-items:center;gap:12px;background:#fff;color:#4d4d4d;border-radius:7px;height:48px;padding:0 14px;font-size:16.5px;font-weight:700;cursor:pointer;}
+.srch-fake svg{color:#111;flex-shrink:0;}
+.srch-fake:active{opacity:.85;}
+.pl-tall{flex:0 0 122px;height:182px;border-radius:10px;position:relative;overflow:hidden;cursor:pointer;background:var(--surface-2);}
+.pl-tall:active{transform:scale(.97);}
+.pl-tall .a{position:absolute;inset:0;}
+.pl-tall .g{position:absolute;inset:0;background:linear-gradient(transparent 45%,rgba(0,0,0,.78));}
+.pl-tall .n{position:absolute;left:10px;right:10px;bottom:10px;font-weight:700;font-size:16px;line-height:1.15;text-shadow:0 1px 6px rgba(0,0,0,.5);overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;}
+.xgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.xcard{position:relative;height:100px;border-radius:8px;padding:12px;overflow:hidden;font-weight:700;font-size:17px;line-height:1.15;cursor:pointer;color:#fff;}
+.xcard:active{transform:scale(.97);}
+.xcard .xa{position:absolute;right:-9px;bottom:-5px;width:66px;height:66px;transform:rotate(25deg);border-radius:4px;overflow:hidden;box-shadow:0 3px 10px rgba(0,0,0,.4);background:rgba(0,0,0,.25);}
+.xcard .xa img,.xcard .xa svg{width:100%;height:100%;object-fit:cover;display:block;}
+.srch-bar{display:flex;align-items:center;gap:8px;margin:2px -6px 6px;}
+.srch-back{background:none;border:none;color:var(--text);padding:10px;display:flex;cursor:pointer;}
+.search-box.srch-gray{flex:1;margin:0;background:rgba(255,255,255,.14);border-radius:8px;padding:0 14px;height:48px;}
+.search-box.srch-gray input{font-size:16.5px;}
+.search-box.srch-gray input::placeholder{color:var(--text-dim);opacity:.9;}
+.srch-rec-title{font-family:var(--font-head);font-size:24px;font-weight:700;margin:18px 0 10px;}
+.rec-chk,.rec-x{background:none;border:none;padding:7px;display:flex;color:var(--text-dim);cursor:pointer;flex-shrink:0;}
+.rec-chk.on{color:var(--accent);}
+.srch-chip{padding:7px 16px;border-radius:20px;border:1px solid var(--line);background:var(--surface);color:var(--text-dim);font-size:13px;font-weight:600;white-space:nowrap;cursor:pointer;}
+.srch-chip.active{background:var(--text);color:#0A0A0B;border-color:var(--text);}
 </style>
 </head>
 <body>
@@ -2338,7 +2365,7 @@ function renderCore(soft){
     main.classList.remove('anim','tab-in-l','tab-in-r'); void main.offsetWidth;
     main.classList.add(dir===1 ? 'tab-in-r' : dir===-1 ? 'tab-in-l' : 'anim');
   }
-  const detailScreens = ['messages','playlistDetail','artistDetail','albumDetail','likedDetail','profile','appSettings','recentAdded','statsDetail','history','recent'];
+  const detailScreens = ['search','messages','playlistDetail','artistDetail','albumDetail','likedDetail','profile','appSettings','recentAdded','statsDetail','history','recent'];
   const isDetail = detailScreens.includes(activeTab);
   document.querySelector('header.top').style.display = isDetail ? 'none' : 'flex';
   main.style.paddingTop = isDetail ? 'calc(6px + env(safe-area-inset-top))' : '6px';
@@ -2573,7 +2600,7 @@ Object.assign(SP_ICON, {
   invite: __ic('<circle cx="10" cy="8.5" r="3.8"/><path d="M3 20.5a7 7 0 0114 0M19 6.5v5M16.5 9h5"/>'),
   folder: __ic('<path d="M3 6.5A2 2 0 015 4.5h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>'),
   profileOff: __ic('<circle cx="12" cy="12" r="9.5"/><circle cx="12" cy="10" r="3"/><path d="M6.3 18.2a7 7 0 0111.4 0"/>'),
-  sparkle: __ic('<path d="M19 3.5v4M17 5.5h4M6 5l1 2.6L9.6 8.6 7 9.6 6 12.2 5 9.6 2.4 8.6 5 7.6zM13 12l1.4 3.6L18 17l-3.6 1.4L13 22l-1.4-3.6L8 17l3.6-1.4z"/>')
+  sparkle: __ic('<path d="M20.5 12.5V18a2.5 2.5 0 01-2.5 2.5H6A2.5 2.5 0 013.5 18V6A2.5 2.5 0 016 3.5h6"/><path d="M8.2 16.4l.9-3.4 6.4-6.4 2.5 2.5-6.4 6.4z"/><path d="M18.5 2.8l.8 1.9 1.9.8-1.9.8-.8 1.9-.8-1.9-1.9-.8 1.9-.8z"/>')
 });
 function likeBtnHTML(t){ return ''; } // las canciones de álbum/artista no llevan ningún símbolo; para "me gusta" está el botón del álbum y el corazón del reproductor
 function refreshLikeAllBtn(){
@@ -2671,7 +2698,7 @@ function spmHead(){
   if(c.kind==='playlist'){
     const p = collPl();
     return `<div class="spm-head" style="--i:0"><div class="spm-art">${playlistArtHTML(p, 56, {fluid:true, radius:'0'})}</div>
-      <div style="min-width:0;"><div class="t">${escapeHtml(p.name)}</div><div class="s">de ${escapeHtml(profile.name||'Tú')} • Playlist</div></div></div>`;
+      <div style="min-width:0;"><div class="t">${escapeHtml(p.name)}</div><div class="s">de ${escapeHtml(profile.name||'Tú')} • Playlist pública</div></div></div>`;
   }
   if(c.kind==='album'){
     const al = getAlbums()[c.idx];
@@ -2712,7 +2739,7 @@ function renderCollMenu(){
     h += spmOpt(SP_ICON.plus,'Agregar a esta playlist','plMenuAddSongs()',n++);
     if(list.length>1) h += spmOpt(SP_ICON.lines,'Editar playlist','plMenuEdit()',n++);
     h += spmOpt(SP_ICON.pen,'Nombre y datos','plMenuInfo()',n++);
-    h += spmOpt(SP_ICON.sparkle,'Cambiar portada','plMenuCover()',n++);
+    h += spmOpt(SP_ICON.sparkle,'Crear portada','plMenuCover()',n++);
     if(p.cover) h += spmOpt(SP_ICON.refresh,'Restablecer portada','plMenuCoverReset()',n++);
     h += spmOpt(SP_ICON.trash,'Eliminar playlist','plMenuDelete()',n++);
     if(list.length) h += spmOpt(SP_ICON.queue,'Agregar a la fila','collQueue()',n++);
@@ -3483,48 +3510,126 @@ function deletePlaylist(id){
 
 /* ============ BÚSQUEDA ============ */
 function renderSearch(main){
-  // Un refresco de fondo (por ejemplo mientras se buscan carátulas o letras) puede volver a dibujar
-  // esta pantalla; si el usuario ya estaba escribiendo una búsqueda, no se la borramos ni le quitamos
-  // el foco de un tirón.
+  // Un refresco de fondo (carátulas, letras…) puede volver a dibujar esta pantalla: si ya estabas
+  // escribiendo, no se borra lo escrito ni se pierde el foco.
   const prevInput = document.getElementById('searchInput');
-  const prevValue = prevInput ? prevInput.value : '';
+  const prevValue = prevInput ? prevInput.value : (window.__srchActive ? (window.__lastSearchQ||'') : '');
   const prevFocused = prevInput && document.activeElement===prevInput;
   const prevCursor = prevFocused ? [prevInput.selectionStart, prevInput.selectionEnd] : null;
+  if(!window.__srchActive){ main.innerHTML = searchLandingHTML(); return; }
   main.innerHTML = `
-    <div class="search-box" style="margin-top:14px;">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
-      <input id="searchInput" placeholder="¿Qué quieres reproducir?" oninput="doSearch(this.value)" onkeydown="if(event.key==='Enter'){rememberSearch();this.blur();}" value="${escapeHtml(prevValue)}">
+    <div class="srch-bar">
+      <button class="srch-back" onclick="closeSearchMode()"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
+      <div class="search-box srch-gray">
+        <input id="searchInput" placeholder="¿Qué quieres escuchar?" oninput="doSearch(this.value)" onkeydown="if(event.key==='Enter'){this.blur();}" value="${escapeHtml(prevValue)}">
+      </div>
     </div>
     <div id="searchResults"></div>`;
   const input = document.getElementById('searchInput');
+  const box = document.getElementById('searchResults');
+  // lo que abres desde los resultados queda en "Recientes" (como en Spotify, son elementos, no textos)
+  box.addEventListener('click', e=>{
+    if(e.target.closest('.row-menu,.rec-x,.rec-chk')) return;
+    const r = e.target.closest('[data-rk],[data-tid]'); if(!r) return;
+    const k = r.dataset.rk || 'song', id = r.dataset.rid || r.dataset.tid;
+    if(id) addRecentItem(k, id);
+  }, true);
   doSearch(prevValue);
   if(!window.__softNow || prevFocused){
     input.focus();
     if(prevCursor) input.setSelectionRange(prevCursor[0], prevCursor[1]);
   }
 }
+function openSearchMode(){
+  window.__srchActive = true; searchFilter = 'all';
+  render();
+  const i = document.getElementById('searchInput'); if(i) i.focus(); // directo en el toque, para que abra el teclado
+}
+function closeSearchMode(){
+  window.__srchActive = false; window.__lastSearchQ = ''; searchFilter = 'all';
+  const i = document.getElementById('searchInput'); if(i) i.blur();
+  render();
+}
+const SRCH_COLORS = ['#dc148c','#1e3264','#e8115b','#477d95','#8d67ab','#148a08','#e13300','#503750'];
+function searchLandingHTML(){
+  const pls = playlists.slice().reverse().slice(0,10);
+  const mt = musicTracks();
+  const art = (t)=> t ? `<div class="xa">${trackArt(t,66)}</div>` : '';
+  const artists = getArtists(), albums = getAlbums();
+  const cats = [
+    ['Tus me gusta','openLiked()', art(mt.find(t=>t.liked))],
+    ['Canciones',"showTab('songs')", art(bestCoverTrack(mt)||mt[0])],
+    ['Artistas',"showTab('artists')", artists.length? `<div class="xa">${artistArt(artists[0],66)}</div>` : ''],
+    ['Álbumes',"showTab('albums')", albums.length? art(bestCoverTrack(albums[0].tracks)) : ''],
+    ['Playlists',"showTab('playlists')", pls.length? `<div class="xa">${playlistArtHTML(pls[0],66,{fluid:true,radius:'0'})}</div>` : ''],
+    ['Podcasts',"showTab('podcasts')", ''],
+    ['Estadísticas',"showTab('history')", '']
+  ];
+  return `
+    <div class="srch-top"><button class="avatar-btn" onclick="openDrawer()">${avatarHTML()}</button><div class="srch-title">Buscar</div></div>
+    <div class="srch-fake" onclick="openSearchMode()">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <span>¿Qué quieres escuchar?</span>
+    </div>
+    ${pls.length ? `<div class="section-title">Tus playlists</div><div class="hgrid">${pls.map(p=>`<div class="pl-tall" onclick="openPlaylist('${jsq(p.id)}')"><div class="a">${playlistArtHTML(p,122,{fluid:true,radius:'0'})}</div><div class="g"></div><div class="n">${escapeHtml(p.name)}</div></div>`).join('')}</div>` : ''}
+    <div class="section-title">Explorar todo</div>
+    <div class="xgrid">${cats.map((c,i)=>`<div class="xcard" style="background:${SRCH_COLORS[i%SRCH_COLORS.length]}" onclick="${c[1]}">${c[0]}${c[2]}</div>`).join('')}</div>`;
+}
 function srchNorm(x){ return String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase(); }
 let searchFilter = 'all';
-function getRecentSearches(){ const l = lsGet('celestia:recent-searches', []); return Array.isArray(l) ? l : []; }
-function currentSearchText(){ const inp = document.getElementById('searchInput'); return inp ? inp.value : ''; }
-function rememberSearch(){
-  const q = (window.__lastSearchQ||'').trim(); if(q.length<2) return; // se lee del texto ya buscado: al abrir un resultado la pantalla se redibuja y el campo desaparece
-  const l = getRecentSearches().filter(x=>srchNorm(x)!==srchNorm(q)); l.unshift(q);
-  lsSet('celestia:recent-searches', l.slice(0,8));
+function getRecentItems(){ const l = lsGet('celestia:recent-items', []); return Array.isArray(l) ? l : []; }
+function addRecentItem(k, id){
+  const l = getRecentItems().filter(x=>!(x.k===k && x.id===id)); l.unshift({k, id});
+  lsSet('celestia:recent-items', l.slice(0,20));
 }
-function removeRecentSearch(i){ const l = getRecentSearches(); l.splice(i,1); lsSet('celestia:recent-searches', l); doSearch(currentSearchText()); }
-function clearRecentSearches(){ lsSet('celestia:recent-searches', []); doSearch(currentSearchText()); }
-function useRecentSearch(i){ const q = getRecentSearches()[i]; if(q==null) return; const inp = document.getElementById('searchInput'); inp.value = q; doSearch(q); }
+function removeRecentItem(i){ const l = getRecentItems(); l.splice(i,1); lsSet('celestia:recent-items', l); doSearch(''); }
+function toggleLikeRecent(id){
+  const t = tracks.find(x=>x.id===id); if(!t) return;
+  t.liked = !t.liked; idbUpdateTrackFields(t.id,{liked:t.liked}); buzz(14);
+  if(currentTrack && currentTrack.id===t.id) updatePlayIcons();
+  showToast(t.liked ? 'Agregado a Tus me gusta' : 'Quitado de Tus me gusta');
+  doSearch('');
+}
 function setSearchFilter(f){ searchFilter = f; doSearch(currentSearchText()); }
+function currentSearchText(){ const inp = document.getElementById('searchInput'); return inp ? inp.value : ''; }
+const SRCH_CHECK = `<svg width="26" height="26" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="currentColor"/><path d="M7 12.5l3.2 3.2L17 9" fill="none" stroke="#000" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const SRCH_PLUS = `<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10.2"/><path d="M12 7.5v9M7.5 12h9"/></svg>`;
+const SRCH_X = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>`;
+function recentRowHTML(r, i){
+  const xb = `<button class="rec-x" onclick="event.stopPropagation();removeRecentItem(${i})">${SRCH_X}</button>`;
+  const ea = escapeHtml(r.id), own = escapeHtml(profile.name||'Tú');
+  if(r.k==='song'){
+    const t = tracks.find(x=>x.id===r.id && !x.isPodcast); if(!t) return '';
+    return `<div class="row" data-rk="song" data-rid="${ea}" onclick="playTrack('${jsq(t.id)}','all')"><div class="art">${trackArt(t,46)}</div>
+      <div class="meta"><div class="t">${escapeHtml(t.title)}</div><div class="s">Canción • ${escapeHtml(t.artist)}</div></div>
+      <button class="rec-chk ${t.liked?'on':''}" onclick="event.stopPropagation();toggleLikeRecent('${jsq(t.id)}')">${t.liked?SRCH_CHECK:SRCH_PLUS}</button>${xb}</div>`;
+  }
+  if(r.k==='artist'){
+    if(!getArtists().includes(r.id)) return '';
+    return `<div class="row" data-rk="artist" data-rid="${ea}" onclick="openArtist('${encA(r.id)}')"><div class="art" style="border-radius:50%">${artistArt(r.id,46)}</div>
+      <div class="meta"><div class="t">${ea}</div><div class="s">Artista</div></div>${xb}</div>`;
+  }
+  if(r.k==='album'){
+    const [alb, art] = r.id.split('|||'); const idx = getAlbums().findIndex(a=>a.album===alb && a.artist===art); if(idx<0) return '';
+    const al = getAlbums()[idx];
+    return `<div class="row" data-rk="album" data-rid="${ea}" onclick="openAlbum(${idx})"><div class="art">${trackArt(bestCoverTrack(al.tracks),46)}</div>
+      <div class="meta"><div class="t">${escapeHtml(alb)}</div><div class="s">Álbum • ${escapeHtml(art)}</div></div>${xb}</div>`;
+  }
+  if(r.k==='playlist'){
+    const p = playlists.find(x=>x.id===r.id); if(!p) return '';
+    return `<div class="row" data-rk="playlist" data-rid="${ea}" onclick="openPlaylist('${jsq(p.id)}')"><div class="art">${playlistArtHTML(p,46,{fluid:true,radius:'0'})}</div>
+      <div class="meta"><div class="t">${escapeHtml(p.name)}</div><div class="s">Playlist • ${own}</div></div>${xb}</div>`;
+  }
+  return '';
+}
 function doSearch(q){
   const box = document.getElementById('searchResults');
   if(!box) return;
   q = (q||'').trim();
   window.__lastSearchQ = q;
   if(!q){
-    const rec = getRecentSearches();
-    box.innerHTML = rec.length ? `<div class="section-title">Búsquedas recientes<span class="see-all" onclick="clearRecentSearches()">Borrar</span></div>` +
-      rec.map((r,i)=>`<div class="srch-recent" onclick="useRecentSearch(${i})"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>${escapeHtml(r)}</span><button onclick="event.stopPropagation();removeRecentSearch(${i})">✕</button></div>`).join('') : '';
+    const rows = getRecentItems().map((r,i)=>recentRowHTML(r,i)).join('');
+    box.innerHTML = rows ? `<div class="srch-rec-title">Recientes</div>${rows}` : '';
     return;
   }
   const n = srchNorm(q);
@@ -3535,14 +3640,13 @@ function doSearch(q){
   if(!songs.length && !artists.length && !albums.length && !pls.length){ box.innerHTML = `<div class="empty"><p>No se encontraron resultados para "${escapeHtml(q)}".</p></div>`; return; }
   const F = searchFilter, all = F==='all';
   const chips = [['all','Todo'],['songs','Canciones'],['artists','Artistas'],['albums','Álbumes'],['playlists','Playlists']]
-    .map(([k,l])=>`<div class="tab ${F===k?'active':''}" onclick="setSearchFilter('${k}')">${l}</div>`).join('');
-  let h = `<div class="lib-chips srch-chips">${chips}</div><div onclick="rememberSearch()">`;
-  if((all||F==='songs') && songs.length) h += `<div class="section-title">Canciones</div>` + (all? songs.slice(0,6) : songs).map(t=>trackRow(t,{showAlbum:true})).join('');
-  if((all||F==='artists') && artists.length) h += `<div class="section-title">Artistas</div>` + (all? artists.slice(0,3) : artists).map(a=>`<div class="row" onclick="openArtist('${encA(a)}')"><div class="art" style="border-radius:50%">${artistArt(a,46)}</div><div class="meta"><div class="t">${escapeHtml(a)}</div><div class="s">Artista</div></div></div>`).join('');
-  if((all||F==='albums') && albums.length) h += `<div class="section-title">Álbumes</div>` + (all? albums.slice(0,3) : albums).map(x=>`<div class="row" onclick="openAlbum(${x.idx})"><div class="art">${trackArt(bestCoverTrack(x.al.tracks),46)}</div><div class="meta"><div class="t">${escapeHtml(x.al.album)}</div><div class="s">Álbum • ${escapeHtml(x.al.artist)}</div></div></div>`).join('');
-  if((all||F==='playlists') && pls.length) h += `<div class="section-title">Playlists</div>` + (all? pls.slice(0,3) : pls).map(p=>`<div class="row" onclick="openPlaylist('${jsq(p.id)}')"><div class="art">${playlistArtHTML(p,46,{fluid:true,radius:'0'})}</div><div class="meta"><div class="t">${escapeHtml(p.name)}</div><div class="s">Playlist • ${escapeHtml(profile.name||'Tú')}</div></div></div>`).join('');
-  if(h.endsWith('<div onclick="rememberSearch()">')) h += `<div class="empty"><p>Sin resultados en esta categoría.</p></div>`;
-  box.innerHTML = h + '</div>';
+    .map(([k,l])=>`<div class="srch-chip ${F===k?'active':''}" onclick="setSearchFilter('${k}')">${l}</div>`).join('');
+  let h = `<div class="lib-chips srch-chips">${chips}</div>`, body = '';
+  if((all||F==='songs') && songs.length) body += `<div class="section-title">Canciones</div>` + (all? songs.slice(0,6) : songs).map(t=>trackRow(t,{showAlbum:true})).join('');
+  if((all||F==='artists') && artists.length) body += `<div class="section-title">Artistas</div>` + (all? artists.slice(0,3) : artists).map(a=>`<div class="row" data-rk="artist" data-rid="${escapeHtml(a)}" onclick="openArtist('${encA(a)}')"><div class="art" style="border-radius:50%">${artistArt(a,46)}</div><div class="meta"><div class="t">${escapeHtml(a)}</div><div class="s">Artista</div></div></div>`).join('');
+  if((all||F==='albums') && albums.length) body += `<div class="section-title">Álbumes</div>` + (all? albums.slice(0,3) : albums).map(x=>`<div class="row" data-rk="album" data-rid="${escapeHtml(x.al.album+'|||'+x.al.artist)}" onclick="openAlbum(${x.idx})"><div class="art">${trackArt(bestCoverTrack(x.al.tracks),46)}</div><div class="meta"><div class="t">${escapeHtml(x.al.album)}</div><div class="s">Álbum • ${escapeHtml(x.al.artist)}</div></div></div>`).join('');
+  if((all||F==='playlists') && pls.length) body += `<div class="section-title">Playlists</div>` + (all? pls.slice(0,3) : pls).map(p=>`<div class="row" data-rk="playlist" data-rid="${escapeHtml(p.id)}" onclick="openPlaylist('${jsq(p.id)}')"><div class="art">${playlistArtHTML(p,46,{fluid:true,radius:'0'})}</div><div class="meta"><div class="t">${escapeHtml(p.name)}</div><div class="s">Playlist • ${escapeHtml(profile.name||'Tú')}</div></div></div>`).join('');
+  box.innerHTML = h + (body || `<div class="empty"><p>Sin resultados en esta categoría.</p></div>`);
 }
 
 /* ============ ESTADÍSTICAS DE REPRODUCCIÓN ============ */
