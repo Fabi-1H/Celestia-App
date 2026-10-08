@@ -832,6 +832,27 @@ nav.bottom button{font-size:var(--fs-nav);}
 #mini .meta .t{font-size:13.5px;}
 #mini .meta .s{font-size:12px;}
 @media (max-width:380px){.sp-actions{gap:12px;}.sp-ic{padding:2px;}.sp-play{width:54px;height:54px;}} /* en pantallas de 360 px el botón de reproducir del álbum quedaba cortado */
+
+/* ===== transición suave al entrar al buscador ===== */
+.srch-wrap{--srch-ease:cubic-bezier(.22,1,.36,1);}
+.srch-top{display:flex;align-items:center;gap:14px;margin:6px 0 18px;max-height:60px;overflow:hidden;transition:max-height .32s var(--srch-ease),margin .32s var(--srch-ease),opacity .2s ease;}
+.srch-barrow{display:flex;align-items:center;margin:0 0 4px;}
+.srch-back{background:none;border:none;color:var(--text);display:flex;cursor:pointer;flex-shrink:0;max-width:0;padding:10px 0;opacity:0;overflow:hidden;transition:max-width .32s var(--srch-ease),padding .32s var(--srch-ease),margin .32s var(--srch-ease),opacity .22s ease;}
+.srch-field{flex:1;min-width:0;display:flex;align-items:center;height:48px;border-radius:7px;padding:0 14px;background:#fff;color:#4d4d4d;cursor:pointer;transition:background-color .28s ease,color .28s ease;}
+.srch-ic{flex-shrink:0;color:#111;max-width:24px;margin-right:12px;transition:max-width .3s var(--srch-ease),margin .3s var(--srch-ease),opacity .2s ease;}
+.srch-field input{flex:1;min-width:0;background:none;border:none;outline:none;color:inherit;font-size:var(--fs-input);font-weight:600;font-family:var(--font-body);padding:0;transition:font-weight .28s ease;}
+.srch-field input::placeholder{color:#4d4d4d;opacity:1;transition:color .28s ease;}
+.srch-landing{max-height:4000px;transition:opacity .22s ease,transform .3s var(--srch-ease);}
+.srch-wrap.active .srch-top{max-height:0;margin:0;opacity:0;}
+.srch-wrap.active .srch-back{max-width:48px;padding:10px;margin-left:-8px;opacity:1;}
+.srch-wrap.active .srch-field{background:rgba(255,255,255,.14);color:var(--text);cursor:text;}
+.srch-wrap.active .srch-ic{max-width:0;margin-right:0;opacity:0;}
+.srch-wrap.active .srch-field input{font-weight:400;}
+.srch-wrap.active .srch-field input::placeholder{color:var(--text-dim);}
+.srch-wrap.active .srch-landing{opacity:0;transform:translateY(10px);max-height:0;overflow:hidden;pointer-events:none;transition:opacity .12s ease,transform .3s var(--srch-ease),max-height 0s linear .14s;}
+@keyframes srchIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+.srch-wrap.active #searchResults{animation:srchIn .28s ease .03s both;}
+@media (prefers-reduced-motion:reduce){.srch-wrap *,.srch-wrap{transition-duration:.01s !important;animation-duration:.01s !important;}}
 </style>
 </head>
 <body>
@@ -1400,6 +1421,98 @@ let audioB = document.getElementById('audioB');
 let audio = audioA;
 let crossfading = false;
 let crossfadeState = {enabled:false, seconds:6};
+
+
+/* ============ BOTÓN "ATRÁS" DEL TELÉFONO ============ */
+// Antes la app no sabía nada de este botón y Android cerraba todo. Ahora, cada vez que lo presionas,
+// se deshace UN paso: primero menús/ventanas abiertas, luego el reproductor, luego la pantalla en que estás.
+// Solo si ya estás en Inicio y no hay nada abierto, el teléfono sale de la app como siempre.
+const NAV_BASE = ['home','following','songs','albums','artists','podcasts','playlists','search'];
+let navStack = [];
+function navSnap(){
+  const t = activeTab;
+  return { tab:t, album:window.currentAlbumIdx, artist:window.currentArtist, pl:currentPlaylistViewId, stats:window.__statsKind, artistTab:window.__artistTab,
+    key:[t, t==='albumDetail'?window.currentAlbumIdx:'', t==='artistDetail'?window.currentArtist:'', t==='playlistDetail'?currentPlaylistViewId:'', t==='statsDetail'?window.__statsKind:''].join('|') };
+}
+const NAV_HOME = { tab:'home', key:'home||||' };
+function navTrack(){
+  const sn = navSnap(), top = navStack[navStack.length-1];
+  if(top && top.key===sn.key){ navStack[navStack.length-1] = sn; return; }  // misma pantalla: solo se actualiza
+  if(NAV_BASE.includes(sn.tab)){ navStack = sn.tab==='home' ? [sn] : [NAV_HOME, sn]; return; } // pestañas de abajo: atrás -> Inicio
+  navStack.push(sn); if(navStack.length>40) navStack.shift();
+}
+function navValid(sn){
+  if(sn.tab==='playlistDetail') return !!playlists.find(p=>p.id===sn.pl);
+  if(sn.tab==='albumDetail') return !!getAlbums()[sn.album];
+  if(sn.tab==='artistDetail') return getArtists().includes(sn.artist);
+  return true;
+}
+function navGoBack(){
+  navStack.pop();
+  while(navStack.length>1 && !navValid(navStack[navStack.length-1])) navStack.pop(); // si lo que había ya no existe, se salta
+  const sn = navStack[navStack.length-1] || NAV_HOME;
+  if(NAV_BASE.includes(sn.tab)){ showTab(sn.tab); return; }
+  if(sn.tab==='playlistDetail'){ currentPlaylistViewId = sn.pl; plEditMode = false; plSelectMode = false; plSearchQuery = ''; }
+  if(sn.tab==='albumDetail') window.currentAlbumIdx = sn.album;
+  if(sn.tab==='artistDetail'){ window.currentArtist = sn.artist; window.__artistTab = sn.artistTab || 'music'; window.__artistShowAll = false; }
+  if(sn.tab==='statsDetail') window.__statsKind = sn.stats;
+  activeTab = sn.tab; render();
+}
+// ¿qué se deshace con un "atrás"? devuelve la acción, o null si no hay nada (entonces el teléfono sale de la app)
+function backStep(){
+  const dr = document.getElementById('drawer');
+  if(dr && dr.classList.contains('show')) return ()=>closeDrawer();
+  const pk = document.getElementById('artistPicker');
+  if(pk && pk.classList.contains('show')) return ()=>closeArtistPicker(false);
+  const ovs = [...document.querySelectorAll('.overlay.show')];
+  if(ovs.length){
+    ovs.sort((a,b)=>(parseInt(getComputedStyle(a).zIndex)||0)-(parseInt(getComputedStyle(b).zIndex)||0));
+    const top = ovs[ovs.length-1];
+    return ()=>closeOverlay(top.id);
+  }
+  const pl = document.getElementById('player');
+  if(pl && pl.classList.contains('show')) return ()=>closePlayer();
+  if(activeTab==='playlistDetail' && plEditMode) return ()=>togglePlaylistEditMode();
+  if(activeTab==='playlistDetail' && plSelectMode) return ()=>togglePlaylistSelectMode();
+  if(activeTab==='search' && window.__srchActive) return ()=>closeSearchMode();
+  if(navStack.length>1) return navGoBack;
+  return null;
+}
+let __backTrap = false, __ignorePop = 0;
+function syncBackTrap(){
+  try{
+    const need = !!backStep();
+    if(need && !__backTrap){ history.pushState({celestiaBack:1}, ''); __backTrap = true; }       // "colchón": el atrás gasta esto en vez de salir
+    else if(!need && __backTrap){ __backTrap = false; __ignorePop++; history.back(); }           // ya no hay nada que deshacer: se quita el colchón
+  }catch(e){}
+}
+(function setupBackButton(){
+  const capApp = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
+  if(capApp && capApp.addListener){
+    // app empaquetada con Capacitor: el botón llega como evento propio
+    capApp.addListener('backButton', ()=>{
+      const st = backStep();
+      if(st){ try{ st(); }catch(e){} }
+      else if(capApp.minimizeApp) capApp.minimizeApp(); else if(capApp.exitApp) capApp.exitApp();
+    });
+    return;
+  }
+  window.addEventListener('popstate', ()=>{
+    if(__ignorePop>0){ __ignorePop--; return; }
+    if(!__backTrap) return;
+    __backTrap = false;
+    const st = backStep();
+    if(st){ try{ st(); }catch(e){} }
+    setTimeout(syncBackTrap, 0);
+  });
+  // abrir/cerrar menús, reproductor o panel lateral no pasa por render(): se vigilan sus clases
+  const watch = ()=>{
+    const mo = new MutationObserver(()=>syncBackTrap());
+    document.querySelectorAll('.overlay, #player, #drawer, #artistPicker').forEach(el=>mo.observe(el, {attributes:true, attributeFilter:['class']}));
+  };
+  watch();
+  setInterval(()=>{ if(!document.hidden) syncBackTrap(); }, 600); // red de seguridad
+})();
 
 /* ============ PERSISTENCIA ============ */
 function buzz(ms){ try{ if(navigator.vibrate && lsGet('celestia:haptics', true)!==false) navigator.vibrate(ms||12); }catch(e){} }
@@ -2371,6 +2484,7 @@ function showTab(tab){
 function render(soft){
   const r = renderCore(soft);
   try{ settleUI(); }catch(e){}
+  try{ navTrack(); syncBackTrap(); }catch(e){}
   return r;
 }
 function renderCore(soft){
@@ -3536,18 +3650,23 @@ function renderSearch(main){
   // Un refresco de fondo (carátulas, letras…) puede volver a dibujar esta pantalla: si ya estabas
   // escribiendo, no se borra lo escrito ni se pierde el foco.
   const prevInput = document.getElementById('searchInput');
-  const prevValue = prevInput ? prevInput.value : (window.__srchActive ? (window.__lastSearchQ||'') : '');
-  const prevFocused = prevInput && document.activeElement===prevInput;
+  const act = !!window.__srchActive;
+  const prevValue = prevInput ? prevInput.value : (act ? (window.__lastSearchQ||'') : '');
+  const prevFocused = act && prevInput && document.activeElement===prevInput;
   const prevCursor = prevFocused ? [prevInput.selectionStart, prevInput.selectionEnd] : null;
-  if(!window.__srchActive){ main.innerHTML = searchLandingHTML(); return; }
   main.innerHTML = `
-    <div class="srch-bar">
-      <button class="srch-back" onclick="closeSearchMode()"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
-      <div class="search-box srch-gray">
-        <input id="searchInput" placeholder="¿Qué quieres escuchar?" oninput="doSearch(this.value)" onkeydown="if(event.key==='Enter'){this.blur();}" value="${escapeHtml(prevValue)}">
+    <div class="srch-wrap ${act?'active':''}">
+      <div class="srch-top"><button class="avatar-btn" onclick="openDrawer()">${avatarHTML()}</button><div class="srch-title">Buscar</div></div>
+      <div class="srch-barrow">
+        <button class="srch-back" onclick="closeSearchMode()"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
+        <div class="srch-field" onclick="if(!window.__srchActive) openSearchMode()">
+          <svg class="srch-ic" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+          <input id="searchInput" placeholder="¿Qué quieres escuchar?" ${act?'':'readonly'} oninput="doSearch(this.value)" onkeydown="if(event.key==='Enter'){this.blur();}" value="${act ? escapeHtml(prevValue) : ''}">
+        </div>
       </div>
-    </div>
-    <div id="searchResults"></div>`;
+      <div class="srch-landing">${searchLandingHTML()}</div>
+      <div id="searchResults"></div>
+    </div>`;
   const input = document.getElementById('searchInput');
   const box = document.getElementById('searchResults');
   // lo que abres desde los resultados queda en "Recientes" (como en Spotify, son elementos, no textos)
@@ -3557,21 +3676,32 @@ function renderSearch(main){
     const k = r.dataset.rk || 'song', id = r.dataset.rid || r.dataset.tid;
     if(id) addRecentItem(k, id);
   }, true);
-  doSearch(prevValue);
-  if(!window.__softNow || prevFocused){
-    input.focus();
-    if(prevCursor) input.setSelectionRange(prevCursor[0], prevCursor[1]);
+  if(act){
+    doSearch(prevValue);
+    if(!window.__softNow || prevFocused){
+      input.focus();
+      if(prevCursor) input.setSelectionRange(prevCursor[0], prevCursor[1]);
+    }
   }
 }
 function openSearchMode(){
+  const wrap = document.querySelector('.srch-wrap'), inp = document.getElementById('searchInput');
   window.__srchActive = true; searchFilter = 'all';
-  render();
-  const i = document.getElementById('searchInput'); if(i) i.focus(); // directo en el toque, para que abra el teclado
+  if(!wrap || !inp){ render(); const i2 = document.getElementById('searchInput'); if(i2) i2.focus(); return; }
+  // todo en el mismo toque: el teclado abre al instante mientras el campo "sube" y la pantalla se desvanece
+  inp.readOnly = false;
+  inp.focus({preventScroll:true});
+  const main = document.getElementById('main'); if(main && main.scrollTop>0) main.scrollTop = 0;
+  doSearch(inp.value);
+  wrap.classList.add('active');
 }
 function closeSearchMode(){
   window.__srchActive = false; window.__lastSearchQ = ''; searchFilter = 'all';
-  const i = document.getElementById('searchInput'); if(i) i.blur();
-  render();
+  const wrap = document.querySelector('.srch-wrap'), inp = document.getElementById('searchInput');
+  if(!wrap || !inp){ render(); return; }
+  inp.blur(); inp.value = ''; inp.readOnly = true;
+  wrap.classList.remove('active');
+  setTimeout(()=>{ if(!window.__srchActive){ const b = document.getElementById('searchResults'); if(b) b.innerHTML = ''; } }, 300);
 }
 const SRCH_COLORS = ['#dc148c','#1e3264','#e8115b','#477d95','#8d67ab','#148a08','#e13300','#503750'];
 function searchLandingHTML(){
@@ -3589,11 +3719,6 @@ function searchLandingHTML(){
     ['Estadísticas',"showTab('history')", '']
   ];
   return `
-    <div class="srch-top"><button class="avatar-btn" onclick="openDrawer()">${avatarHTML()}</button><div class="srch-title">Buscar</div></div>
-    <div class="srch-fake" onclick="openSearchMode()">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
-      <span>¿Qué quieres escuchar?</span>
-    </div>
     ${pls.length ? `<div class="section-title">Tus playlists</div><div class="hgrid">${pls.map(p=>`<div class="pl-tall" onclick="openPlaylist('${jsq(p.id)}')"><div class="a">${playlistArtHTML(p,122,{fluid:true,radius:'0'})}</div><div class="g"></div><div class="n">${escapeHtml(p.name)}</div></div>`).join('')}</div>` : ''}
     <div class="section-title">Explorar todo</div>
     <div class="xgrid">${cats.map((c,i)=>`<div class="xcard" style="background:${SRCH_COLORS[i%SRCH_COLORS.length]}" onclick="${c[1]}">${c[0]}${c[2]}</div>`).join('')}</div>`;
@@ -3637,7 +3762,7 @@ function recentRowHTML(r, i){
 }
 function doSearch(q){
   const box = document.getElementById('searchResults');
-  if(!box) return;
+  if(!box || !window.__srchActive) return;
   q = (q||'').trim();
   window.__lastSearchQ = q;
   if(!q){
@@ -4037,7 +4162,7 @@ function renderAppSettings(main){
       ${row(ic('<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>'),'Almacenamiento y datos','Borrar estadísticas de reproducción guardadas en este dispositivo',"confirmClearHistory()")}
       ${row(ic('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'),'Apariencia','Temas y colores personalizados',"showToast('Apariencia — próximamente')",'<span class="badge">Próximamente</span>')}
       ${row(ic('<path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/>'),'Notificaciones','Controles del reproductor en la barra de notificaciones',"showToast('Notificaciones — próximamente')",'<span class="badge">Próximamente</span>')}
-      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.10.04-d) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
+      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.10.08-f) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
     </div>
   `;
 }
