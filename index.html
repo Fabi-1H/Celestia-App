@@ -987,6 +987,10 @@ body:not(.is-playing) #player .p-bars .tk{transform:scaleY(.3);}
 #player [style*="--text-faint"]{color:rgba(255,255,255,.5) !important;}
 #player .lyrics-card-lines p[style*="--text-faint"]{color:rgba(255,255,255,.45) !important;}
 @media (max-width:380px){#player{padding:14px 14px 22px;}#player .controls{gap:5px;}#player .controls .side{width:40px;height:40px;}#player .controls .mid button:not(.play-btn){width:48px;height:48px;}#player .controls .play-btn{width:60px;height:60px;}#player .titlebar .t{font-size:23px;}}
+
+/* ===== listas largas livianas: solo se pintan las filas que se ven (mismo aspecto) ===== */
+main .row{content-visibility:auto;contain-intrinsic-block-size:auto 60px;}
+.album-grid .card{content-visibility:auto;contain-intrinsic-block-size:auto 190px;}
 </style>
 </head>
 <body>
@@ -1100,9 +1104,6 @@ body:not(.is-playing) #player .p-bars .tk{transform:scaleY(.3);}
       <div class="lyrics-card-head">
         <span class="label">Letras</span>
         <div class="lyrics-card-icons" onclick="event.stopPropagation()">
-          <button onclick="showToast('Traducir — próximamente')">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 8h9M9.5 5v3M13 8c-1 4-3 7-6 9M6 12c1.5 2 3.5 3.5 6 4M15 21l4-9 4 9M16.3 18h5.4"/></svg>
-          </button>
           <button onclick="shareCurrentTrack()">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.3 10.7l7.4-4.4M8.3 13.3l7.4 4.4"/></svg>
           </button>
@@ -1154,7 +1155,6 @@ body:not(.is-playing) #player .p-bars .tk{transform:scaleY(.3);}
         Ir a la línea actual
       </button>
       <div class="lyrics-icon-row">
-        <button onclick="showToast('Traducir — próximamente')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 8h9M9.5 5v3M13 8c-1 4-3 7-6 9M6 12c1.5 2 3.5 3.5 6 4M15 21l4-9 4 9M16.3 18h5.4"/></svg></button>
         <button onclick="shareCurrentTrack()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.3 10.7l7.4-4.4M8.3 13.3l7.4 4.4"/></svg></button>
         <button onclick="openTrackMenu(currentTrack.id,'')"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>
       </div>
@@ -1182,10 +1182,6 @@ body:not(.is-playing) #player .p-bars .tk{transform:scaleY(.3);}
       <div class="switch" id="cfSwitch" onclick="toggleCrossfade()"><div class="knob"></div></div>
     </div>
     <div class="eq-presets" id="cfDurations" style="display:none;margin-top:0;"></div>
-    <button class="sheet-option" onclick="showToast('Mezcla avanzada con BPM automático — próximamente')" style="border-top:1px solid var(--line);margin-top:12px;padding-top:16px;">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>
-      Mezcla avanzada (BPM automático) <span style="font-size:11px;color:var(--text-faint);margin-left:auto;">Próximamente</span>
-    </button>
   </div></div>
 
   <div class="overlay" id="overlayPlaylistPicker"><div class="sheet">
@@ -1230,18 +1226,6 @@ body:not(.is-playing) #player .p-bars .tk{transform:scaleY(.3);}
     <button class="sheet-option" id="menuPodcastBtn" onclick="toggleClassifyPodcast(menuTrack.id)">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 14a3 3 0 003-3V6a3 3 0 00-6 0v5a3 3 0 003 3z"/><path d="M19 11a7 7 0 01-14 0M12 18v3"/></svg>
       <span id="menuPodcastLabel">Clasificar como Podcast</span></button>
-    <button class="sheet-option" onclick="showToast('SongDNA — próximamente')">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4c4 0 4 4 8 4s4-4 8-4M4 20c4 0 4-4 8-4s4 4 8 4"/></svg>
-      Explorar SongDNA <span style="font-size:10px;color:var(--text-faint);margin-left:auto;">Próximamente</span></button>
-    <button class="sheet-option" onclick="showToast('Empezar una jam — próximamente')">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="9" r="3"/><circle cx="16" cy="9" r="3"/><path d="M2 20c0-3 3-5 6-5s6 2 6 5M10 20c0-3 3-5 6-5s6 2 6 5"/></svg>
-      Empezar una jam <span style="font-size:10px;color:var(--text-faint);margin-left:auto;">Próximamente</span></button>
-    <button class="sheet-option" onclick="showToast('Ir a la radio de la canción — próximamente')">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="2"/><path d="M8.5 8.5a5 5 0 000 7M15.5 8.5a5 5 0 010 7M5.5 5.5a9 9 0 000 13M18.5 5.5a9 9 0 010 13"/></svg>
-      Ir a la radio de la canción <span style="font-size:10px;color:var(--text-faint);margin-left:auto;">Próximamente</span></button>
-    <button class="sheet-option" onclick="showToast('Excluir de tu perfil de gustos — próximamente')">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M8 8l8 8"/></svg>
-      Excluir de tu perfil de gustos <span style="font-size:10px;color:var(--text-faint);margin-left:auto;">Próximamente</span></button>
     <button class="sheet-option" id="menuRemoveBtn" style="color:var(--danger)" onclick="removeFromPlaylistCurrent()">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>Eliminar de esta playlist</button>
     <button class="sheet-option" id="menuExcludeBtn" style="color:var(--danger)" onclick="excludeTrack(menuTrack.id)">
@@ -1366,10 +1350,6 @@ body:not(.is-playing) #player .p-bars .tk{transform:scaleY(.3);}
     <button class="sheet-option" onclick="resetPlaylistCover(playlistMenuId)">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7M3 3v5h5"/></svg>
       Quitar portada personalizada
-    </button>
-    <button class="sheet-option" onclick="showToast('Hacer privada — próximamente')">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg>
-      Hacer privada <span style="font-size:11px;color:var(--text-faint);margin-left:auto;">Próximamente</span>
     </button>
     <button class="sheet-option" style="color:var(--danger)" onclick="deletePlaylistFromMenu()">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
@@ -2146,10 +2126,16 @@ function artistFullImg(a){
   if(!src) return trackArt(bestCoverTrack(getArtistTracks(a)),300);
   return `<img class="bg" src="${src}"><img class="fg" src="${src}">`; // foto completa, con su propio desenfoque de fondo
 }
-function artistArt(a,size){
+function artistArt(a,size,lazy,at){
   const u = artistImages[akey(a)];
-  if(u) return `<img src="${u}">`;
-  return trackArt(bestCoverTrack(getArtistTracks(a)), size);
+  if(u) return `<img src="${u}"${lazy?' loading="lazy" decoding="async"':''}>`;
+  return trackArt(bestCoverTrack(at || getArtistTracks(a)), size, lazy);
+}
+// canciones agrupadas por artista en una sola pasada (antes se recorría toda la biblioteca una vez por cada artista)
+function artistGroups(){
+  const m = new Map();
+  musicTracks().forEach(t=>{ const k = akey(t.artist); if(!k) return; let g = m.get(k); if(!g){ g = []; m.set(k,g); } g.push(t); });
+  return m;
 }
 
 let artRunning = false;
@@ -2437,8 +2423,9 @@ function renderPickerGrid(){
   const list = getArtists().filter(a=>!isUnknownName(a) && (!q || artNorm(a).includes(q)))
     .sort((a,b)=>(totals[akey(b)]||0)-(totals[akey(a)]||0) || a.localeCompare(b));
   const chk = `<span class="pk-check"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>`;
+  const __grp = artistGroups();
   document.getElementById('pickerGrid').innerHTML = list.length
-    ? list.map(a=>`<div class="pk-item ${window.__pickSel.has(akey(a))?'sel':''}" onclick="togglePick(this,'${encA(a)}')"><div class="pk-av">${artistArt(a,104)}${chk}</div><div class="pk-name">${escapeHtml(a)}</div></div>`).join('')
+    ? list.map(a=>`<div class="pk-item ${window.__pickSel.has(akey(a))?'sel':''}" onclick="togglePick(this,'${encA(a)}')"><div class="pk-av">${artistArt(a,104,true,__grp.get(akey(a)))}${chk}</div><div class="pk-name">${escapeHtml(a)}</div></div>`).join('')
     : `<div class="spm-empty" style="grid-column:1/-1;text-align:center;">No hay artistas con ese nombre.</div>`;
 }
 function togglePick(el, enc){
@@ -2691,16 +2678,17 @@ function emptyState(icon, title, text, btnLabel){
 const CELESTIAL_ICON = `<svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#5C5254" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8.5 8.5 0 019.5 4a8.5 8.5 0 1010.5 10.5z"/><path d="M17.5 3.5v3M16 5h3M20.6 8.6v2M19.6 9.6h2"/></svg>`;
 const noteIcon = `<svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#5C5C61" stroke-width="1.6"><path d="M9 18V5l12-2v13M9 9l12-2M9 18a3 3 0 11-6 0 3 3 0 016 0zM21 16a3 3 0 11-6 0 3 3 0 016 0z"/></svg>`;
 
-function trackArt(t, size){
+function trackArt(t, size, lazy){
+  const L = lazy ? ' loading="lazy" decoding="async"' : '';
   if(!t) return `<svg width="${size*0.45}" height="${size*0.45}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 18V5l12-2v13M9 9l12-2M9 18a3 3 0 11-6 0 3 3 0 016 0zM21 16a3 3 0 11-6 0 3 3 0 016 0z"/></svg>`;
   const au = t.cover ? null : artistImages[akey(t.artist)];
-  if(au) return `<img src="${au}">`;
-  return t.cover ? `<img src="${t.cover}">` : `<svg width="${size*0.45}" height="${size*0.45}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 18V5l12-2v13M9 9l12-2M9 18a3 3 0 11-6 0 3 3 0 016 0zM21 16a3 3 0 11-6 0 3 3 0 016 0z"/></svg>`;
+  if(au) return `<img src="${au}"${L}>`;
+  return t.cover ? `<img src="${t.cover}"${L}>` : `<svg width="${size*0.45}" height="${size*0.45}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 18V5l12-2v13M9 9l12-2M9 18a3 3 0 11-6 0 3 3 0 016 0zM21 16a3 3 0 11-6 0 3 3 0 016 0z"/></svg>`;
 }
 
 function trackRow(t, opts={}){
   return `<div class="row ${currentTrack && currentTrack.id===t.id?'playing':''}" data-tid="${escapeHtml(t.id)}" ${opts.animStyle?`style="${opts.animStyle}"`:''} onclick="playTrack('${jsq(t.id)}', ${opts.queueExpr||"'all'"})">
-    <div class="art">${trackArt(t,46)}</div>
+    <div class="art">${trackArt(t,46,true)}</div>
     <div class="meta"><div class="t">${escapeHtml(t.title)}</div><div class="s">${escapeHtml(t.artist)} ${opts.showAlbum?'• '+escapeHtml(t.album):''}</div></div>
     <button class="row-menu" onclick="event.stopPropagation();openTrackMenu('${jsq(t.id)}', '${opts.playlistId||''}')">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
@@ -2851,10 +2839,11 @@ function getAlbums(){
 function renderArtists(main){
   const list = getArtists();
   if(!list.length){ main.innerHTML = emptyState(noteIcon,'Sin artistas','Importa música para ver a tus artistas aquí.',null); return; }
+  const groups = artistGroups();
   main.innerHTML = `<div class="section-title">Artistas</div>` + list.map(a=>{
-    const at = getArtistTracks(a);
+    const at = groups.get(akey(a)) || [];
     return `<div class="row" onclick="openArtist('${encA(a)}')">
-      <div class="art" style="border-radius:50%">${artistArt(a,46)}</div>
+      <div class="art" style="border-radius:50%">${artistArt(a,46,true,at)}</div>
       <div class="meta"><div class="t">${escapeHtml(a)}</div><div class="s">${at.length} canción(es)</div></div>
     </div>`;
   }).join('');
@@ -3037,11 +3026,7 @@ function renderCollMenu(){
     if(p.cover) h += spmOpt(SP_ICON.refresh,'Restablecer portada','plMenuCoverReset()',n++);
     h += spmOpt(SP_ICON.trash,'Eliminar playlist','plMenuDelete()',n++);
     if(list.length) h += spmOpt(SP_ICON.queue,'Agregar a la fila','collQueue()',n++);
-    h += spmOpt(SP_ICON.video,'Cambiar a video',"collSoon('Video')",n++,{badge:'Próximamente'});
     h += spmOpt(SP_ICON.plus,'Agregar a otra playlist','collAddPlaylist()',n++);
-    h += spmOpt(SP_ICON.invite,'Invitar colaboradores',"collSoon('Colaboradores')",n++,{badge:'Próximamente'});
-    h += spmOpt(SP_ICON.jam,'Empezar una jam',"collSoon('Jam')",n++,{badge:'Próximamente'});
-    h += spmOpt(SP_ICON.folder,'Mover a una carpeta',"collSoon('Carpetas')",n++,{badge:'Próximamente'});
     h += spmOpt(SP_ICON.profileOff, feat ? 'Eliminar del perfil' : 'Agregar al perfil','plMenuProfile()',n++,{on:feat});
   } else if(c.kind==='album'){
     const all = collTracks().length && collTracks().every(t=>t.liked);
@@ -3052,7 +3037,6 @@ function renderCollMenu(){
     h += spmOpt(SP_ICON.dl,'Descargar','collDownload()',n++);
     h += spmOpt(SP_ICON.user,'Ir al artista','collGoArtist()',n++);
     h += spmOpt(SP_ICON.queue,'Agregar a la fila','collQueue()',n++);
-    h += spmOpt(SP_ICON.jam,'Empezar una jam',"collSoon('Jam')",n++,{badge:'Próximamente'});
     h += spmOpt(SP_ICON.radio,'Ir a la radio del álbum','collRadio()',n++);
     h += spmOpt(SP_ICON.plus,'Agregar a playlist','collAddPlaylist()',n++);
   } else {
@@ -3065,7 +3049,6 @@ function renderCollMenu(){
     if(artistManual[akey(c.artist)]) h += spmOpt(SP_ICON.refresh,'Volver a la foto automática','collResetImage()',n++);
     h += spmOpt(fol? SP_ICON.following : SP_ICON.follow, fol? 'Dejar de seguir' : 'Seguir','collFollow()',n++,{on:fol});
     h += spmOpt(SP_ICON.block, blk? 'Volver a reproducir a este artista' : 'No reproducir a este artista','collBlock()',n++,{on:blk});
-    h += spmOpt(SP_ICON.jam,'Empezar una jam',"collSoon('Jam')",n++,{badge:'Próximamente'});
     h += spmOpt(SP_ICON.radio,'Ir a la radio del artista','collRadio()',n++);
     h += spmOpt(SP_ICON.plus,'Agregar a playlist','collAddPlaylist()',n++);
   }
@@ -3082,7 +3065,6 @@ function collShare(){
 function collLikeAll(){ closeOverlay('overlayCollMenu'); toggleLikeAll(); }
 function collDownload(){ closeOverlay('overlayCollMenu'); showToast('Ya está guardado en tu dispositivo'); }
 function collGoArtist(){ closeOverlay('overlayCollMenu'); openArtist(encA(window.__collCtx.artist)); }
-function collSoon(n){ closeOverlay('overlayCollMenu'); showToast(n+' — próximamente'); }
 function collQueue(){
   const list = collTracks(); if(!list.length) return;
   closeOverlay('overlayCollMenu');
@@ -3284,9 +3266,9 @@ function renderArtistDetail(main){
 function renderAlbums(main){
   const list = getAlbums();
   if(!list.length){ main.innerHTML = emptyState(noteIcon,'Sin álbumes','Importa música para organizarla por álbum.',null); return; }
-  main.innerHTML = `<div class="section-title">Álbumes</div><div class="hgrid" style="flex-wrap:wrap;">
+  main.innerHTML = `<div class="section-title">Álbumes</div><div class="hgrid album-grid" style="flex-wrap:wrap;">
     ${list.map((al,i)=>`<div class="card" onclick="openAlbum(${i})">
-      <div class="art">${trackArt(al.tracks[0],132)}</div>
+      <div class="art">${trackArt(al.tracks[0],132,true)}</div>
       <div class="t">${escapeHtml(al.album)}</div><div class="s">${escapeHtml(al.artist)}</div>
     </div>`).join('')}</div>`;
 }
@@ -3473,14 +3455,6 @@ function renderPlaylistDetail(main){
       <button class="btn secondary" onclick="openSongPicker('${p.id}')">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
         Agregar
-      </button>
-      <button class="btn secondary" onclick="showToast('Mixear — próximamente')">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 21V14M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>
-        Mixear <span style="font-size:10px;color:var(--text-faint);">· Próximamente</span>
-      </button>
-      <button class="btn secondary" onclick="showToast('Video — próximamente')">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="14" height="12" rx="2"/><path d="M16 10l6-4v12l-6-4"/></svg>
-        Video <span style="font-size:10px;color:var(--text-faint);">· Próximamente</span>
       </button>
       ${pt.length>1? `<button class="btn secondary" onclick="togglePlaylistEditMode()">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
@@ -4319,7 +4293,7 @@ function renderAppSettings(main){
       ${row(ic('<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>'),'Almacenamiento y datos','Borrar estadísticas de reproducción guardadas en este dispositivo',"confirmClearHistory()")}
       ${row(ic('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'),'Apariencia','Temas y colores personalizados',"showToast('Apariencia — próximamente')",'<span class="badge">Próximamente</span>')}
       ${row(ic('<path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/>'),'Notificaciones','Controles del reproductor en la barra de notificaciones',"showToast('Notificaciones — próximamente')",'<span class="badge">Próximamente</span>')}
-      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.10.11-l) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
+      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.10.11-m) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
     </div>
   `;
 }
@@ -5756,7 +5730,6 @@ async function fetchMissingLyrics(showCard){
       }
       done++;
       if(showCard){ countEl.textContent = done+' / '+total; barEl.style.width = Math.round(done/total*100)+'%'; }
-      if(dirty && Date.now()-lastRender>1200){ lastRender=Date.now(); dirty=false; renderSoft(); }
       await new Promise(r=>setTimeout(r,150)); // no saturamos el servicio gratuito
     }
   }
@@ -5764,7 +5737,6 @@ async function fetchMissingLyrics(showCard){
   lsSet('celestia:lyrics-miss', miss);
   if(recheckAll && !aborted) lsSet('celestia:lyrics-match-v', LYRICS_MATCH_VERSION);
   lyricsRunning = false;
-  renderSoft();
   if(showCard){
     progressEl.classList.add('done');
     titleEl.textContent = aborted? 'No se pudo conectar' : (found? 'Letras listas' : 'Sin letras nuevas');
