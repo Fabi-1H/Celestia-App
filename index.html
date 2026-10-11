@@ -854,26 +854,56 @@ nav.bottom button{font-size:var(--fs-nav);}
 .srch-wrap.active #searchResults{animation:srchIn .28s ease .03s both;}
 @media (prefers-reduced-motion:reduce){.srch-wrap *,.srch-wrap{transition-duration:.01s !important;animation-duration:.01s !important;}}
 
-/* ===== mini reproductor "widget": monocromo, portada con anillo de marcas, controles en píldoras ===== */
-#mini{padding:9px 12px 9px 9px;gap:12px;border-radius:22px;background:#1a1718 !important;box-shadow:0 14px 34px rgba(0,0,0,.6),inset 0 0 0 1px rgba(255,255,255,.07);}
+/* ===== mini reproductor "widget" grande: anillo de barras, título/artista/álbum, barra con tiempos, píldoras y letra ===== */
+#mini{--rs:124px;flex-direction:column;align-items:stretch;gap:12px;padding:16px 14px 12px;border-radius:28px;background:#1a1718 !important;box-shadow:0 14px 34px rgba(0,0,0,.6),inset 0 0 0 1px rgba(255,255,255,.07);}
 #mini .bar{display:none;}
-#mini .ring{position:relative;width:58px;height:58px;border:none;flex-shrink:0;}
+#mini .mini-top{display:flex;align-items:center;gap:14px;min-width:0;}
+#mini .ring{position:relative;width:var(--rs);height:var(--rs);border:none;flex-shrink:0;border-radius:0;}
 #mini .ring-svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible;}
-#mini .tk{stroke:rgba(255,255,255,.26);stroke-width:2;stroke-linecap:round;transform-box:fill-box;transform-origin:50% 100%;transition:stroke .25s ease;}
-#mini .tk.on{stroke:#f2eeed;}
-body.is-playing #mini .tk{animation:miniPulse 1.3s ease-in-out infinite;animation-delay:var(--d,0s);}
-@keyframes miniPulse{0%,100%{transform:scaleY(1);}50%{transform:scaleY(.5);}}
-#mini .art{width:40px;height:40px;position:absolute;left:9px;top:9px;}
-#mini .meta .t{font-family:var(--font-head);font-size:15.5px;font-weight:600;letter-spacing:-.1px;}
-#mini .meta .s{font-size:12.5px;margin-top:2px;color:var(--text-dim);}
-#mini .mini-controls{gap:6px;}
-#mini .ctrl.mini-hide,#mini .ctrl.heart{display:none;}
-#mini .ctrl.pill{width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.09);color:var(--text);padding:0;display:flex;align-items:center;justify-content:center;transition:background .15s ease,transform .12s ease;}
-#mini .ctrl.pill:active{transform:scale(.92);background:rgba(255,255,255,.16);}
-#mini .ctrl.play{width:50px;height:38px;border-radius:14px;background:#ece8e7;color:#141414;transition:transform .12s ease;}
-#mini .ctrl.play:active{transform:scale(.94);}
-@media (prefers-reduced-motion:reduce){body.is-playing #mini .tk{animation:none;}}
-@media (max-width:380px){#mini{gap:10px;}#mini .mini-controls{gap:5px;}#mini .ctrl.pill{width:30px;height:30px;}#mini .ctrl.play{width:44px;height:36px;}}
+#mini .tk{stroke:#e9e5e4;stroke-width:3;stroke-linecap:round;opacity:.9;transform-box:fill-box;transform-origin:50% 100%;}
+body.is-playing #mini .tk{animation:miniPulse var(--du,1.2s) ease-in-out infinite;animation-delay:var(--d,0s);}
+@keyframes miniPulse{0%,100%{transform:scaleY(1);}50%{transform:scaleY(.38);}}
+#mini .art{width:calc(var(--rs)*.645);height:calc(var(--rs)*.645);position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);border-radius:50%;}
+#mini .meta{flex:1;min-width:0;}
+#mini .meta .t{font-family:var(--font-head);font-size:19px;line-height:1.2;font-weight:600;letter-spacing:-.2px;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+#mini .meta .s{font-size:15px;margin-top:4px;color:var(--text-dim);}
+#mini .meta .al{font-size:13px;margin-top:2px;color:rgba(255,255,255,.4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#mini .mini-seekrow{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--text-dim);font-variant-numeric:tabular-nums;}
+#mini .mini-seekrow span{min-width:32px;}
+#mini .mini-seekrow span:last-child{text-align:right;}
+#mini #miniSeek{-webkit-appearance:none;appearance:none;flex:1;min-width:0;height:8px;margin:0;border-radius:8px;outline:none;border:none;background:linear-gradient(to right,#ece8e7 0%,#ece8e7 0%,rgba(255,255,255,.16) 0%);touch-action:pan-y;}
+#mini #miniSeek::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:5px;height:24px;border-radius:3px;background:#ece8e7;border:none;box-shadow:0 0 0 2px #1a1718;}
+#mini .mini-controls{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;}
+#mini .ctrl.heart{display:none;}
+#mini .ctrl.side{width:44px;height:44px;border-radius:14px;background:rgba(255,255,255,.1);color:#d9d4d3;padding:0;display:flex;align-items:center;justify-content:center;transition:background .2s ease,color .2s ease,transform .12s ease;}
+#mini .ctrl.side.on{background:rgba(255,255,255,.62);color:#141414;}
+#mini .ctrl.pill{width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,.09);color:var(--text);padding:0;display:flex;align-items:center;justify-content:center;transition:background .15s ease,transform .12s ease;}
+#mini .ctrl.play{flex:1;width:auto;min-width:70px;height:50px;border-radius:17px;background:#ece8e7;color:#141414;padding:0;display:flex;align-items:center;justify-content:center;transition:transform .12s ease;}
+#mini .ctrl.side:active,#mini .ctrl.pill:active{transform:scale(.92);}
+#mini .ctrl.pill:active{background:rgba(255,255,255,.16);}
+#mini .ctrl.play:active{transform:scale(.96);}
+#mini .mini-lyr{border-top:1px solid rgba(255,255,255,.08);padding-top:10px;min-height:76px;cursor:pointer;overflow:hidden;}
+#mini .mini-lyr p{margin:0 0 4px;font-size:15px;line-height:1.25;color:rgba(255,255,255,.42);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#mini .mini-lyr p.a{color:#f2eeed;font-size:16.5px;font-weight:500;animation:lyricLineIn .35s ease;}
+#mini .mini-lyr p.none{color:var(--text-faint);}
+#mini .mini-fold{position:absolute;top:-10px;left:50%;transform:translateX(-50%);width:46px;height:20px;border-radius:12px;background:#1a1718;border:1px solid rgba(255,255,255,.1);color:var(--text-dim);display:flex;align-items:center;justify-content:center;padding:0;z-index:2;}
+#mini .mini-fold::after{content:'';position:absolute;inset:-8px -6px;}
+#mini .mini-fold svg{transition:transform .25s ease;}
+#mini.compact .mini-fold svg{transform:rotate(180deg);}
+/* versión compacta (se activa con la flechita de arriba) */
+#mini.compact{--rs:58px;flex-direction:row;align-items:center;gap:12px;padding:9px 12px 9px 9px;border-radius:22px;}
+#mini.compact .mini-top{display:contents;}
+#mini.compact .meta .t{font-size:15.5px;display:block;white-space:nowrap;text-overflow:ellipsis;}
+#mini.compact .meta .s{font-size:12.5px;margin-top:2px;}
+#mini.compact .meta .al,#mini.compact .mini-seekrow,#mini.compact .mini-lyr,#mini.compact .ctrl.side{display:none;}
+#mini.compact .mini-controls{width:auto;flex-shrink:0;gap:6px;}
+#mini.compact .ctrl.pill{width:34px;height:34px;}
+#mini.compact .ctrl.play{flex:none;width:50px;height:38px;border-radius:14px;}
+#mini.flip{animation:miniFlip .28s ease;}
+@keyframes miniFlip{from{opacity:.4;transform:translateY(8px);}to{opacity:1;transform:none;}}
+body:has(#mini.show:not(.compact)) main{padding-bottom:410px;}
+@media (prefers-reduced-motion:reduce){body.is-playing #mini .tk{animation:none;}#mini.flip{animation:none;}}
+@media (max-width:380px){#mini{padding:14px 12px 10px;}#mini .meta .t{font-size:18px;}#mini .ctrl.side{width:40px;height:40px;}#mini .ctrl.pill{width:42px;height:42px;}#mini.compact{gap:10px;}#mini.compact .mini-controls{gap:5px;}#mini.compact .ctrl.pill{width:30px;height:30px;}#mini.compact .ctrl.play{width:44px;height:36px;}}
 
 /* ===== detalles propios de Celestia: campo de estrellitas (puntos) que se desvanece ===== */
 #app{isolation:isolate;}
@@ -916,28 +946,33 @@ body.is-playing #player::before{animation:starTwinkle 8s ease-in-out infinite;}
 
   <div id="mini" onclick="openPlayer()">
     <div class="bar" id="miniBar" style="width:0%"></div>
-    <div class="ring">
-      <svg class="ring-svg" id="miniTicks" viewBox="0 0 60 60" aria-hidden="true"><g transform="rotate(0 30 30)"><line class="tk" x1="30" y1="2" x2="30" y2="7.5" style="--d:-0.00s"/></g><g transform="rotate(10 30 30)"><line class="tk" x1="30" y1="2" x2="30" y2="7.5" style="--d:-0.25s"/></g><g transform="rotate(20 30 30)"><line class="tk" x1="30" y1="2" x2="30" y2="7.5" style="--d:-0.51s"/></g><g transform="rotate(30 30 30)"><line class="tk" x1="30" y1="2" x2="30" y2="7.5" style="--d:-0.76s"/></g><g transform="rotate(40 30 30)"><line class="tk" x1="30" y1="2" x2="30" y2="7.5" style="--d:-1.01s"/></g><g transform="rotate(50 30 30)"><line class="tk" x1="30" y1="2" x2="30" y2="7.5" style="--d:-1.26s"/></g><g transform="rotate(60 30 30)"><line class="tk" x1="30" y1="2" x2="30" y2="7.5" style="--d:-0.22s"/></g><g transform="rotate(70 30 30)"><line class="tk" x1="30" y1="2" x2="30" y2="7.5" style="--d:-0.47s"/></g><g transform="rotate(80 30 30)"><line class="tk" x1="30" y1="2" x2="30" y2="7.5" style="--d:-0.72s"/></g><g transform="rotate(90 30 30)"><line class="tk" x1="30" y1="2" x2="30" y2="7.5" style="--d:-0.98s"/></g><g transform="rotate(100 30 30)"><line class="tk" x1="30" y1="2" x2="30" y2="7.5" style="--d:-1.23s"/></g><g transform="rotate(110 30 30)"><line class="tk" x1="30" y1="2" x2="30" y2="7.5" style="--d:-0.18s"/></g><g transform="rotate(120 30 30)"><line class="tk" x1="30" y1="2" x2="30" y2="7.5" style="--d:-0.43s"/></g><g transform="rotate(130 30 30)"><line class="tk" x1="30" y1="2" x2="30" y2="7.5" style="--d:-0.69s"/></g><g transform="rotate(140 30 30)"><line class="tk" x1="30" y1="2" x2="30" y2="7.5" style="--d:-0.94s"/></g><g transform="rotate(150 30 30)"><line class="tk" x1="30" y1="2" x2="30" y2="7.5" style="--d:-1.19s"/></g><g transform="rotate(160 30 30)"><line class="tk" x1="30" y1="2" x2="30" y2="7.5" style="--d:-0.14s"/></g><g transform="rotate(170 30 30)"><line class="tk" x1="30" y1="2" x2="30" y2="7.5" style="--d:-0.40s"/></g><g transform="rotate(180 30 30)"><line class="tk" x1="30" y1="2" x2="30" y2="7.5" style="--d:-0.65s"/></g><g transform="rotate(190 30 30)"><line class="tk" x1="30" y1="2" x2="30" y2="7.5" style="--d:-0.90s"/></g><g transform="rotate(200 30 30)"><line class="tk" x1="30" y1="2" x2="30" y2="7.5" style="--d:-1.16s"/></g><g transform="rotate(210 30 30)"><line class="tk" x1="30" y1="2" x2="30" y2="7.5" style="--d:-0.11s"/></g><g transform="rotate(220 30 30)"><line class="tk" x1="30" y1="2" x2="30" y2="7.5" style="--d:-0.36s"/></g><g transform="rotate(230 30 30)"><line class="tk" x1="30" y1="2" x2="30" y2="7.5" style="--d:-0.61s"/></g><g transform="rotate(240 30 30)"><line class="tk" x1="30" y1="2" x2="30" y2="7.5" style="--d:-0.87s"/></g><g transform="rotate(250 30 30)"><line class="tk" x1="30" y1="2" x2="30" y2="7.5" style="--d:-1.12s"/></g><g transform="rotate(260 30 30)"><line class="tk" x1="30" y1="2" x2="30" y2="7.5" style="--d:-0.07s"/></g><g transform="rotate(270 30 30)"><line class="tk" x1="30" y1="2" x2="30" y2="7.5" style="--d:-0.33s"/></g><g transform="rotate(280 30 30)"><line class="tk" x1="30" y1="2" x2="30" y2="7.5" style="--d:-0.58s"/></g><g transform="rotate(290 30 30)"><line class="tk" x1="30" y1="2" x2="30" y2="7.5" style="--d:-0.83s"/></g><g transform="rotate(300 30 30)"><line class="tk" x1="30" y1="2" x2="30" y2="7.5" style="--d:-1.08s"/></g><g transform="rotate(310 30 30)"><line class="tk" x1="30" y1="2" x2="30" y2="7.5" style="--d:-0.04s"/></g><g transform="rotate(320 30 30)"><line class="tk" x1="30" y1="2" x2="30" y2="7.5" style="--d:-0.29s"/></g><g transform="rotate(330 30 30)"><line class="tk" x1="30" y1="2" x2="30" y2="7.5" style="--d:-0.54s"/></g><g transform="rotate(340 30 30)"><line class="tk" x1="30" y1="2" x2="30" y2="7.5" style="--d:-0.79s"/></g><g transform="rotate(350 30 30)"><line class="tk" x1="30" y1="2" x2="30" y2="7.5" style="--d:-1.05s"/></g></svg>
-      <div class="art" id="miniArt"></div>
+    <button class="mini-fold" id="miniFoldBtn" aria-label="Minimizar o expandir" onclick="event.stopPropagation();toggleMiniFold()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+    <div class="mini-top">
+      <div class="ring">
+        <svg class="ring-svg" id="miniTicks" viewBox="0 0 124 124" aria-hidden="true"><g transform="rotate(0 62 62)"><line class="tk" x1="62" y1="7.1" x2="62" y2="15" style="--du:0.94s;--d:-1.04s"/></g><g transform="rotate(6.42857 62 62)"><line class="tk" x1="62" y1="9.3" x2="62" y2="15" style="--du:1.28s;--d:-0.59s"/></g><g transform="rotate(12.8571 62 62)"><line class="tk" x1="62" y1="9.5" x2="62" y2="15" style="--du:1.26s;--d:-0.06s"/></g><g transform="rotate(19.2857 62 62)"><line class="tk" x1="62" y1="6.1" x2="62" y2="15" style="--du:0.86s;--d:-0.15s"/></g><g transform="rotate(25.7143 62 62)"><line class="tk" x1="62" y1="6.2" x2="62" y2="15" style="--du:1.54s;--d:-0.2s"/></g><g transform="rotate(32.1429 62 62)"><line class="tk" x1="62" y1="8" x2="62" y2="15" style="--du:1.36s;--d:-1.52s"/></g><g transform="rotate(38.5714 62 62)"><line class="tk" x1="62" y1="4.8" x2="62" y2="15" style="--du:1.16s;--d:-1.56s"/></g><g transform="rotate(45 62 62)"><line class="tk" x1="62" y1="9.6" x2="62" y2="15" style="--du:1.57s;--d:-0.46s"/></g><g transform="rotate(51.4286 62 62)"><line class="tk" x1="62" y1="8.7" x2="62" y2="15" style="--du:0.91s;--d:-0.49s"/></g><g transform="rotate(57.8571 62 62)"><line class="tk" x1="62" y1="2.7" x2="62" y2="15" style="--du:0.96s;--d:-0.93s"/></g><g transform="rotate(64.2857 62 62)"><line class="tk" x1="62" y1="4.2" x2="62" y2="15" style="--du:1.14s;--d:-0.88s"/></g><g transform="rotate(70.7143 62 62)"><line class="tk" x1="62" y1="9.4" x2="62" y2="15" style="--du:0.85s;--d:-0.33s"/></g><g transform="rotate(77.1429 62 62)"><line class="tk" x1="62" y1="3.9" x2="62" y2="15" style="--du:1.18s;--d:-0.5s"/></g><g transform="rotate(83.5714 62 62)"><line class="tk" x1="62" y1="4.7" x2="62" y2="15" style="--du:1.21s;--d:-0.48s"/></g><g transform="rotate(90 62 62)"><line class="tk" x1="62" y1="2.9" x2="62" y2="15" style="--du:1.43s;--d:-0.39s"/></g><g transform="rotate(96.4286 62 62)"><line class="tk" x1="62" y1="4.8" x2="62" y2="15" style="--du:1.27s;--d:-1.4s"/></g><g transform="rotate(102.857 62 62)"><line class="tk" x1="62" y1="3.4" x2="62" y2="15" style="--du:1.06s;--d:-1.57s"/></g><g transform="rotate(109.286 62 62)"><line class="tk" x1="62" y1="8.9" x2="62" y2="15" style="--du:1.18s;--d:-1.21s"/></g><g transform="rotate(115.714 62 62)"><line class="tk" x1="62" y1="8.6" x2="62" y2="15" style="--du:1.24s;--d:-0.06s"/></g><g transform="rotate(122.143 62 62)"><line class="tk" x1="62" y1="4" x2="62" y2="15" style="--du:1.49s;--d:-0.92s"/></g><g transform="rotate(128.571 62 62)"><line class="tk" x1="62" y1="2.1" x2="62" y2="15" style="--du:1.08s;--d:-1.11s"/></g><g transform="rotate(135 62 62)"><line class="tk" x1="62" y1="4.7" x2="62" y2="15" style="--du:1.32s;--d:-0.73s"/></g><g transform="rotate(141.429 62 62)"><line class="tk" x1="62" y1="2.4" x2="62" y2="15" style="--du:1.65s;--d:-0.76s"/></g><g transform="rotate(147.857 62 62)"><line class="tk" x1="62" y1="4" x2="62" y2="15" style="--du:0.85s;--d:-1.12s"/></g><g transform="rotate(154.286 62 62)"><line class="tk" x1="62" y1="4.2" x2="62" y2="15" style="--du:1.69s;--d:-1.32s"/></g><g transform="rotate(160.714 62 62)"><line class="tk" x1="62" y1="7.4" x2="62" y2="15" style="--du:1.15s;--d:-1.07s"/></g><g transform="rotate(167.143 62 62)"><line class="tk" x1="62" y1="9.8" x2="62" y2="15" style="--du:1.22s;--d:-0.27s"/></g><g transform="rotate(173.571 62 62)"><line class="tk" x1="62" y1="8.9" x2="62" y2="15" style="--du:0.85s;--d:-1.23s"/></g><g transform="rotate(180 62 62)"><line class="tk" x1="62" y1="8.8" x2="62" y2="15" style="--du:1.02s;--d:-0.63s"/></g><g transform="rotate(186.429 62 62)"><line class="tk" x1="62" y1="2.2" x2="62" y2="15" style="--du:0.87s;--d:-0.72s"/></g><g transform="rotate(192.857 62 62)"><line class="tk" x1="62" y1="5.1" x2="62" y2="15" style="--du:1.6s;--d:-1.31s"/></g><g transform="rotate(199.286 62 62)"><line class="tk" x1="62" y1="2.2" x2="62" y2="15" style="--du:1.05s;--d:-0.66s"/></g><g transform="rotate(205.714 62 62)"><line class="tk" x1="62" y1="6.8" x2="62" y2="15" style="--du:1.6s;--d:-1.53s"/></g><g transform="rotate(212.143 62 62)"><line class="tk" x1="62" y1="8.6" x2="62" y2="15" style="--du:0.96s;--d:-0.37s"/></g><g transform="rotate(218.571 62 62)"><line class="tk" x1="62" y1="7.9" x2="62" y2="15" style="--du:1.24s;--d:-0.94s"/></g><g transform="rotate(225 62 62)"><line class="tk" x1="62" y1="7.6" x2="62" y2="15" style="--du:0.8s;--d:-0.67s"/></g><g transform="rotate(231.429 62 62)"><line class="tk" x1="62" y1="6.7" x2="62" y2="15" style="--du:1.31s;--d:-1.52s"/></g><g transform="rotate(237.857 62 62)"><line class="tk" x1="62" y1="3.8" x2="62" y2="15" style="--du:1.26s;--d:-0.99s"/></g><g transform="rotate(244.286 62 62)"><line class="tk" x1="62" y1="3.9" x2="62" y2="15" style="--du:0.85s;--d:-1.44s"/></g><g transform="rotate(250.714 62 62)"><line class="tk" x1="62" y1="3" x2="62" y2="15" style="--du:1.59s;--d:-1.28s"/></g><g transform="rotate(257.143 62 62)"><line class="tk" x1="62" y1="6.5" x2="62" y2="15" style="--du:1.16s;--d:-0.17s"/></g><g transform="rotate(263.571 62 62)"><line class="tk" x1="62" y1="4.3" x2="62" y2="15" style="--du:0.86s;--d:-0.11s"/></g><g transform="rotate(270 62 62)"><line class="tk" x1="62" y1="8.1" x2="62" y2="15" style="--du:0.95s;--d:-0.54s"/></g><g transform="rotate(276.429 62 62)"><line class="tk" x1="62" y1="9.5" x2="62" y2="15" style="--du:0.8s;--d:-0.24s"/></g><g transform="rotate(282.857 62 62)"><line class="tk" x1="62" y1="9.1" x2="62" y2="15" style="--du:1.13s;--d:-0.04s"/></g><g transform="rotate(289.286 62 62)"><line class="tk" x1="62" y1="2.1" x2="62" y2="15" style="--du:1.35s;--d:-0.24s"/></g><g transform="rotate(295.714 62 62)"><line class="tk" x1="62" y1="7.7" x2="62" y2="15" style="--du:1.11s;--d:-0.58s"/></g><g transform="rotate(302.143 62 62)"><line class="tk" x1="62" y1="8.9" x2="62" y2="15" style="--du:1.56s;--d:-1.59s"/></g><g transform="rotate(308.571 62 62)"><line class="tk" x1="62" y1="5.8" x2="62" y2="15" style="--du:1.24s;--d:-0.14s"/></g><g transform="rotate(315 62 62)"><line class="tk" x1="62" y1="9.1" x2="62" y2="15" style="--du:1.11s;--d:-0.42s"/></g><g transform="rotate(321.429 62 62)"><line class="tk" x1="62" y1="2.5" x2="62" y2="15" style="--du:0.95s;--d:-0.04s"/></g><g transform="rotate(327.857 62 62)"><line class="tk" x1="62" y1="1.4" x2="62" y2="15" style="--du:1.28s;--d:-0.23s"/></g><g transform="rotate(334.286 62 62)"><line class="tk" x1="62" y1="5.1" x2="62" y2="15" style="--du:0.82s;--d:-0.84s"/></g><g transform="rotate(340.714 62 62)"><line class="tk" x1="62" y1="1.2" x2="62" y2="15" style="--du:1.58s;--d:-1.11s"/></g><g transform="rotate(347.143 62 62)"><line class="tk" x1="62" y1="7.6" x2="62" y2="15" style="--du:1.13s;--d:-0.27s"/></g><g transform="rotate(353.571 62 62)"><line class="tk" x1="62" y1="3.1" x2="62" y2="15" style="--du:1.28s;--d:-1.25s"/></g></svg>
+        <div class="art" id="miniArt"></div>
+      </div>
+      <div class="meta"><div class="t" id="miniTitle">—</div><div class="s" id="miniSub">—</div><div class="al" id="miniAlbum"></div></div>
     </div>
-    <div class="meta"><div class="t" id="miniTitle">—</div><div class="s" id="miniSub">—</div></div>
+    <div class="mini-seekrow" onclick="event.stopPropagation()">
+      <span id="miniCur">0:00</span>
+      <input type="range" id="miniSeek" min="0" max="100" step="0.1" value="0" aria-label="Progreso" oninput="miniSeeking=true;miniSeekPreview(this.value)" onchange="commitSeek(this.value);miniSeeking=false">
+      <span id="miniDur">0:00</span>
+    </div>
     <div class="mini-controls" onclick="event.stopPropagation()">
-      <button class="ctrl side mini-hide" id="miniShuffleBtn" onclick="toggleShuffle()">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3h4v4M21 3l-7 7M3 21l6-6M3 3h4l14 18h4"/></svg>
+      <button class="ctrl side" id="miniShuffleBtn" onclick="toggleShuffle()">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3h4v4M21 3l-7 7M3 21l6-6M3 3h4l14 18h4"/></svg>
       </button>
-      <button class="ctrl pill" aria-label="Anterior" onclick="prevTrack()">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zM20 6L9 12l11 6z"/></svg>
-      </button>
+      <button class="ctrl pill" aria-label="Anterior" onclick="prevTrack()"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zM20 6L9 12l11 6z"/></svg></button>
       <button class="ctrl heart" id="miniLikeBtn" aria-label="Me gusta" onclick="toggleLike();popEl(this)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 21s-7.5-4.8-10-9.3C.5 8 2 4.5 5.5 4 8 3.6 10 5 12 7.5 14 5 16 3.6 18.5 4 22 4.5 23.5 8 22 11.7 19.5 16.2 12 21 12 21z"/></svg></button>
-      <button class="ctrl play" onclick="togglePlay()" id="miniPlayBtn"></button>
-      <button class="ctrl pill" aria-label="Siguiente" onclick="nextTrack()">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M16 6h2v12h-2zM4 6l11 6-11 6z"/></svg>
-      </button>
-      <button class="ctrl side mini-hide" id="miniRepeatBtn" onclick="toggleRepeat()" style="position:relative;">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 2l4 4-4 4M21 6H8a4 4 0 00-4 4v1M7 22l-4-4 4-4M3 18h13a4 4 0 004-4v-1"/></svg>
+      <button class="ctrl play" onclick="togglePlay()" id="miniPlayBtn" aria-label="Reproducir o pausar"></button>
+      <button class="ctrl pill" aria-label="Siguiente" onclick="nextTrack()"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M16 6h2v12h-2zM4 6l11 6-11 6z"/></svg></button>
+      <button class="ctrl side" id="miniRepeatBtn" onclick="toggleRepeat()" style="position:relative;">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 2l4 4-4 4M21 6H8a4 4 0 00-4 4v1M7 22l-4-4 4-4M3 18h13a4 4 0 004-4v-1"/></svg>
         <span class="repeat-badge" style="font-size:7px;right:-1px;top:-1px;">1</span>
       </button>
     </div>
+    <div class="mini-lyr" id="miniLyrics" onclick="event.stopPropagation();if(currentTrack)openLyrics()"></div>
   </div>
 
   <nav class="bottom">
@@ -4207,7 +4242,7 @@ function renderAppSettings(main){
       ${row(ic('<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>'),'Almacenamiento y datos','Borrar estadísticas de reproducción guardadas en este dispositivo',"confirmClearHistory()")}
       ${row(ic('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'),'Apariencia','Temas y colores personalizados',"showToast('Apariencia — próximamente')",'<span class="badge">Próximamente</span>')}
       ${row(ic('<path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/>'),'Notificaciones','Controles del reproductor en la barra de notificaciones',"showToast('Notificaciones — próximamente')",'<span class="badge">Próximamente</span>')}
-      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.10.11-i) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
+      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.10.11-j) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
     </div>
   `;
 }
@@ -4409,7 +4444,7 @@ function onAudioTimeUpdate(e){
   if(e.target!==audio) return;
   const pct = (audio.duration && isFinite(audio.duration))? (audio.currentTime/audio.duration*100):0;
   document.getElementById('miniBar').style.width = pct+'%';
-  updateMiniRing();
+  updateMiniSeek();
   document.getElementById('seek').value = pct;
   document.getElementById('seek').style.background = `linear-gradient(to right, #fff 0%, #fff ${pct}%, var(--line) ${pct}%, var(--line) 100%)`;
   document.getElementById('curTime').textContent = fmtTime(audio.currentTime);
@@ -4495,6 +4530,7 @@ function lyricsResumeAutoScroll(){
 function updateLRCNow(){
   if(!currentTrackLRC || !currentTrackLRC.length) return;
   const idx = lrcIndexAt(audio.currentTime);
+  updateMiniLyrics();
   const text = idx>=0? currentTrackLRC[idx].text : currentTrackLRC[0].text;
   const el = document.getElementById('playerLyricsLine');
   if(el && text!=null && el.textContent!==text){
@@ -4846,6 +4882,7 @@ function updatePlayerUI(){
 }
 let lastCardLrcIdx = -999;
 function renderPlayerLyricsCard(){
+  updateMiniLyrics(true);
   const box = document.getElementById('lyricsCardLines');
   if(!box || !currentTrack) return;
   const text = currentTrack.lyrics || '';
@@ -4889,7 +4926,7 @@ function tintMini(){ const m=document.getElementById('mini'); if(m) m.style.back
   const mini = document.getElementById('mini'); if(!mini) return;
   let x0 = null, y0 = 0, dx = 0, moved = false;
   mini.addEventListener('touchstart', e=>{
-    if(e.target.closest('.mini-controls')){ x0 = null; return; }
+    if(e.target.closest('.mini-controls,.mini-seekrow,.mini-fold')){ x0 = null; return; }
     x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; dx = 0; moved = false;
   }, {passive:true});
   mini.addEventListener('touchmove', e=>{
@@ -4912,24 +4949,62 @@ function tintMini(){ const m=document.getElementById('mini'); if(m) m.style.back
   });
   mini.addEventListener('click', e=>{ if(window.__miniSwiped){ e.stopImmediatePropagation(); e.preventDefault(); window.__miniSwiped = false; } }, true);
 })();
-let __tickOn = -1;
-function updateMiniRing(){
-  const ticks = document.querySelectorAll('#miniTicks .tk'); if(!ticks.length) return;
-  const d = audio.duration;
-  const p = (d && isFinite(d)) ? Math.min(1, Math.max(0, audio.currentTime/d)) : 0;
-  const n = Math.round(p*ticks.length);
-  if(n === __tickOn) return; __tickOn = n;
-  ticks.forEach((t,i)=>t.classList.toggle('on', i < n));
+function updateMiniRing(){} // las barras del anillo ahora son decorativas (laten al reproducir); el progreso va en la barra con tiempos
+let miniSeeking = false;
+['pointerup','pointercancel','touchend'].forEach(ev=>document.addEventListener(ev, ()=>{ if(miniSeeking) setTimeout(()=>{ miniSeeking=false; }, 60); }, {passive:true}));
+function miniSeekPaint(pct){
+  const sk = document.getElementById('miniSeek'); if(!sk) return;
+  sk.style.background = `linear-gradient(to right, #ece8e7 0%, #ece8e7 ${pct}%, rgba(255,255,255,.16) ${pct}%, rgba(255,255,255,.16) 100%)`;
 }
+function miniSeekPreview(pct){
+  if(!audio.duration) return;
+  document.getElementById('miniCur').textContent = fmtTime(audio.duration*(pct/100));
+  miniSeekPaint(pct);
+}
+function updateMiniSeek(){
+  if(miniSeeking) return;
+  const sk = document.getElementById('miniSeek'); if(!sk) return;
+  const d = audio.duration;
+  const pct = (d && isFinite(d)) ? Math.min(100, Math.max(0, audio.currentTime/d*100)) : 0;
+  sk.value = pct; miniSeekPaint(pct);
+  document.getElementById('miniCur').textContent = fmtTime(audio.currentTime||0);
+  document.getElementById('miniDur').textContent = fmtTime((d && isFinite(d)) ? d : 0);
+}
+let __miniLrcKey = '';
+function updateMiniLyrics(force){
+  const box = document.getElementById('miniLyrics'); if(!box || !currentTrack) return;
+  const text = currentTrack.lyrics || '';
+  let lines = [], key = 'none';
+  if(text.trim()){
+    if(currentTrackLRC && currentTrackLRC.length){
+      const idx = Math.max(0, lrcIndexAt(audio.currentTime));
+      lines = currentTrackLRC.slice(idx, idx+3).map(l=>l.text||'♪'); key = 'l'+idx;
+    } else {
+      lines = text.split(/\r\n|\r|\n/).map(l=>l.trim()).filter(Boolean).slice(0,3); key = 'p'+text.length;
+    }
+  }
+  const k = currentTrack.id+'|'+key; if(!force && k===__miniLrcKey) return; __miniLrcKey = k;
+  box.innerHTML = lines.length ? lines.map((l,i)=>`<p class="${i===0?'a':''}">${escapeHtml(l)}</p>`).join('') : `<p class="none">Toca para agregar letra</p>`;
+}
+let miniCompact = false;
+try{ miniCompact = lsGet('celestia:mini-compact', false) === true; }catch(e){}
+function applyMiniFold(animate){
+  const m = document.getElementById('mini'); if(!m) return;
+  m.classList.toggle('compact', miniCompact);
+  if(animate){ m.classList.remove('flip'); void m.offsetWidth; m.classList.add('flip'); }
+}
+function toggleMiniFold(){ miniCompact = !miniCompact; try{ lsSet('celestia:mini-compact', miniCompact); }catch(e){} buzz && buzz(8); applyMiniFold(true); }
 function renderMini(){
   const mini = document.getElementById('mini');
   if(!currentTrack){ mini.classList.remove('show'); return; }
   mini.classList.add('show');
-  document.getElementById('miniArt').innerHTML = trackArt(currentTrack,32);
+  document.getElementById('miniArt').innerHTML = trackArt(currentTrack,80);
   tintMini();
-  updateMiniRing();
+  applyMiniFold(false);
   document.getElementById('miniTitle').textContent = currentTrack.title;
   document.getElementById('miniSub').textContent = currentTrack.artist;
+  const al = document.getElementById('miniAlbum'); al.textContent = currentTrack.album || ''; al.style.display = currentTrack.album ? '' : 'none';
+  updateMiniSeek(); updateMiniLyrics(true);
   document.getElementById('miniShuffleBtn').classList.toggle('on',shuffleOn);
   document.getElementById('miniRepeatBtn').classList.toggle('on',repeatMode>0);
   updatePlayIcons();
