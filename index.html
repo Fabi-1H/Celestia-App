@@ -1065,6 +1065,65 @@ main .row{padding:7px 6px 7px 7px;margin-bottom:6px;}
 .home-greet,.lib-title,.srch-title{text-shadow:0 2px 12px rgba(0,0,0,.4);}
 nav.bottom .jpn{display:block;font-family:var(--font-jp);font-size:7.5px;letter-spacing:.18em;color:rgba(255,255,255,.3);margin-top:1px;line-height:1;}
 nav.bottom button.active .jpn{color:rgba(255,255,255,.55);}
+
+/* ===== ajuste: pestañas, estadísticas, paneles de opciones, panel lateral y playlist ===== */
+.st-txt{flex:1;min-width:0;white-space:normal !important;}
+.section-title .st-txt+.see-all{margin-left:10px;}
+.stat-bar-row{background:var(--box);border:1px solid var(--box-line);border-radius:16px;padding:10px 12px;margin-bottom:7px;}
+/* panel lateral */
+.drawer{background:linear-gradient(180deg,#2a2425,#161213 55%,#0e0c0d);border-right:1px solid rgba(255,255,255,.08);}
+.drawer-profile{background:var(--box);border:1px solid var(--box-line);border-radius:22px;padding:12px;margin-bottom:10px;}
+.drawer-profile .av{width:56px;height:56px;}
+.drawer-profile .sub .jp{margin-left:7px;font-size:.78em;}
+.drawer-menu{border-top:none;padding-top:0;margin-top:10px;gap:7px;}
+.drawer-menu button{font-family:var(--font-body);background:var(--box);border:1px solid var(--box-line);border-radius:18px;padding:12px 14px;font-size:15px;}
+.drawer-menu button svg{box-sizing:content-box;padding:8px;background:rgba(255,255,255,.07);border-radius:12px;color:var(--text);}
+.drawer-menu .dm-t{flex:1;line-height:1.2;}
+.drawer-menu .dm-t .jp{display:block;margin:3px 0 0;font-size:.62em;}
+.drawer-circles{border-top:none;padding-top:0;margin-top:12px;gap:10px;}
+.drawer-circle-item{flex:1;width:auto;background:var(--box);border:1px solid var(--box-line);border-radius:20px;padding:12px 8px;}
+.drawer-circle-av{border-radius:18px;width:60px;height:60px;border-width:2px;}
+.drawer-circle-av img,.drawer-circle-av svg{border-radius:14px;}
+.drawer-msgs{background:var(--box);border:1px solid var(--box-line);border-radius:22px;padding:14px;margin-top:12px;border-top:1px solid var(--box-line);}
+.drawer-msgs-new .circ,.msg-row .circ{border-radius:14px;background:var(--box-2);}
+.drawer-footer .jp{margin-left:9px;}
+/* paneles de opciones */
+.sheet::before{content:"";display:block;width:42px;height:4px;border-radius:2px;background:rgba(255,255,255,.22);margin:-6px auto 14px;}
+.sheet.spm::before{display:none;}
+.sheet h3{background:var(--box-2);border:1px solid var(--box-line);border-radius:18px;padding:12px 12px 12px 16px;gap:10px;}
+.sheet h3 button{width:34px;height:34px;border-radius:11px;background:var(--box);border:1px solid var(--box-line);color:var(--text);flex-shrink:0;}
+.sheet h3 .mt-t{min-width:0;display:flex;flex-direction:column;gap:3px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+.mt-k{font-family:var(--font-jp);font-size:10.5px;letter-spacing:.3em;color:rgba(255,255,255,.4);font-weight:500;}
+.mt-k span{font-family:var(--font-body);letter-spacing:.18em;margin-left:8px;}
+.sheet-option{background:var(--box);border:1px solid var(--box-line);border-radius:18px;padding:9px 14px 9px 10px;margin-bottom:7px;gap:14px;}
+.sheet-option svg{box-sizing:content-box;padding:8px;background:rgba(255,255,255,.07);border-radius:12px;color:var(--text);}
+.spm-head{background:var(--box-2);border:1px solid var(--box-line);border-radius:20px;margin:0 16px 10px;padding:12px;gap:14px;}
+.spm-art{border-radius:14px;}
+.spm-k{font-family:var(--font-jp);font-size:10.5px;letter-spacing:.3em;color:rgba(255,255,255,.4);margin-bottom:3px;}
+.spm-head .t{font-size:17px;}
+.spm-opt{width:calc(100% - 32px);margin:0 16px 7px;padding:9px 14px 9px 10px;background:var(--box);border:1px solid var(--box-line);border-radius:18px;font-size:16px;gap:14px;}
+.spm-opt:active{background:var(--box-2);}
+.spm-ic{width:38px;height:38px;border-radius:12px;background:rgba(255,255,255,.07);color:var(--text);}
+.spm-opt.on{background:var(--box-2);border-color:rgba(255,255,255,.2);}
+.spm-opt.on .spm-ic{background:var(--text);color:#141414;}
+.spm-empty{margin:0 16px;}
+/* playlist */
+.pl-hero{display:flex;align-items:center;gap:14px;background:var(--box);border:1px solid var(--box-line);border-radius:26px;padding:12px;margin:8px 0 10px;}
+.pl-hero .sp-cover{flex:0 0 132px;width:132px;max-width:132px;margin:0;border-radius:18px;box-shadow:0 10px 24px rgba(0,0,0,.45);}
+.pl-hero-info{min-width:0;flex:1;}
+.pl-kick{font-size:10px;letter-spacing:.22em;color:rgba(255,255,255,.45);font-weight:600;margin-bottom:6px;}
+.pl-kick .jp{margin-left:8px;font-size:1em;letter-spacing:.3em;}
+.pl-hero .sp-title{font-size:23px;margin-bottom:8px;word-break:break-word;}
+.pl-hero .sp-byline{margin-bottom:9px;}
+.pl-hero .sp-meta{display:inline-block;background:var(--box-2);border:1px solid var(--box-line);border-radius:11px;padding:4px 10px;font-size:12px;}
+.pl-header-bg .sp-actions{background:var(--box);border:1px solid var(--box-line);border-radius:22px;padding:10px 12px;margin:0 0 12px;gap:10px;}
+.pl-header-bg .sp-thumb{width:46px;height:46px;border-radius:14px;overflow:hidden;box-shadow:0 0 0 1px var(--box-line);}
+.pl-header-bg .sp-ic{width:46px;height:46px;border-radius:14px;background:var(--box-2);color:var(--text);padding:0;}
+.pl-header-bg .sp-ic.active-accent{background:var(--text);color:#141414;}
+.section-title .st-txt:has(+ .see-all) .jp{display:block;margin:3px 0 0;}
+.drawer-circle-av{border-radius:50%;}
+.drawer-circle-av img,.drawer-circle-av svg{border-radius:50%;}
+.drawer-circle-av.drawer-circle-invite svg{border-radius:0;}
 </style>
 </head>
 <body>
@@ -1316,27 +1375,27 @@ nav.bottom button.active .jpn{color:rgba(255,255,255,.55);}
       <div class="av" id="drawerAvatar"></div>
       <div>
         <div class="name" id="drawerName">Tú</div>
-        <div class="sub">Ver perfil</div>
+        <div class="sub">Ver perfil<span class="jp">プロフィール</span></div>
       </div>
     </div>
     <div class="drawer-featured" id="drawerFeatured"></div>
     <div class="drawer-menu">
       <button onclick="closeDrawer();openPlanSheet()">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12.5l2.5 2.5L16 9" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        Tu plan
+        <span class="dm-t">Tu plan<span class="jp">プラン</span></span>
         <span class="plan-pill">Free</span>
       </button>
       <button onclick="closeDrawer();goToHistory()">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 21V14M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>
-        Estadísticas de reproducción
+        <span class="dm-t">Estadísticas de reproducción<span class="jp">統計</span></span>
       </button>
       <button onclick="closeDrawer();goToRecent()">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        Recientes
+        <span class="dm-t">Recientes<span class="jp">最近</span></span>
       </button>
       <button onclick="closeDrawer();goToAppSettings()">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.9l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.9-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1-1.6 1.7 1.7 0 00-1.9.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.9 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1 1.7 1.7 0 00-.3-1.9l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.9.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.9-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.9V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg>
-        Configuración y privacidad
+        <span class="dm-t">Configuración y privacidad<span class="jp">設定</span></span>
       </button>
     </div>
     <div class="drawer-circles">
@@ -1367,7 +1426,7 @@ nav.bottom button.active .jpn{color:rgba(255,255,255,.55);}
         Nuevo mensaje
       </div>
     </div>
-    <div class="drawer-footer">Celestia — reproductor local</div>
+    <div class="drawer-footer">Celestia — reproductor local<span class="jp">星の音楽</span></div>
   </div>
 
   <div class="overlay" id="overlayQueue"><div class="sheet">
@@ -2704,7 +2763,7 @@ function decorateJP(){
       if(el.querySelector('.jp')) return;
       const n = el.firstChild; if(!n || n.nodeType!==3) return;
       const jp = JP_TITLES[n.nodeValue.trim()]; if(!jp) return;
-      const sp = document.createElement('span'); sp.className='jp'; sp.textContent = jp; n.after(sp);
+      const sp = document.createElement('span'); sp.className='jp'; sp.textContent = jp; const w = document.createElement('span'); w.className='st-txt'; n.replaceWith(w); n.nodeValue = n.nodeValue.trim(); w.append(n, sp);
     });
   }catch(e){}
 }
@@ -2734,6 +2793,7 @@ function renderCore(soft){
   const detailScreens = ['search','messages','playlistDetail','artistDetail','albumDetail','likedDetail','profile','appSettings','recentAdded','statsDetail','history','recent'];
   const isDetail = detailScreens.includes(activeTab);
   document.body.classList.toggle('no-stars', isDetail);
+  { const tb = document.getElementById('tabsBar'); if(tb) tb.style.display = (isDetail || activeTab==='playlists') ? 'none' : 'flex'; }
   document.querySelector('header.top').style.display = isDetail ? 'none' : 'flex';
   main.style.paddingTop = isDetail ? 'calc(6px + env(safe-area-inset-top))' : '6px';
   if(activeTab==='home') return renderHome(main);
@@ -3070,7 +3130,7 @@ function spmHead(){
   if(c.kind==='playlist'){
     const p = collPl();
     return `<div class="spm-head" style="--i:0"><div class="spm-art">${playlistArtHTML(p, 56, {fluid:true, radius:'0'})}</div>
-      <div style="min-width:0;"><div class="t">${escapeHtml(p.name)}</div><div class="s">de ${escapeHtml(profile.name||'Tú')} • Playlist pública</div></div></div>`;
+      <div style="min-width:0;"><div class="spm-k">プレイリスト</div><div class="t">${escapeHtml(p.name)}</div><div class="s">de ${escapeHtml(profile.name||'Tú')} • Playlist pública</div></div></div>`;
   }
   if(c.kind==='album'){
     const al = getAlbums()[c.idx];
@@ -3525,18 +3585,20 @@ function renderPlaylistDetail(main){
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
       <input id="plSearchInput" placeholder="Buscar en la playlist" value="${escapeHtml(plSearchQuery)}" oninput="onPlSearchInput(this.value)">
     </div>` : ''}
-    <div class="sp-cover">${playlistArtHTML(p, 270, {clickable:true, fluid:true, radius:'0'})}</div>
+    <div class="pl-hero"><div class="sp-cover">${playlistArtHTML(p, 270, {clickable:true, fluid:true, radius:'0'})}</div>
+    <div class="pl-hero-info"><div class="pl-kick">PLAYLIST<span class="jp">プレイリスト</span></div>
     <div class="sp-title" id="plTitleMain">${escapeHtml(p.name)}</div>
     <div class="sp-byline" style="pointer-events:none;">
       <div class="av">${avatarHTML()}</div>
       <div class="nm">${escapeHtml(profile.name||'Tú')}</div>
     </div>
     <div class="sp-meta" id="plTrackCount">${pt.length} canción(es)${totalSec? ' • '+fmtDurationTotal(totalSec):''}</div>
+    </div></div>
     <div class="sp-actions">
       <div class="sp-thumb" onclick="openPlaylistMenu('${p.id}')">${playlistArtHTML(p, 46, {fluid:true, radius:'0'})}</div>
       <button class="sp-ic" onclick="openPlaylistMenu('${p.id}')">${SP_ICON.dots}</button>
       <div style="flex:1"></div>
-      <button class="sp-ic ${shuffleOn?'active-accent':''}" id="plShuffleBtn" onclick="toggleShuffle()">${SP_ICON.shuffle}</button>
+      <button class="sp-ic ${shuffleOn?'active-accent':''}" id="plShuffleBtn" onclick="toggleShuffle()"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="8.6" cy="8.6" r="1.25" fill="currentColor" stroke="none"/><circle cx="15.4" cy="8.6" r="1.25" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.25" fill="currentColor" stroke="none"/><circle cx="8.6" cy="15.4" r="1.25" fill="currentColor" stroke="none"/><circle cx="15.4" cy="15.4" r="1.25" fill="currentColor" stroke="none"/></svg></button>
       <button class="sp-play ${active?'playing':''}" id="spPlayBtn" data-expr="${expr}" data-state="${active}" onclick="onSpPlay('${expr}')" ${pt.length? '':'disabled'}>${active?SP_ICON.pause:SP_ICON.play}</button>
     </div>
     </div>
@@ -4382,7 +4444,7 @@ function renderAppSettings(main){
       ${row(ic('<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>'),'Almacenamiento y datos','Borrar estadísticas de reproducción guardadas en este dispositivo',"confirmClearHistory()")}
       ${row(ic('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'),'Apariencia','Temas y colores personalizados',"showToast('Apariencia — próximamente')",'<span class="badge">Próximamente</span>')}
       ${row(ic('<path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/>'),'Notificaciones','Controles del reproductor en la barra de notificaciones',"showToast('Notificaciones — próximamente')",'<span class="badge">Próximamente</span>')}
-      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.10.12-o) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
+      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.10.12-r) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
     </div>
   `;
 }
@@ -5466,7 +5528,7 @@ function fmtTime(s){ if(!isFinite(s)) return '0:00'; const m=Math.floor(s/60); c
 function openTrackMenu(id, playlistId){
   menuTrack = tracks.find(t=>t.id===id);
   window.__menuPlaylistId = playlistId||'';
-  document.getElementById('trackMenuTitle').innerHTML = `${escapeHtml(menuTrack.title)} <button onclick="closeOverlay('overlayTrackMenu')">✕</button>`;
+  document.getElementById('trackMenuTitle').innerHTML = `<span class="mt-t"><span class="mt-k">曲<span>CANCIÓN</span></span>${escapeHtml(menuTrack.title)}</span><button onclick="closeOverlay('overlayTrackMenu')">✕</button>`;
   document.getElementById('menuRemoveBtn').style.display = playlistId? 'flex':'none';
   document.getElementById('menuPodcastLabel').textContent = menuTrack.isPodcast? 'Marcar como canción de nuevo' : 'Clasificar como Podcast';
   document.getElementById('overlayTrackMenu').classList.add('show');
