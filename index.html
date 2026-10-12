@@ -1174,6 +1174,46 @@ nav.bottom button.active .jpn{color:rgba(255,255,255,.55);}
 .srch-field input::placeholder{color:var(--text-dim);}
 .srch-wrap.active .srch-field{background:var(--box-2);}
 .srch-back{border-radius:14px;}
+
+/* ===== rediseño: álbum, artista y selector de artistas ===== */
+.sp-row .rk{width:32px;height:32px;line-height:32px;border-radius:10px;background:rgba(255,255,255,.07);color:var(--text-dim);font-size:13px;flex-shrink:0;}
+.sp-row.playing .rk{background:var(--text);color:#141414;}
+.sp-row .mt .s{font-variant-numeric:tabular-nums;}
+.ar-hero{border-radius:0 0 30px 30px;margin-bottom:12px;}
+.ar-hero::after{background:linear-gradient(180deg,rgba(0,0,0,.35) 0%,rgba(0,0,0,0) 35%,rgba(16,13,14,.88) 100%);}
+.ar-hero .ar-titles{position:absolute;left:20px;right:20px;bottom:16px;z-index:2;}
+.ar-hero .ar-titles .pl-kick{color:rgba(255,255,255,.6);margin-bottom:4px;}
+.ar-hero .ar-name{position:static;font-size:36px;}
+.ar-meta{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px;}
+.ar-chip{display:inline-flex;align-items:baseline;background:var(--box-2);border:1px solid var(--box-line);border-radius:11px;padding:6px 11px;font-size:12.5px;color:var(--text);}
+.ar-chip .jp{margin-left:7px;font-size:.85em;}
+#overlay-none{display:none;}
+.ar-tabs{background:var(--box);border:1px solid var(--box-line);border-radius:18px;padding:4px;gap:4px;margin:0 0 6px;}
+.ar-tabs button{flex:1;padding:10px 0;border-radius:14px;font-size:14.5px;}
+.ar-tabs button.on{background:var(--text);color:#141414;}
+.ar-ind{display:none;}
+.ar-more{display:block;width:100%;background:var(--box);border:1px solid var(--box-line);border-radius:16px;color:var(--text);padding:13px 0;margin-top:4px;}
+.ar-follow{height:42px;padding:0 18px;border-radius:14px;background:var(--box-2);border:1px solid var(--box-line);}
+.ar-follow.on{background:var(--text);color:#141414;border-color:var(--text);}
+.sp-actions .ar-follow{margin-left:2px;}
+.pl-header-bg .sp-actions,.sp-actions{background:var(--box);border:1px solid var(--box-line);border-radius:22px;padding:10px 12px;gap:10px;}
+.sp-actions .sp-ic{width:46px;height:46px;border-radius:14px;background:var(--box-2);color:var(--text);padding:0;}
+.sp-actions .sp-ic.active-accent{background:var(--text);color:#141414;}
+.sp-thumb{width:46px;height:46px;border-radius:14px;overflow:hidden;box-shadow:0 0 0 1px var(--box-line);flex-shrink:0;}
+.picker{background:linear-gradient(180deg,#262122 0%,#1b1718 300px,#131011 720px,#0e0c0d 100%);}
+.picker::before{content:"";position:absolute;left:0;right:0;bottom:0;height:150px;background:linear-gradient(180deg,rgba(14,12,13,0),#0e0c0d 70%);pointer-events:none;z-index:1;}
+.picker-x{width:44px;height:44px;border-radius:14px;background:var(--box-2);border:1px solid var(--box-line);align-items:center;justify-content:center;margin:0 0 14px;padding:0;}
+.picker-title{font-size:27px;}
+.picker-search{background:var(--box-2);border:1px solid var(--box-line);border-radius:16px;height:50px;}
+.picker-grid{gap:10px;}
+.pk-item{background:var(--box);border:1px solid var(--box-line);border-radius:20px;padding:8px 8px 12px;gap:9px;transition:background-color .3s ease,border-color .3s ease,transform .45s var(--ease-soft);}
+.pk-item:active{transform:scale(.96);}
+.pk-av{max-width:none;border-radius:14px;box-shadow:none !important;}
+.pk-check{inset:auto;top:6px;right:6px;width:28px;height:28px;border-radius:9px;background:var(--text);color:#141414;}
+.pk-check svg{width:18px;height:18px;}
+.pk-item.sel{background:var(--box-2);border-color:rgba(255,255,255,.35);}
+.pk-name{font-size:12.5px;}
+.picker-done{z-index:2;border-radius:18px;padding:15px 42px;}
 </style>
 </head>
 <body>
@@ -1681,6 +1721,7 @@ nav.bottom button.active .jpn{color:rgba(255,255,255,.55);}
   <div class="picker" id="artistPicker">
     <div class="picker-scroll" id="pickerScroll">
       <button class="picker-x" onclick="closeArtistPicker(false)"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      <div class="pl-kick" style="margin:2px 0 8px;">ARTISTAS<span class="jp">アーティスト</span></div>
       <div class="picker-title">Elige más artistas que te gusten.</div>
       <div class="picker-search"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><input id="pickerSearch" placeholder="Buscar" oninput="renderPickerGrid()"></div>
       <div class="picker-grid" id="pickerGrid"></div>
@@ -2607,6 +2648,7 @@ function renderPickerGrid(){
     .sort((a,b)=>(totals[akey(b)]||0)-(totals[akey(a)]||0) || a.localeCompare(b));
   const chk = `<span class="pk-check"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>`;
   const __grp = artistGroups();
+  updatePickerCount();
   document.getElementById('pickerGrid').innerHTML = list.length
     ? list.map(a=>`<div class="pk-item ${window.__pickSel.has(akey(a))?'sel':''}" onclick="togglePick(this,'${encA(a)}')"><div class="pk-av">${artistArt(a,104,true,__grp.get(akey(a)))}${chk}</div><div class="pk-name">${escapeHtml(a)}</div></div>`).join('')
     : `<div class="spm-empty" style="grid-column:1/-1;text-align:center;">No hay artistas con ese nombre.</div>`;
@@ -2616,7 +2658,9 @@ function togglePick(el, enc){
   if(window.__pickSel.has(k)) window.__pickSel.delete(k); else window.__pickSel.add(k);
   el.classList.toggle('sel', window.__pickSel.has(k));
   popEl(el.querySelector('.pk-av'));
+  updatePickerCount();
 }
+function updatePickerCount(){ const b = document.querySelector('.picker-done'); if(b){ const n = window.__pickSel ? window.__pickSel.size : 0; b.textContent = n ? 'Listo · '+n : 'Listo'; } }
 function closeArtistPicker(save){
   document.getElementById('artistPicker').classList.remove('show');
   document.getElementById('pickerSearch').blur();
@@ -3065,7 +3109,7 @@ function fmtMinutes(list){
 const SP_ICON = {
   back:`<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>`,
   dots:`<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="12" cy="19" r="1.7"/></svg>`,
-  shuffle:`<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>`,
+  shuffle:`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3h4v4M21 3l-7 7M3 21l6-6M3 3h4l14 18h4"/></svg>`,
   play:`<svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5l13 7.5-13 7.5v-15z"/></svg>`,
   download:`<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 7v9M8.5 12.5L12 16l3.5-3.5"/></svg>`,
   checkFill:`<span class="sp-checkfill"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>`,
@@ -3353,7 +3397,9 @@ function openArtist(enc){
 function artistMetaHTML(a){
   const at = getArtistTracks(a);
   const n = getAlbums().filter(al=>akey(al.artist)===akey(a)).length;
-  return `${at.length} canción(es)${n? ' · '+n+(n===1?' álbum':' álbumes'):''}${fmtMinutes(at)? ' · '+fmtMinutes(at):''}${artistBlocked(a)? ' · Silenciado en tus listas':''}`;
+  const mins = fmtMinutes(at);
+  const chip = (t,j)=>`<span class="ar-chip">${t}<span class="jp">${j}</span></span>`;
+  return chip(at.length+(at.length===1?' canción':' canciones'),'曲')+(n? chip(n+(n===1?' álbum':' álbumes'),'盤') : '')+(mins? chip(mins,'時間') : '')+(artistBlocked(a)? `<span class="ar-chip">Silenciado</span>` : '');
 }
 function artistBodyHTML(a, rowAnim){
   const tab = window.__artistTab || 'music';
@@ -3440,7 +3486,7 @@ function renderArtistDetail(main){
     <div class="ar-hero">
       ${artistImgSrc(a) ? `<img src="${artistImgSrc(a)}">` : SP_ICON.note}
       <button class="ar-cam" onclick="pickArtistImage(window.currentArtist)">${SP_ICON.image}</button>
-      <div class="ar-name">${escapeHtml(a)}</div>
+      <div class="ar-titles"><div class="pl-kick">ARTISTA<span class="jp">アーティスト</span></div><div class="ar-name">${escapeHtml(a)}</div></div>
     </div>
     <div class="ar-meta" id="arMeta">${artistMetaHTML(a)}</div>
     <div class="sp-actions" style="margin-top:0;">
@@ -3489,13 +3535,14 @@ function renderAlbumDetail(main){
   const mins = fmtMinutes(al.tracks);
   main.innerHTML = stickyBarHTML(al.album, expr, active) + `<div class="pl-header-bg" id="albHeaderBg" style="margin-top:0;">
     <div style="height:calc(54px + env(safe-area-inset-top));"></div>
-    <div class="sp-cover">${coverT && coverT.cover ? trackArt(coverT,270) : SP_ICON.note}</div>
+    <div class="pl-hero"><div class="sp-cover">${coverT && coverT.cover ? trackArt(coverT,270) : SP_ICON.note}</div>
+    <div class="pl-hero-info"><div class="pl-kick">ÁLBUM<span class="jp">アルバム</span></div>
     <div class="sp-title">${escapeHtml(al.album)}</div>
     <div class="sp-byline" onclick="openArtist('${encA(al.artist)}')">
       <div class="av">${artistArt(al.artist,26)}</div>
       <div class="nm">${escapeHtml(al.artist)}</div>
     </div>
-    <div class="sp-meta">Álbum • ${al.tracks.length} canción(es)${mins? ' • '+mins:''}</div>
+    <div class="sp-meta">${al.tracks.length} canción(es)${mins? ' • '+mins:''}</div></div></div>
     <div class="sp-actions">
       <div class="sp-thumb">${trackArt(coverT,46)}</div>
       <button class="sp-ic" id="spLikeAll" data-all="${!!allLiked}" onclick="toggleLikeAll()" style="${allLiked?'':'color:var(--text-dim)'}">${allLiked?SP_ICON.checkFill:SP_ICON.checkOff}</button>
@@ -3507,7 +3554,8 @@ function renderAlbumDetail(main){
     </div>
   </div>
   ${al.tracks.map((t,i)=>`<div class="sp-row ${currentTrack&&currentTrack.id===t.id?'playing':''}" data-tid="${escapeHtml(t.id)}" onclick="playTrack('${jsq(t.id)}','${expr}')" style="${animate?`animation:rowEditIn .38s ease both;animation-delay:${Math.min(i*0.045,0.45)}s;`:''}">
-      <div class="mt"><div class="t">${escapeHtml(t.title)}</div><div class="s">${escapeHtml(t.artist)}</div></div>
+      <div class="rk">${i+1}</div>
+      <div class="mt"><div class="t">${escapeHtml(t.title)}</div><div class="s">${t.duration? fmtTime(t.duration) : escapeHtml(t.artist)}</div></div>
       ${likeBtnHTML(t)}
       <button class="row-menu" onclick="event.stopPropagation();openTrackMenu('${jsq(t.id)}','')">${SP_ICON.dots}</button>
     </div>`).join('')}`;
@@ -4494,7 +4542,7 @@ function renderAppSettings(main){
       ${row(ic('<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>'),'Almacenamiento y datos','Borrar estadísticas de reproducción guardadas en este dispositivo',"confirmClearHistory()")}
       ${row(ic('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'),'Apariencia','Temas y colores personalizados',"showToast('Apariencia — próximamente')",'<span class="badge">Próximamente</span>')}
       ${row(ic('<path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/>'),'Notificaciones','Controles del reproductor en la barra de notificaciones',"showToast('Notificaciones — próximamente')",'<span class="badge">Próximamente</span>')}
-      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.10.12-u) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
+      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.10.12-v) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
     </div>
   `;
 }
@@ -4571,26 +4619,28 @@ let queueOriginalOrder = [];
 function setQueueOriginalOrder(){ queueOriginalOrder = currentQueue.map(t=>t.id); }
 function reshuffleQueueForToggle(){
   if(!currentQueue.length || currentIndex<0) return;
-  const upcoming = currentQueue.slice(currentIndex+1);
-  if(!upcoming.length) return;
-  let newUpcoming;
+  const cur = currentQueue[currentIndex];
   if(shuffleOn){
-    newUpcoming = shuffledCopy(upcoming);
+    // aleatorio: se baraja TODA la fila (no solo lo que falta) y la canción actual queda de primera
+    const rest = currentQueue.filter((_,k)=>k!==currentIndex);
+    currentQueue = [cur].concat(shuffledCopy(rest)); currentIndex = 0;
   } else {
-    const idsSet = new Set(upcoming.map(t=>t.id));
-    const byId = {}; upcoming.forEach(t=>byId[t.id]=t);
+    // al apagarlo se recupera el orden original y se sigue desde la canción actual
+    const byId = new Map(); currentQueue.forEach(t=>{ if(!byId.has(t.id)) byId.set(t.id,t); });
     const ordered = [];
-    queueOriginalOrder.forEach(id=>{ if(idsSet.has(id)){ ordered.push(byId[id]); idsSet.delete(id); } });
-    idsSet.forEach(id=>ordered.push(byId[id])); // canciones agregadas después, no estaban en el orden original
-    newUpcoming = ordered;
+    queueOriginalOrder.forEach(id=>{ if(byId.has(id)){ ordered.push(byId.get(id)); byId.delete(id); } });
+    byId.forEach(t=>ordered.push(t)); // canciones agregadas después, no estaban en el orden original
+    const ix = ordered.findIndex(t=>t.id===cur.id);
+    currentQueue = ordered; currentIndex = ix>=0 ? ix : 0;
   }
-  currentQueue = currentQueue.slice(0, currentIndex+1).concat(newUpcoming);
   if(document.getElementById('overlayQueue').classList.contains('show')) renderQueueList();
 }
 function loadCurrent(autoplay){
   currentTrack = currentQueue[currentIndex];
   if(!currentTrack) return;
+  cancelCrossfade();
   audio.src = currentTrack.url;
+  applySpeed(audio);
   audio.currentTime = 0;
   lastListenTick = null;
   fetchLyricsNowPlaying(currentTrack);
@@ -4606,25 +4656,27 @@ function loadCurrent(autoplay){
   if(document.getElementById('overlayQueue').classList.contains('show')) renderQueueList();
 }
 function togglePlay(){
+  finishCrossfade(); // si se pausa a mitad de un fundido, este termina al instante
   if(!currentTrack){ if(tracks.length){ playTrack(tracks[0].id,'all'); } return; }
   if(audio.paused){ resumeAudioCtx(); safePlay(audio); } else { audio.pause(); }
 }
 function peekNextTrack(){
   if(!currentQueue.length) return null;
   if(repeatMode===1) return currentTrack;
-  if(shuffleOn) return currentQueue[Math.floor(Math.random()*currentQueue.length)];
   if(currentIndex < currentQueue.length-1) return currentQueue[currentIndex+1];
   if(repeatMode===2) return currentQueue[0]; // repetir todo: al terminar la fila vuelve a empezar
   return null;
 }
 function nextTrack(){
   if(!currentQueue.length) return;
-  if(shuffleOn){ currentIndex = Math.floor(Math.random()*currentQueue.length); }
-  else { currentIndex = (currentIndex+1) % currentQueue.length; }
+  cancelCrossfade();
+  currentIndex = (currentIndex+1) % currentQueue.length; // con aleatorio la fila ya está barajada, así no se repite ninguna
   loadCurrent(true);
 }
 function prevTrack(){
   if(!currentQueue.length) return;
+  cancelCrossfade();
+  if(audio.currentTime>3){ audio.currentTime = 0; return; } // como en cualquier reproductor: primero reinicia la canción, si ya estás al inicio va a la anterior
   currentIndex = (currentIndex-1+currentQueue.length) % currentQueue.length;
   loadCurrent(true);
 }
@@ -4632,46 +4684,56 @@ function prevTrack(){
 /* ---- Crossfade real entre pistas usando dos elementos de audio ---- */
 function otherAudio(){ return audio===audioA? audioB: audioA; }
 function chainFor(el){ return el===audioA? chainA: chainB; }
+let xf = null;
+function cancelCrossfade(){
+  if(!xf) return;
+  const x = xf; xf = null; clearInterval(x.iv);
+  try{ x.incoming.pause(); x.incoming.currentTime = 0; }catch(e){}
+  const oc = chainFor(x.outgoing), ic = chainFor(x.incoming);
+  if(oc) oc.gain.gain.value = 1; if(ic) ic.gain.gain.value = 1;
+  crossfading = false;
+}
+function finishCrossfade(){ if(xf) xf.complete(); }
+function crossfadeSecondsFor(dur){ return Math.max(1, Math.min(crossfadeState.seconds, (dur||crossfadeState.seconds*2)/2)); }
 function startCrossfade(){
   const nextT = peekNextTrack();
-  if(!nextT || crossfading) return;
+  if(!nextT || crossfading || repeatMode===1) return;
   crossfading = true;
   ensureEQGraph();
-  const outgoing = audio;
-  const incoming = otherAudio();
-  const outgoingChain = chainFor(outgoing);
-  const incomingChain = chainFor(incoming);
-  incoming.src = nextT.url;
-  incoming.currentTime = 0;
-  if(incomingChain) incomingChain.gain.gain.value = 0;
+  const outgoing = audio, incoming = otherAudio();
+  const oc = chainFor(outgoing), ic = chainFor(incoming);
+  incoming.src = nextT.url; incoming.currentTime = 0; applySpeed(incoming);
+  if(ic) ic.gain.gain.value = 0;
   safePlay(incoming);
-  const totalMs = Math.max(1,crossfadeState.seconds)*1000;
-  const steps = 30;
+  const dur = crossfadeSecondsFor(outgoing.duration);
+  const steps = Math.max(24, Math.round(dur*12));
   let step = 0;
+  const complete = ()=>{
+    if(!xf) return;
+    clearInterval(xf.iv); xf = null;
+    outgoing.pause(); outgoing.currentTime = 0;
+    if(oc) oc.gain.gain.value = 1;
+    if(ic) ic.gain.gain.value = 1;
+    audio = incoming;
+    const idx = currentQueue.indexOf(nextT);
+    currentIndex = idx>=0? idx : currentIndex;
+    currentTrack = nextT;
+    lastListenTick = null; playCounted = false;
+    fetchLyricsNowPlaying(currentTrack);
+    updatePlayerUI(); renderMini(); updateMediaSessionMetadata();
+    if(activeTab==='history') render();
+    if(document.getElementById('overlayQueue').classList.contains('show')) renderQueueList();
+    crossfading = false;
+  };
   const iv = setInterval(()=>{
     step++;
-    const t = step/steps;
-    if(outgoingChain) outgoingChain.gain.gain.value = Math.max(0,1-t);
-    if(incomingChain) incomingChain.gain.gain.value = Math.min(1,t);
-    if(step>=steps){
-      clearInterval(iv);
-      outgoing.pause();
-      outgoing.currentTime = 0;
-      if(outgoingChain) outgoingChain.gain.gain.value = 1;
-      audio = incoming;
-      const idx = currentQueue.indexOf(nextT);
-      currentIndex = idx>=0? idx : currentIndex;
-      currentTrack = nextT;
-      lastListenTick = null;
-      playCounted = false;
-      updatePlayerUI();
-      renderMini();
-      updateMediaSessionMetadata();
-      if(activeTab==='history') render();
-      if(document.getElementById('overlayQueue').classList.contains('show')) renderQueueList();
-      crossfading = false;
-    }
-  }, totalMs/steps);
+    const t = Math.min(1, step/steps);
+    // curva de potencia constante: el volumen total no se hunde a la mitad del fundido
+    if(oc) oc.gain.gain.value = Math.cos(t*Math.PI/2);
+    if(ic) ic.gain.gain.value = Math.sin(t*Math.PI/2);
+    if(step>=steps) complete();
+  }, dur*1000/steps);
+  xf = {iv, incoming, outgoing, complete};
 }
 
 function onAudioPlay(e){ if(e.target!==audio) return; isPlaying=true; consecutivePlayErrors=0; updatePlayIcons(); if('mediaSession' in navigator) navigator.mediaSession.playbackState='playing'; }
@@ -4721,9 +4783,9 @@ function onAudioTimeUpdate(e){
     if(activeTab==='history'||activeTab==='recent') render();
   }
   if('mediaSession' in navigator && isFinite(audio.duration)){
-    try{ navigator.mediaSession.setPositionState({duration:audio.duration, playbackRate:1, position:audio.currentTime}); }catch(e){}
+    try{ navigator.mediaSession.setPositionState({duration:audio.duration, playbackRate:playbackSpeed, position:audio.currentTime}); }catch(e){}
   }
-  if(crossfadeState.enabled && !crossfading && !sleepTimerEndOfTrack && repeatMode!==1 && isFinite(audio.duration) && (audio.duration-audio.currentTime)<=crossfadeState.seconds){
+  if(crossfadeState.enabled && !crossfading && !audio.paused && !sleepTimerEndOfTrack && repeatMode!==1 && isFinite(audio.duration) && audio.duration>2 && (audio.duration-audio.currentTime)<=crossfadeSecondsFor(audio.duration)){
     startCrossfade();
   }
   updateLRCNow();
@@ -4832,8 +4894,7 @@ function onAudioError(e){
     updatePlayIcons();
     return;
   }
-  if(shuffleOn){ currentIndex = Math.floor(Math.random()*currentQueue.length); }
-  else { currentIndex = (currentIndex+1) % currentQueue.length; }
+  currentIndex = (currentIndex+1) % currentQueue.length;
   loadCurrent(true);
 }
 [audioA, audioB].forEach(el=>{
@@ -5057,14 +5118,26 @@ function openSleepTimer(){
   document.getElementById('sleepTimerCancelBtn').style.display = sleepTimerLabel? 'flex':'none';
   document.getElementById('overlaySleepTimer').classList.add('show');
 }
+let sleepFadeIv = null;
+function stopSleepFade(){ clearInterval(sleepFadeIv); sleepFadeIv = null; audioA.volume = 1; audioB.volume = 1; }
+function sleepFadeAndPause(){
+  clearInterval(sleepFadeIv);
+  let step = 0; const steps = 40;
+  sleepFadeIv = setInterval(()=>{
+    step++; const v = Math.max(0, 1 - step/steps);
+    audioA.volume = v; audioB.volume = v;
+    if(step>=steps){ stopSleepFade(); finishCrossfade(); audio.pause(); }
+  }, 250);
+}
 function setSleepTimer(minutes){
-  clearTimeout(sleepTimerHandle);
+  clearTimeout(sleepTimerHandle); stopSleepFade();
   sleepTimerEndOfTrack = false;
+  // el volumen baja suavemente durante los últimos 10 segundos antes de pausar
   sleepTimerHandle = setTimeout(()=>{
-    audio.pause();
     sleepTimerLabel = '';
     showToast('Reproducción pausada por el temporizador');
-  }, minutes*60000);
+    sleepFadeAndPause();
+  }, Math.max(0, minutes*60000 - 10000));
   sleepTimerLabel = minutes+' min';
   showToast('Temporizador activado: '+minutes+' min');
   closeOverlay('overlaySleepTimer');
@@ -5077,7 +5150,7 @@ function setSleepTimerEndOfTrack(){
   closeOverlay('overlaySleepTimer');
 }
 function cancelSleepTimer(){
-  clearTimeout(sleepTimerHandle);
+  clearTimeout(sleepTimerHandle); stopSleepFade();
   sleepTimerEndOfTrack = false;
   sleepTimerLabel = '';
   showToast('Temporizador cancelado');
@@ -5087,6 +5160,7 @@ function toggleShuffle(){
   buzz(10);
   shuffleOn=!shuffleOn;
   reshuffleQueueForToggle();
+  showToast(shuffleOn ? 'Aleatorio activado' : 'Aleatorio desactivado');
   const b1=document.getElementById('shuffleBtn'); if(b1) b1.classList.toggle('on',shuffleOn);
   const b2=document.getElementById('plShuffleBtn'); if(b2){ b2.classList.toggle('active-accent',shuffleOn); popEl(b2); }
   const b3=document.getElementById('miniShuffleBtn'); if(b3) b3.classList.toggle('on',shuffleOn);
@@ -5639,16 +5713,18 @@ function goToAlbumFromMenu(){
   if(idx>=0) openAlbum(idx); else showToast('No se encontró el álbum');
 }
 function goToArtistFromMenu(){ openArtist(encodeURIComponent(menuTrack.artist)); }
+let playbackSpeed = 1;
+function applySpeed(el){ try{ el.defaultPlaybackRate = playbackSpeed; el.playbackRate = playbackSpeed; el.preservesPitch = true; }catch(e){} }
 function openSpeedSheet(){
   const speeds = [0.5, 0.75, 1, 1.25, 1.5, 2];
-  const current = audio.playbackRate || 1;
+  const current = playbackSpeed;
   document.getElementById('speedOptions').innerHTML = speeds.map(s=>`
     <button class="btn ${Math.abs(current-s)<0.01?'':'secondary'}" style="flex:1;min-width:80px;" onclick="setPlaybackSpeed(${s})">${s}x</button>
   `).join('');
   document.getElementById('overlaySpeed').classList.add('show');
 }
 function setPlaybackSpeed(s){
-  audio.playbackRate = s;
+  playbackSpeed = s; applySpeed(audioA); applySpeed(audioB);
   closeOverlay('overlaySpeed');
   showToast('Velocidad: '+s+'x');
 }
