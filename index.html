@@ -4542,7 +4542,7 @@ function renderAppSettings(main){
       ${row(ic('<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>'),'Almacenamiento y datos','Borrar estadísticas de reproducción guardadas en este dispositivo',"confirmClearHistory()")}
       ${row(ic('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'),'Apariencia','Temas y colores personalizados',"showToast('Apariencia — próximamente')",'<span class="badge">Próximamente</span>')}
       ${row(ic('<path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/>'),'Notificaciones','Controles del reproductor en la barra de notificaciones',"showToast('Notificaciones — próximamente')",'<span class="badge">Próximamente</span>')}
-      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.10.12-v) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
+      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.10.12-w) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
     </div>
   `;
 }
@@ -4705,7 +4705,8 @@ function startCrossfade(){
   incoming.src = nextT.url; incoming.currentTime = 0; applySpeed(incoming);
   if(ic) ic.gain.gain.value = 0;
   safePlay(incoming);
-  const dur = crossfadeSecondsFor(outgoing.duration);
+  const remain = isFinite(outgoing.duration) ? Math.max(0.5, outgoing.duration - outgoing.currentTime - 0.3) : 99;
+  const dur = Math.min(crossfadeSecondsFor(outgoing.duration), remain);
   const steps = Math.max(24, Math.round(dur*12));
   let step = 0;
   const complete = ()=>{
@@ -4740,6 +4741,7 @@ function onAudioPlay(e){ if(e.target!==audio) return; isPlaying=true; consecutiv
 function onAudioPause(e){ if(e.target!==audio) return; isPlaying=false; updatePlayIcons(); if('mediaSession' in navigator) navigator.mediaSession.playbackState='paused'; clearTimeout(listenSaveTimer); saveHistory(); }
 function onAudioEnded(e){
   if(e.target!==audio) return;
+  if(xf){ finishCrossfade(); return; } // la canción que sale terminó justo al acabar el fundido: la siguiente ya está sonando, no se vuelve a cargar
   if(!playCounted && currentTrack){ playCounted = true; logPlayEvent(currentTrack); if(activeTab==='history'||activeTab==='recent') render(); }
   clearTimeout(listenSaveTimer); saveHistory();
   if(sleepTimerEndOfTrack){
