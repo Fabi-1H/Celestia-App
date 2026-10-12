@@ -305,7 +305,7 @@ nav.bottom button.active{color:var(--accent);}
   color:var(--bg);background:var(--text-dim);border-radius:50%;width:11px;height:11px;
   display:flex;align-items:center;justify-content:center;opacity:0;transform:scale(.6);transition:opacity .15s,transform .15s;
 }
-#repeatBtn.on .repeat-badge{opacity:1;transform:scale(1);background:var(--accent);color:var(--accent-ink);}
+#repeatBtn.one .repeat-badge{opacity:1;transform:scale(1);background:var(--accent);color:var(--accent-ink);}
 #player .lyrics-line{color:var(--text);font-size:19px;font-weight:700;line-height:1.35;height:52px;margin:2px 0 22px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
 #player .lyrics-line.line-anim{animation:lyricLineIn .28s ease;}
 #player .lyrics-line:empty{margin:0;}
@@ -961,7 +961,7 @@ body:not(.is-playing) #player .p-bars .tk{transform:scaleY(.3);}
 #player .controls .side.on{background:#f2eeed;color:#141414;}
 #player .controls .mid button:not(.play-btn){width:52px;height:52px;border-radius:16px;background:rgba(255,255,255,.1);}
 #player .controls .play-btn{width:64px;height:64px;border-radius:20px;background:#f2eeed;color:#141414;}
-#repeatBtn.on .repeat-badge{background:#141414;color:#f2eeed;}
+#repeatBtn.one .repeat-badge{background:#141414;color:#f2eeed;}
 #player .player-icons-row{display:flex;gap:10px;margin:0 0 10px;}
 #player .player-icons-row button{flex:1;height:52px;border-radius:18px;background:var(--pbox);border:1px solid var(--pboxl);display:flex;align-items:center;justify-content:center;padding:0;color:var(--text);}
 #player .player-icons-row button:active{background:#f2eeed;color:#141414;}
@@ -1124,6 +1124,56 @@ nav.bottom button.active .jpn{color:rgba(255,255,255,.55);}
 .drawer-circle-av{border-radius:50%;}
 .drawer-circle-av img,.drawer-circle-av svg{border-radius:50%;}
 .drawer-circle-av.drawer-circle-invite svg{border-radius:0;}
+
+/* ===== ajuste: fila, ecualizador y repetir ===== */
+#repeatBtn .repeat-badge{display:none;}
+#repeatBtn.one .repeat-badge{display:flex;}
+.q-k{font-size:10px;letter-spacing:.2em;color:rgba(255,255,255,.45);font-weight:600;margin:12px 4px 8px;display:flex;align-items:center;}
+.q-k .jp{margin-left:8px;font-size:1.05em;letter-spacing:.3em;}
+.q-k .q-n{margin-left:auto;background:var(--box-2);border-radius:8px;padding:2px 8px;letter-spacing:.05em;color:var(--text);}
+#overlayQueue .sheet>div:first-child{background:var(--box-2);border:1px solid var(--box-line);border-radius:18px;padding:8px 8px 8px 16px;margin-bottom:4px !important;}
+#overlayQueue h3{background:none;border:none;padding:0;border-radius:0;}
+#overlayQueue .queue-edit-btn{background:var(--box);border:1px solid var(--box-line);border-radius:12px;padding:8px 14px;}
+#overlayQueue #queueEditTools button:not(.queue-edit-btn){width:34px;height:34px;border-radius:11px !important;background:var(--box) !important;border:1px solid var(--box-line) !important;padding:0 !important;display:inline-flex;align-items:center;justify-content:center;}
+#overlayQueue #queueEditTools{gap:6px !important;}
+#overlayQueue .queue-sub{margin:12px 4px 0;}
+#overlayQueue .row{background:var(--box);border:1px solid var(--box-line);border-radius:18px;padding:7px 8px 7px 7px;margin-bottom:6px;}
+#overlayQueue .row .art{border-radius:12px;}
+#overlayQueue .row.q-now{background:var(--box-2);border-color:rgba(255,255,255,.2);}
+#overlayQueue .queue-playpause{border-radius:12px;width:36px;height:36px;}
+.queue-pill-row{border-top:none;padding-top:0;margin-top:14px;gap:8px;}
+.queue-pill{background:var(--box);border:1px solid var(--box-line);border-radius:18px;position:relative;}
+.queue-pill.on{background:var(--text);color:#141414;border-color:var(--text);}
+.queue-pill .qp-one{display:none;position:absolute;top:7px;right:10px;font-size:9px;font-weight:800;background:#141414;color:#f2eeed;border-radius:6px;padding:2px 5px;line-height:1;}
+.queue-pill.one .qp-one{display:block;}
+#overlayEQ .toggle-row{background:var(--box);border:1px solid var(--box-line);border-radius:18px;padding:12px 14px;margin-bottom:0;}
+#overlayEQ .switch{width:48px;height:28px;border-radius:10px;background:rgba(255,255,255,.12);}
+#overlayEQ .switch .knob{width:20px;height:20px;border-radius:7px;top:4px;left:4px;}
+#overlayEQ .switch.on{background:var(--text);}
+#overlayEQ .switch.on .knob{left:24px;background:#141414;}
+.eq-wrap{display:flex;gap:6px;background:var(--box);border:1px solid var(--box-line);border-radius:20px;padding:14px 12px 10px;margin:12px 0 4px;}
+.eq-scale{display:flex;flex-direction:column;justify-content:space-between;align-items:flex-end;font-size:9px;color:rgba(255,255,255,.35);height:152px;padding-top:2px;}
+.eq-wrap .eq-bands{flex:1;margin:0;height:170px;}
+.eq-slider-wrap input[type=range]{accent-color:#ece8e7;background:rgba(255,255,255,.12);border-radius:6px;}
+.eq-slider-wrap span{color:rgba(255,255,255,.45);}
+.eq-presets button{border-radius:14px;background:var(--box);border-color:var(--box-line);}
+.eq-presets button.active{background:var(--text);color:#141414;border-color:var(--text);}
+/* fila: barra inferior fija (aleatorio, repetir, temporizador) sin importar cuánto se baje */
+#overlayQueue .queue-pill-row{position:sticky;bottom:calc(-22px - env(safe-area-inset-bottom));z-index:3;margin:10px 0 calc(-22px - env(safe-area-inset-bottom));padding:22px 0 calc(38px + env(safe-area-inset-bottom));background:linear-gradient(180deg,rgba(23,19,20,0) 0,#171314 20px);}
+/* ===== botones que no encajaban: atrás, engranaje, cámara, buscador y barra fija ===== */
+.sp-sticky .sb-back,.ar-hero .ar-back,.ar-hero .ar-cam,.pf-nav{width:42px;height:42px;border-radius:14px;background:rgba(52,45,47,.9);border:1px solid rgba(255,255,255,.16);color:var(--text);box-shadow:0 4px 14px rgba(0,0,0,.3);-webkit-backdrop-filter:none;backdrop-filter:none;}
+.stats-back,.sp-back{width:42px;height:42px;border-radius:14px;background:var(--box-2);border:1px solid var(--box-line);color:var(--text);display:flex;align-items:center;justify-content:center;padding:0;}
+.sp-back{margin:12px 0 0;}
+.sp-sticky::before{background:#1b1718;}
+.sp-sticky .sb-play{border-radius:13px;}
+.srch-fake{background:var(--box-2);border:1px solid var(--box-line);color:var(--text-dim);border-radius:16px;height:50px;}
+.srch-fake svg{color:var(--text);}
+.search-box.pl-search,.search-box.srch-gray{background:var(--box-2);border:1px solid var(--box-line);border-radius:16px;}
+.srch-field{height:50px;border-radius:16px;background:var(--box-2);border:1px solid var(--box-line);color:var(--text-dim);}
+.srch-ic{color:var(--text);}
+.srch-field input::placeholder{color:var(--text-dim);}
+.srch-wrap.active .srch-field{background:var(--box-2);}
+.srch-back{border-radius:14px;}
 </style>
 </head>
 <body>
@@ -1304,13 +1354,13 @@ nav.bottom button.active .jpn{color:rgba(255,255,255,.55);}
   </div></div>
 
   <div class="overlay" id="overlayEQ"><div class="sheet">
-    <h3>Ecualizador <button onclick="closeOverlay('overlayEQ')">✕</button></h3>
+    <h3><span class="mt-t"><span class="mt-k">音<span>AUDIO</span></span>Ecualizador</span><button onclick="closeOverlay('overlayEQ')">✕</button></h3>
     <div class="toggle-row"><span style="font-size:14px;font-weight:600;">Activar ecualizador</span>
       <div class="switch" id="eqSwitch" onclick="toggleEQ()"><div class="knob"></div></div>
     </div>
-    <div class="eq-bands" id="eqBands"></div>
+    <div class="eq-wrap"><div class="eq-scale"><span>+12</span><span>0</span><span>−12</span></div><div class="eq-bands" id="eqBands"></div></div>
     <div class="eq-presets" id="eqPresets"></div>
-    <div class="toggle-row" style="border-top:1px solid var(--line);margin-top:16px;padding-top:16px;">
+    <div class="toggle-row" style="margin-top:12px;">
       <span style="font-size:14px;font-weight:600;">Cross fade entre canciones</span>
       <div class="switch" id="cfSwitch" onclick="toggleCrossfade()"><div class="knob"></div></div>
     </div>
@@ -1431,7 +1481,7 @@ nav.bottom button.active .jpn{color:rgba(255,255,255,.55);}
 
   <div class="overlay" id="overlayQueue"><div class="sheet">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;">
-      <h3 style="margin:0;">Fila</h3>
+      <h3 style="margin:0;"><span class="mt-t"><span class="mt-k">列<span>COLA</span></span>Fila</span></h3>
       <div style="display:flex;align-items:center;gap:2px;" id="queueEditTools">
         <button id="queueUndoBtn" onclick="queueEditUndo()" style="background:none;border:none;color:var(--text);padding:6px;display:none;opacity:.35;" disabled>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5M4 9h10a6 6 0 010 12h-2"/></svg>
@@ -1447,11 +1497,11 @@ nav.bottom button.active .jpn{color:rgba(255,255,255,.55);}
     <div class="queue-pill-row">
       <button class="queue-pill" id="queuePillShuffle" onclick="toggleShuffleFromQueue()">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3h4v4M21 3l-7 7M3 21l6-6M3 3h4l14 18h4"/></svg>
-        Modo aleatorio
+        <span class="qp-t">Modo aleatorio</span>
       </button>
       <button class="queue-pill" id="queuePillRepeat" onclick="toggleRepeatFromQueue()">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 2l4 4-4 4M21 6H8a4 4 0 00-4 4v1M7 22l-4-4 4-4M3 18h13a4 4 0 004-4v-1"/></svg>
-        Repetir una vez
+        <span class="qp-t">Repetir</span><span class="qp-one">1</span>
       </button>
       <button class="queue-pill" onclick="closeOverlay('overlayQueue');openSleepTimer()">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/></svg>
@@ -3598,7 +3648,7 @@ function renderPlaylistDetail(main){
       <div class="sp-thumb" onclick="openPlaylistMenu('${p.id}')">${playlistArtHTML(p, 46, {fluid:true, radius:'0'})}</div>
       <button class="sp-ic" onclick="openPlaylistMenu('${p.id}')">${SP_ICON.dots}</button>
       <div style="flex:1"></div>
-      <button class="sp-ic ${shuffleOn?'active-accent':''}" id="plShuffleBtn" onclick="toggleShuffle()"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="8.6" cy="8.6" r="1.25" fill="currentColor" stroke="none"/><circle cx="15.4" cy="8.6" r="1.25" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.25" fill="currentColor" stroke="none"/><circle cx="8.6" cy="15.4" r="1.25" fill="currentColor" stroke="none"/><circle cx="15.4" cy="15.4" r="1.25" fill="currentColor" stroke="none"/></svg></button>
+      <button class="sp-ic ${shuffleOn?'active-accent':''}" id="plShuffleBtn" onclick="toggleShuffle()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3h4v4M21 3l-7 7M3 21l6-6M3 3h4l14 18h4"/></svg></button>
       <button class="sp-play ${active?'playing':''}" id="spPlayBtn" data-expr="${expr}" data-state="${active}" onclick="onSpPlay('${expr}')" ${pt.length? '':'disabled'}>${active?SP_ICON.pause:SP_ICON.play}</button>
     </div>
     </div>
@@ -4444,7 +4494,7 @@ function renderAppSettings(main){
       ${row(ic('<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>'),'Almacenamiento y datos','Borrar estadísticas de reproducción guardadas en este dispositivo',"confirmClearHistory()")}
       ${row(ic('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'),'Apariencia','Temas y colores personalizados',"showToast('Apariencia — próximamente')",'<span class="badge">Próximamente</span>')}
       ${row(ic('<path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/>'),'Notificaciones','Controles del reproductor en la barra de notificaciones',"showToast('Notificaciones — próximamente')",'<span class="badge">Próximamente</span>')}
-      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.10.12-r) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
+      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.10.12-u) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
     </div>
   `;
 }
@@ -4564,6 +4614,7 @@ function peekNextTrack(){
   if(repeatMode===1) return currentTrack;
   if(shuffleOn) return currentQueue[Math.floor(Math.random()*currentQueue.length)];
   if(currentIndex < currentQueue.length-1) return currentQueue[currentIndex+1];
+  if(repeatMode===2) return currentQueue[0]; // repetir todo: al terminar la fila vuelve a empezar
   return null;
 }
 function nextTrack(){
@@ -4889,12 +4940,14 @@ function renderQueueList(){
   const svgPause = `<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>`;
   const svgPlay = `<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5l12 7-12 7V5z"/></svg>`;
   let html = `<div class="queue-sub">Reproduciendo <b>${escapeHtml(currentSource.name||currentSource.kind)}</b></div>
-    <div class="row" style="cursor:default;">
+    <div class="q-k">AHORA<span class="jp">再生中</span></div>
+    <div class="row q-now" style="cursor:default;">
       <div class="art">${trackArt(currentTrack,46)}</div>
       <div class="meta"><div class="t" style="color:var(--accent)">${escapeHtml(currentTrack.title)}</div><div class="s">${escapeHtml(currentTrack.artist)}</div></div>
       <button class="row-menu queue-playpause" onclick="togglePlay()">${isPlaying? svgPause: svgPlay}</button>
     </div>`;
   if(upcoming.length){
+    html += `<div class="q-k">A CONTINUACIÓN<span class="jp">次</span><span class="q-n">${upcoming.length}</span></div>`;
     html += upcoming.map((x,pos)=>`
       <div class="row queue-row" data-qi="${x.i}" data-pos="${pos}" ${queueEditMode?`style="animation:rowEditIn .38s ease both;animation-delay:${Math.min(pos*0.035,0.4)}s;"`:`onclick="jumpToQueueIndex(${x.i})"`}>
         <div class="art">${trackArt(x.t,46)}</div>
@@ -4913,7 +4966,7 @@ function renderQueueList(){
   }
   box.innerHTML = html;
   document.getElementById('queuePillShuffle').classList.toggle('on', shuffleOn);
-  document.getElementById('queuePillRepeat').classList.toggle('on', repeatMode===1);
+  updateRepeatUI();
 }
 let queueDrag = null;
 function startQueueDrag(e, pos){
@@ -4930,7 +4983,7 @@ function startQueueDrag(e, pos){
   queueDrag = {
     startY: e.clientY,
     pos, newPos: pos,
-    rowHeight: rect.height,
+    rowHeight: rect.height + (parseFloat(getComputedStyle(rowEl).marginBottom)||0),
     rowEl, rows,
     upcomingStart: currentIndex+1
   };
@@ -5041,13 +5094,20 @@ function toggleShuffle(){
 }
 function toggleRepeat(){
   buzz(10);
-  repeatMode = repeatMode? 0:1;
+  repeatMode = repeatMode===0 ? 2 : (repeatMode===2 ? 1 : 0); // 0 apagado, 2 todo en bucle, 1 solo esta canción
+  updateRepeatUI();
+  showToast(repeatMode===2 ? 'Repetir todo' : repeatMode===1 ? 'Repetir esta canción' : 'Repetición desactivada');
+}
+function updateRepeatUI(){
   [document.getElementById('repeatBtn'), document.getElementById('miniRepeatBtn')].forEach(b=>{
     if(!b) return;
-    b.classList.toggle('on',repeatMode===1);
+    b.classList.toggle('on',repeatMode>0);
+    b.classList.toggle('one',repeatMode===1);
     b.style.opacity = '1';
   });
-  const b=document.getElementById('queuePillRepeat'); if(b) b.classList.toggle('on',repeatMode===1);
+  const q=document.getElementById('queuePillRepeat');
+  if(q){ q.classList.toggle('on',repeatMode>0); q.classList.toggle('one',repeatMode===1);
+    const t=q.querySelector('.qp-t'); if(t) t.textContent = repeatMode===2 ? 'Repetir todo' : repeatMode===1 ? 'Repetir canción' : 'Repetir'; }
 }
 function toggleLike(){ if(!currentTrack) return; buzz(14); currentTrack.liked=!currentTrack.liked; idbUpdateTrackFields(currentTrack.id, {liked: currentTrack.liked}); updatePlayIcons(); }
 
