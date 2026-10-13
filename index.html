@@ -1317,6 +1317,67 @@ nav.bottom button.active .jpn{color:rgba(255,255,255,.55);}
 .st2-sec .jp{display:none;}
 .st2-sec{font-size:15px;}
 .st2-tabs button{font-size:11.5px;white-space:nowrap;padding:9px 2px;}
+
+/* ===== píldoras con indicador deslizante ===== */
+.pill-seg{position:relative;display:flex;gap:4px;}
+.pill-seg .pill-thumb{position:absolute;top:4px;bottom:4px;left:0;width:0;opacity:0;border-radius:14px;background:linear-gradient(180deg,#fff,#d9d4d5);z-index:0;
+  transition:left .5s var(--ease-soft), width .5s var(--ease-soft), opacity .3s ease;pointer-events:none;}
+.pill-seg button{position:relative;z-index:1;}
+.st2-tabs.pill-seg button,.st2-tabs.pill-seg button.active{background:transparent;}
+.st2-tabs.pill-seg button{color:rgba(255,255,255,.55);transition:color .4s ease;}
+.st2-tabs.pill-seg button.active{color:#161213;}
+.pc-pills{margin:0 -20px 14px;padding:4px 24px;overflow-x:auto;scrollbar-width:none;}
+.pc-pills::-webkit-scrollbar{display:none;}
+.pc-pills .pill-thumb{top:4px;bottom:4px;}
+.pc-pills button{flex-shrink:0;white-space:nowrap;padding:10px 16px;border-radius:14px;background:var(--box);border:1px solid var(--box-line);color:rgba(255,255,255,.65);font-size:13px;font-weight:600;transition:color .4s ease, background .3s ease;}
+.pc-pills button.active{background:transparent;border-color:transparent;color:#161213;}
+/* ===== tus me gusta / podcasts ===== */
+.lk-hero,.pc-hero{position:relative;overflow:hidden;display:flex;align-items:center;gap:16px;background:linear-gradient(160deg,#322c2d 0%,#262122 60%,#201c1d 100%);border:1px solid var(--box-line);border-radius:26px;padding:16px;margin:12px 0 10px;}
+.lk-hero::after{content:'愛';position:absolute;right:-8px;bottom:-34px;font-family:var(--font-jp);font-size:140px;line-height:1;font-weight:700;color:rgba(255,255,255,.04);pointer-events:none;}
+.pc-hero::after{content:'声';position:absolute;right:-8px;bottom:-34px;font-family:var(--font-jp);font-size:140px;line-height:1;font-weight:700;color:rgba(255,255,255,.04);pointer-events:none;}
+.lk-art{width:112px;height:112px;border-radius:22px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(145deg,#8a8485 0%,#4a4445 55%,#363031 100%);box-shadow:0 10px 26px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.18);}
+.lk-info,.pc-info{min-width:0;position:relative;z-index:1;}
+.lk-kick{display:flex;align-items:center;gap:9px;font-size:10.5px;letter-spacing:.2em;color:rgba(255,255,255,.5);font-weight:600;margin-bottom:6px;}
+.lk-kick .jp0{font-family:var(--font-jp);letter-spacing:.15em;color:rgba(255,255,255,.4);font-size:12px;}
+.lk-title,.pc-title{font-family:var(--font-head);font-size:25px;font-weight:700;line-height:1.1;}
+.lk-sub{color:rgba(255,255,255,.55);font-size:12.5px;margin-top:6px;}
+.lk-actions{margin:0 0 12px;padding:10px 12px;}
+.pc-count{font-size:12.5px;color:rgba(255,255,255,.55);padding-left:6px;}
+.lk-empty{text-align:center;padding:36px 20px;background:var(--box);border:1px solid var(--box-line);border-radius:22px;color:var(--text-dim);font-size:13.5px;}
+.lk-empty .jp0{display:block;font-family:var(--font-jp);font-size:44px;color:rgba(255,255,255,.12);margin-bottom:8px;}
+.pc-covers{position:relative;width:118px;height:96px;flex-shrink:0;}
+.pc-cv{position:absolute;width:76px;height:76px;border-radius:18px;overflow:hidden;background:var(--surface);border:2px solid #262122;box-shadow:0 8px 18px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;}
+.pc-cv img{width:100%;height:100%;object-fit:cover;}
+.pc-cv.c0{left:0;top:10px;z-index:3;}
+.pc-cv.c1{left:22px;top:2px;z-index:2;transform:scale(.9);opacity:.85;}
+.pc-cv.c2{left:42px;top:-2px;z-index:1;transform:scale(.8);opacity:.6;}
+.pc-list{display:flex;flex-direction:column;gap:8px;padding-bottom:8px;}
+.pc-ep{display:flex;align-items:center;gap:13px;background:var(--box);border:1px solid var(--box-line);border-radius:22px;padding:10px 8px 10px 10px;cursor:pointer;transition:background .25s ease, border-color .25s ease, transform .2s ease;}
+.pc-ep:active{transform:scale(.985);background:var(--box-2);}
+.pc-ep.playing{border-color:rgba(255,255,255,.28);background:var(--box-2);}
+.pc-art{width:68px;height:68px;border-radius:16px;overflow:hidden;flex-shrink:0;background:var(--surface);display:flex;align-items:center;justify-content:center;color:var(--text-faint);}
+.pc-art img{width:100%;height:100%;object-fit:cover;}
+.pc-meta{flex:1;min-width:0;}
+.pc-t{font-size:15px;font-weight:600;line-height:1.28;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.pc-ep.playing .pc-t{color:#fff;}
+.pc-s{font-size:12px;color:rgba(255,255,255,.5);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+/* ===== transiciones de pantallas y de canciones ===== */
+.nav-ghost{z-index:3;pointer-events:none;overflow:hidden;background:transparent;}
+.nav-ghost.out-l{animation:ghostOutL .24s cubic-bezier(.4,0,.8,.4) forwards;}
+.nav-ghost.out-r{animation:ghostOutR .24s cubic-bezier(.4,0,.8,.4) forwards;}
+@keyframes ghostOutL{from{opacity:1;transform:none;}to{opacity:0;transform:translateX(-28px);}}
+@keyframes ghostOutR{from{opacity:1;transform:none;}to{opacity:0;transform:translateX(28px);}}
+main.nav-push{animation:navPush .42s var(--ease-soft);}
+main.nav-pop{animation:navPop .42s var(--ease-soft);}
+@keyframes navPush{from{opacity:0;transform:translateX(44px);}to{opacity:1;transform:none;}}
+@keyframes navPop{from{opacity:0;transform:translateX(-44px);}to{opacity:1;transform:none;}}
+.trk-in-r{animation:trkInR .5s var(--ease-soft) both;}
+.trk-in-l{animation:trkInL .5s var(--ease-soft) both;}
+.trk-in-0{animation:trkIn0 .5s var(--ease-soft) both;}
+@keyframes trkInR{from{opacity:0;transform:translateX(26px) scale(.97);}to{opacity:1;transform:none;}}
+@keyframes trkInL{from{opacity:0;transform:translateX(-26px) scale(.97);}to{opacity:1;transform:none;}}
+@keyframes trkIn0{from{opacity:0;transform:translateY(8px) scale(.97);}to{opacity:1;transform:none;}}
 </style>
 </head>
 <body>
@@ -1907,6 +1968,7 @@ function navValid(sn){
   return true;
 }
 function navGoBack(){
+  window.__navBack = true; // le indica a la transición que es un "volver" (la pantalla nueva entra desde la izquierda)
   navStack.pop();
   while(navStack.length>1 && !navValid(navStack[navStack.length-1])) navStack.pop(); // si lo que había ya no existe, se salta
   const sn = navStack[navStack.length-1] || NAV_HOME;
@@ -2621,6 +2683,7 @@ function settleUI(){
   const cands = [...main.querySelectorAll('button,[onclick]')].filter(c=>(c.getAttribute('onclick')||'')===p.on && baseCls(c.className)===p.cls);
   if(!cands.length) return;
   const c = cands.find(x=>(x.textContent||'').trim().slice(0,40)===p.txt) || cands[0];
+  if(c.closest('.pill-seg')){ __press = null; return; } // las píldoras con indicador deslizante ya se animaron solas
   // 1) los hermanos que cambiaron de estado (pestañas, chips...) se animan desde su estado anterior
   const par = c.parentElement;
   const morph = [];
@@ -2983,17 +3046,72 @@ function decorateJP(){
   }catch(e){}
 }
 
+/* ===== entrar/salir de pantallas: la pantalla que se va se desliza y desvanece mientras la nueva entra ===== */
+function navDirection(){
+  if(window.__navBack){ window.__navBack = false; return -1; }
+  const sn = navSnap(), top = navStack[navStack.length-1];
+  if(!top || top.key===sn.key) return 0;
+  if(navStack.length>1 && navStack[navStack.length-2].key===sn.key) return -1; // volver
+  const newBase = NAV_BASE.includes(sn.tab), oldBase = NAV_BASE.includes(top.tab);
+  if(newBase) return oldBase ? 0 : -1;
+  return 1; // entrar a una pantalla de detalle
+}
+function navGhost(main, dir, scrollTop){
+  try{
+    document.querySelectorAll('.nav-ghost').forEach(g=>g.remove());
+    if(!main.firstChild || main.childElementCount>400) return; // listas enormes: se omite para no costar rendimiento
+    const r = main.getBoundingClientRect();
+    const g = main.cloneNode(false);
+    g.removeAttribute('id'); g.className = 'nav-ghost '+(dir>0?'out-l':'out-r');
+    g.style.cssText += `;position:fixed;left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;`;
+    while(main.firstChild) g.appendChild(main.firstChild); // se mueven los nodos (no se copian): es barato
+    main.parentNode.insertBefore(g, main.nextSibling);
+    g.scrollTop = scrollTop;
+    setTimeout(()=>g.remove(), 260);
+  }catch(e){}
+}
+/* ===== píldoras con indicador deslizante (misma animación que Música ⇄ Siguiendo) ===== */
+function placePill(seg, instant){
+  const th = seg.querySelector('.pill-thumb'); const act = seg.querySelector('button.active');
+  if(!th || !act) return;
+  if(instant){ th.style.transition = 'none'; }
+  th.style.left = act.offsetLeft+'px'; th.style.width = act.offsetWidth+'px'; th.style.opacity = '1';
+  if(instant){ void th.offsetWidth; th.style.transition = ''; }
+  if(seg.scrollWidth>seg.clientWidth+2){ // si la fila se desplaza, el activo queda centrado
+    seg.scrollTo({left: Math.max(0, act.offsetLeft-(seg.clientWidth-act.offsetWidth)/2), behavior: instant?'auto':'smooth'});
+  }
+}
+function slidePill(btn){
+  const seg = btn.closest('.pill-seg'); if(!seg) return;
+  seg.querySelectorAll('button').forEach(b=>b.classList.toggle('active', b===btn));
+  placePill(seg,false);
+}
+function initPills(){ document.querySelectorAll('.pill-seg').forEach(seg=>placePill(seg,true)); }
+window.addEventListener('resize', ()=>{ try{ initPills(); }catch(e){} });
+function statsWeek(i,btn){
+  if(window.__histWeekIdx===i) return;
+  window.__histWeekIdx = i; slidePill(btn);
+  setTimeout(()=>{ if(activeTab==='history') render(); }, 360); // deja que el indicador termine de deslizarse antes de cambiar los datos
+}
+function setPodShow(key,btn){
+  if(window.__podShow===key) return;
+  window.__podShow = key; window.__podAnim = true; slidePill(btn);
+  setTimeout(()=>{ if(activeTab==='podcasts') render(true); }, 300);
+}
 function render(soft){
   const r = renderCore(soft);
   decorateJP();
   try{ settleUI(); }catch(e){}
   try{ navTrack(); syncBackTrap(); }catch(e){}
+  try{ initPills(); }catch(e){}
   return r;
 }
 function renderCore(soft){
   const main = document.getElementById('main');
   const navKey = activeTab+'|'+(activeTab==='albumDetail'?window.currentAlbumIdx:'')+'|'+(activeTab==='artistDetail'?window.currentArtist:'');
   const navChanged = navKey!==window.__lastNavKey;
+  const prevScroll = main.scrollTop;
+  const navDir = navChanged ? navDirection() : 0;
   if(navChanged){ window.__lastNavKey = navKey; main.scrollTop = 0; } // pantalla nueva: siempre arranca arriba
   window.__lastRenderNavigated = navChanged;
   const animate = (soft!==true) && navChanged; // refrescar la misma pantalla = cambio silencioso, sin parpadeo
@@ -3002,8 +3120,10 @@ function renderCore(soft){
   syncTabsBar();
   if(animate){
     const dir = window.__tabSlideDir; window.__tabSlideDir = null;
-    main.classList.remove('anim','tab-in-l','tab-in-r'); void main.offsetWidth;
-    main.classList.add(dir===1 ? 'tab-in-r' : dir===-1 ? 'tab-in-l' : 'anim');
+    main.classList.remove('anim','tab-in-l','tab-in-r','nav-push','nav-pop'); void main.offsetWidth;
+    if(dir){ main.classList.add(dir===1 ? 'tab-in-r' : 'tab-in-l'); }
+    else if(navDir!==0){ navGhost(main, navDir, prevScroll); main.classList.add(navDir>0 ? 'nav-push' : 'nav-pop'); }
+    else main.classList.add('anim');
   }
   const detailScreens = ['search','messages','playlistDetail','artistDetail','albumDetail','likedDetail','profile','appSettings','recentAdded','statsDetail','history','recent'];
   const isDetail = detailScreens.includes(activeTab);
@@ -3143,14 +3263,28 @@ function renderRecentAdded(main){
 function openLiked(){ activeTab='likedDetail'; document.getElementById('tabsBar').style.display='none'; render(); }
 function renderLikedDetail(main){
   const liked = tracks.filter(t=>t.liked);
-  main.innerHTML = `<button class="icon-btn" style="margin:20px 0 4px" onclick="showTab('home')">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg> Inicio
-    </button>
-    <div style="display:flex;align-items:center;gap:16px;margin:14px 0 20px;">
-      <div class="quick-art heart" style="width:88px;height:88px;border-radius:10px;"><svg width="34" height="34" viewBox="0 0 24 24" fill="#fff" stroke="none"><path d="M12 21s-7.5-4.8-10-9.3C.5 8 2 4.5 5.5 4 8 3.6 10 5 12 7.5 14 5 16 3.6 18.5 4 22 4.5 23.5 8 22 11.7 19.5 16.2 12 21 12 21z"/></svg></div>
-      <div><div style="font-family:var(--font-head);font-size:21px;font-weight:700;">Tus me gusta</div><div style="color:var(--text-dim);font-size:13px;">${liked.length} canción(es)</div></div>
+  const sec = liked.reduce((n,t)=>n+(t.duration||0),0);
+  const active = window.__curExpr==='liked' && !!isPlaying;
+  const heart = `<svg width="46" height="46" viewBox="0 0 24 24" fill="#fff" stroke="none"><path d="M12 21s-7.5-4.8-10-9.3C.5 8 2 4.5 5.5 4 8 3.6 10 5 12 7.5 14 5 16 3.6 18.5 4 22 4.5 23.5 8 22 11.7 19.5 16.2 12 21 12 21z"/></svg>`;
+  const backBtn = `<button class="stats-back" onclick="showTab('home')"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>`;
+  const anim = (window.__lastRenderNavigated!==false);
+  main.innerHTML = `
+    <div class="stats-header big">${backBtn}<div class="stats-title">Tus me gusta<span class="jp">好き</span></div><span></span></div>
+    <div class="lk-hero">
+      <div class="lk-art">${heart}</div>
+      <div class="lk-info">
+        <div class="lk-kick"><span class="jp0">愛</span><span>PLAYLIST</span></div>
+        <div class="lk-title">Tus me gusta</div>
+        <div class="lk-sub">${liked.length} ${liked.length===1?'canción':'canciones'}${sec>0?' · '+fmtDurationTotal(sec):''}</div>
+      </div>
     </div>
-    ${liked.length? liked.map(t=>trackRow(t,{showAlbum:true, queueExpr:"'liked'"})).join('') : `<div class="empty"><p>Toca el corazón dentro del reproductor para guardar canciones aquí.</p></div>`}`;
+    <div class="sp-actions lk-actions">
+      <div class="pc-count">Tu música favorita</div>
+      <div style="flex:1"></div>
+      <button class="sp-ic ${shuffleOn?'active-accent':''}" id="plShuffleBtn" onclick="toggleShuffle()">${SP_ICON.shuffle}</button>
+      <button class="sp-play ${active?'playing':''}" id="spPlayBtn" data-expr="liked" data-state="${active}" onclick="onSpPlay('liked')" ${liked.length?'':'disabled'}>${active?SP_ICON.pause:SP_ICON.play}</button>
+    </div>
+    ${liked.length? liked.map((t,i)=>trackRow(t,{showAlbum:true, queueExpr:"'liked'", animStyle: anim?`animation:rowEditIn .38s ease both;animation-delay:${Math.min(i*0.04,0.4)}s;`:''})).join('') : `<div class="lk-empty"><span class="jp0">愛</span><p>Toca el corazón dentro del reproductor para guardar canciones aquí.</p></div>`}`;
 }
 
 function renderSongs(main){
@@ -3161,19 +3295,48 @@ function renderSongs(main){
 }
 const podcastIcon = `<svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#5C5254" stroke-width="1.6"><path d="M12 14a3 3 0 003-3V6a3 3 0 00-6 0v5a3 3 0 003 3z"/><path d="M19 11a7 7 0 01-14 0M12 18v3"/></svg>`;
 function renderPodcasts(main){
-  const pods = podcastTracks();
+  const pods = podcastTracks().slice().sort((x,y)=>(y.addedAt||0)-(x.addedAt||0));
   if(!pods.length){
     main.innerHTML = emptyState(podcastIcon,'Aún no tienes podcasts','Marca cualquier audio como Podcast desde su menú (⋮) para que aparezca aquí.',null);
     return;
   }
-  main.innerHTML = `<div class="section-title">Tus podcasts</div>` +
-    pods.map(t=>`<div class="row" onclick="playTrack('${jsq(t.id)}','podcasts')">
-      <div class="art">${trackArt(t,46)}</div>
-      <div class="meta"><div class="t">${escapeHtml(t.title)}</div><div class="s">Podcast • ${escapeHtml(t.artist)}</div></div>
-      <button class="row-menu" onclick="event.stopPropagation();openTrackMenu('${jsq(t.id)}', '')">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
-      </button>
-    </div>`).join('');
+  // programas = artistas distintos
+  const shows = []; const seen = {};
+  pods.forEach(t=>{ const k = akey(t.artist)||'?'; if(!seen[k]){ seen[k] = {key:k, name:(t.artist||'Sin programa').trim(), n:0}; shows.push(seen[k]); } seen[k].n++; });
+  if(window.__podShow && window.__podShow!=='all' && !seen[window.__podShow]) window.__podShow = 'all';
+  const sel = window.__podShow || 'all';
+  const list = sel==='all'? pods : pods.filter(t=>(akey(t.artist)||'?')===sel);
+  const sec = list.reduce((n,t)=>n+(t.duration||0),0);
+  const active = window.__curExpr==='podcasts' && !!isPlaying;
+  const anim = window.__podAnim; window.__podAnim = false;
+  const covers = pods.slice(0,3).map((t,i)=>`<div class="pc-cv c${i}">${trackArt(t,80,true)}</div>`).join('');
+  main.innerHTML = `
+    <div class="pc-hero">
+      <div class="pc-covers">${covers}</div>
+      <div class="pc-info">
+        <div class="lk-kick"><span class="jp0">番組</span><span>PODCAST</span></div>
+        <div class="pc-title">Tus podcasts</div>
+        <div class="lk-sub">${pods.length} ${pods.length===1?'episodio':'episodios'}${sec>0?' · '+fmtDurationTotal(sec):''}</div>
+      </div>
+    </div>
+    <div class="sp-actions lk-actions">
+      <div class="pc-count">${shows.length} ${shows.length===1?'programa':'programas'}</div>
+      <div style="flex:1"></div>
+      <button class="sp-play ${active?'playing':''}" id="spPlayBtn" data-expr="podcasts" data-state="${active}" onclick="onSpPlay('podcasts')">${active?SP_ICON.pause:SP_ICON.play}</button>
+    </div>
+    ${shows.length>1? `<div class="pill-seg pc-pills"><div class="pill-thumb"></div>
+      <button class="${sel==='all'?'active':''}" onclick="setPodShow('all',this)">Todos</button>
+      ${shows.map(sh=>`<button class="${sel===sh.key?'active':''}" onclick="setPodShow('${jsq(sh.key)}',this)">${escapeHtml(sh.name)}</button>`).join('')}
+    </div>`:''}
+    <div class="pc-list">${list.map((t,i)=>`
+      <div class="pc-ep ${currentTrack && currentTrack.id===t.id?'playing':''}" data-tid="${escapeHtml(t.id)}" ${anim?`style="animation:rowEditIn .38s ease both;animation-delay:${Math.min(i*0.05,0.4)}s;"`:''} onclick="playTrack('${jsq(t.id)}','podcasts')">
+        <div class="pc-art">${trackArt(t,64,true)}</div>
+        <div class="pc-meta"><div class="pc-t">${escapeHtml(t.title)}</div>
+          <div class="pc-s">${escapeHtml(t.artist||'')}${t.duration? ' · '+fmtDurationTotal(t.duration):''}</div></div>
+        <button class="row-menu" onclick="event.stopPropagation();openTrackMenu('${jsq(t.id)}', '')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
+        </button>
+      </div>`).join('')}</div>`;
 }
 
 function musicTracks(){ return tracks.filter(t=>!t.isPodcast); }
@@ -3330,7 +3493,7 @@ function bindStickyBar(main, targetSel){
 }
 function syncSpUI(){
   refreshLikeAllBtn();
-  document.querySelectorAll('.sp-row[data-tid], .row[data-tid]').forEach(r=>{
+  document.querySelectorAll('.sp-row[data-tid], .row[data-tid], .pc-ep[data-tid]').forEach(r=>{
     r.classList.toggle('playing', !!currentTrack && r.dataset.tid===currentTrack.id);
   });
   refreshSpPlay();
@@ -4418,7 +4581,7 @@ function renderHistory(main){
 
   main.innerHTML = `
     <div class="stats-header big">${backBtn}<div class="stats-title">Estadísticas<span class="jp">統計</span></div><span></span></div>
-    <div class="week-tabs st2-tabs">${weeksOrdered.map((wk,i)=>`<button class="${i===window.__histWeekIdx?'active':''}" onclick="window.__histWeekIdx=${i};render()">${weekTabLabel(wk)}</button>`).join('')}</div>
+    <div class="week-tabs st2-tabs pill-seg"><div class="pill-thumb"></div>${weeksOrdered.map((wk,i)=>`<button class="${i===window.__histWeekIdx?'active':''}" onclick="statsWeek(${i},this)">${weekTabLabel(wk)}</button>`).join('')}</div>
 
     <div class="st2-hero" onclick="openStatsDetail('minutes')">
       <div class="st2-kick"><span class="jp0">週</span><span>${compactRange(w)}</span><span class="st2-chev">›</span></div>
@@ -4685,7 +4848,7 @@ function renderAppSettings(main){
       ${row(ic('<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>'),'Almacenamiento y datos','Borrar estadísticas de reproducción guardadas en este dispositivo',"confirmClearHistory()")}
       ${row(ic('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'),'Apariencia','Temas y colores personalizados',"showToast('Apariencia — próximamente')",'<span class="badge">Próximamente</span>')}
       ${row(ic('<path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/>'),'Notificaciones','Controles del reproductor en la barra de notificaciones',"showToast('Notificaciones — próximamente')",'<span class="badge">Próximamente</span>')}
-      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.10.12-z) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
+      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.10.13-b) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
     </div>
   `;
 }
@@ -4791,9 +4954,10 @@ function loadCurrent(autoplay){
   if(eqState.enabled || crossfadeState.enabled) ensureEQGraph(); // el audio normal no pasa por Web Audio, así sigue sonando en segundo plano
   const chain = chainFor(audio);
   if(chain) chain.gain.gain.value = 1;
-  if(autoplay){ resumeAudioCtx(); safePlay(audio); }
+  if(autoplay){ resumeAudioCtx(); safePlay(audio); fadeInAudio(audio); } else { clearInterval(fadeInIv); if(!sleepFadeIv) audio.volume = 1; }
   updatePlayerUI();
   renderMini();
+  animateTrackChange(window.__trkDir||0); window.__trkDir = 0;
   updateMediaSessionMetadata();
   if(activeTab==='history') render();
   if(document.getElementById('overlayQueue').classList.contains('show')) renderQueueList();
@@ -4810,18 +4974,64 @@ function peekNextTrack(){
   if(repeatMode===2) return currentQueue[0]; // repetir todo: al terminar la fila vuelve a empezar
   return null;
 }
+/* Al cambiar de canción a mano, el volumen baja en ~0.1 s antes del cambio y sube al empezar la nueva
+   (antes el audio se cortaba en seco: sonaba un "clic" y se sentía brusco). */
+let swapPending = null, swapIv = null, fadeInIv = null;
+function softSwitch(action){
+  if(swapPending){ clearInterval(swapIv); const a = swapPending; swapPending = null; a(); } // un segundo toque rápido: se ejecuta ya el anterior
+  if(!isPlaying || crossfading || xf || sleepFadeIv){ action(); return; }
+  swapPending = action;
+  const el = audio, v0 = el.volume, t0 = performance.now(), D = 110;
+  swapIv = setInterval(()=>{
+    const k = Math.min(1,(performance.now()-t0)/D);
+    el.volume = Math.max(0, v0*(1-k));
+    if(k>=1){ clearInterval(swapIv); const a = swapPending; swapPending = null; if(a) a(); }
+  }, 16);
+}
+function fadeInAudio(el){
+  clearInterval(fadeInIv);
+  if(sleepFadeIv){ return; }
+  el.volume = 0;
+  const t0 = performance.now(), D = 240;
+  fadeInIv = setInterval(()=>{
+    const k = Math.min(1,(performance.now()-t0)/D);
+    el.volume = k*k*(3-2*k); // curva suave
+    if(k>=1){ clearInterval(fadeInIv); el.volume = 1; }
+  }, 16);
+}
 function nextTrack(){
   if(!currentQueue.length) return;
-  cancelCrossfade();
-  currentIndex = (currentIndex+1) % currentQueue.length; // con aleatorio la fila ya está barajada, así no se repite ninguna
-  loadCurrent(true);
+  softSwitch(()=>{
+    cancelCrossfade();
+    currentIndex = (currentIndex+1) % currentQueue.length; // con aleatorio la fila ya está barajada, así no se repite ninguna
+    window.__trkDir = 1;
+    loadCurrent(true);
+  });
 }
 function prevTrack(){
   if(!currentQueue.length) return;
-  cancelCrossfade();
-  if(audio.currentTime>3){ audio.currentTime = 0; return; } // como en cualquier reproductor: primero reinicia la canción, si ya estás al inicio va a la anterior
-  currentIndex = (currentIndex-1+currentQueue.length) % currentQueue.length;
-  loadCurrent(true);
+  if(audio.currentTime>3){ cancelCrossfade(); audio.currentTime = 0; return; } // como en cualquier reproductor: primero reinicia la canción, si ya estás al inicio va a la anterior
+  softSwitch(()=>{
+    cancelCrossfade();
+    currentIndex = (currentIndex-1+currentQueue.length) % currentQueue.length;
+    window.__trkDir = -1;
+    loadCurrent(true);
+  });
+}
+/* animación de cambio de canción: portada y textos entran deslizando desde el lado de la dirección */
+let lastShownTrackId = null;
+function animateTrackChange(dir){
+  const id = currentTrack && currentTrack.id;
+  if(!id || id===lastShownTrackId){ lastShownTrackId = id; return; }
+  const first = lastShownTrackId===null; lastShownTrackId = id;
+  if(first) return;
+  const cls = dir<0 ? 'trk-in-l' : (dir>0 ? 'trk-in-r' : 'trk-in-0');
+  ['playerArt','playerTitle','playerSub','playerAlbum','miniArt','miniTitle','miniSub'].forEach((eid,i)=>{
+    const el = document.getElementById(eid); if(!el) return;
+    el.classList.remove('trk-in-l','trk-in-r','trk-in-0'); void el.offsetWidth;
+    el.style.animationDelay = (i%4===0?0: (i%4)*0.035)+'s';
+    el.classList.add(cls);
+  });
 }
 
 /* ---- Crossfade real entre pistas usando dos elementos de audio ---- */
@@ -4851,6 +5061,7 @@ function startCrossfade(){
   const outgoing = audio, incoming = otherAudio();
   const oc = chainFor(outgoing), ic = chainFor(incoming);
   incoming.src = nextT.url; incoming.currentTime = 0; applySpeed(incoming);
+  if(!sleepFadeIv) incoming.volume = 1;
   const remain = isFinite(outgoing.duration) ? Math.max(0.5, outgoing.duration - outgoing.currentTime - 0.3) : 99;
   const dur = Math.min(crossfadeSecondsFor(outgoing.duration), remain);
   // Las rampas de volumen las ejecuta el motor de audio directamente (no un temporizador de JS), así el
@@ -4878,7 +5089,7 @@ function startCrossfade(){
     currentTrack = nextT;
     lastListenTick = null; playCounted = false;
     fetchLyricsNowPlaying(currentTrack);
-    updatePlayerUI(); renderMini(); updateMediaSessionMetadata();
+    updatePlayerUI(); renderMini(); animateTrackChange(1); updateMediaSessionMetadata();
     if(activeTab==='history') render();
     if(document.getElementById('overlayQueue').classList.contains('show')) renderQueueList();
     crossfading = false;
