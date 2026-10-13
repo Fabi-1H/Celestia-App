@@ -1372,9 +1372,11 @@ main.nav-push{animation:navPush .42s var(--ease-soft);}
 main.nav-pop{animation:navPop .42s var(--ease-soft);}
 @keyframes navPush{from{opacity:0;transform:translateX(44px);}to{opacity:1;transform:none;}}
 @keyframes navPop{from{opacity:0;transform:translateX(-44px);}to{opacity:1;transform:none;}}
-.trk-in-r{animation:trkInR .5s var(--ease-soft) both;}
-.trk-in-l{animation:trkInL .5s var(--ease-soft) both;}
-.trk-in-0{animation:trkIn0 .5s var(--ease-soft) both;}
+.trk-in-r{animation:trkInR .5s var(--ease-soft) backwards;}
+.trk-in-l{animation:trkInL .5s var(--ease-soft) backwards;}
+.trk-in-0{animation:trkIn0 .5s var(--ease-soft) backwards;}
+.trk-fade{animation:trkFade .45s ease backwards;} /* el arte del mini va centrado con transform: aquí solo opacidad */
+@keyframes trkFade{from{opacity:0;}to{opacity:1;}}
 @keyframes trkInR{from{opacity:0;transform:translateX(26px) scale(.97);}to{opacity:1;transform:none;}}
 @keyframes trkInL{from{opacity:0;transform:translateX(-26px) scale(.97);}to{opacity:1;transform:none;}}
 @keyframes trkIn0{from{opacity:0;transform:translateY(8px) scale(.97);}to{opacity:1;transform:none;}}
@@ -4860,7 +4862,7 @@ function renderAppSettings(main){
       ${row(ic('<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>'),'Almacenamiento y datos','Borrar estadísticas de reproducción guardadas en este dispositivo',"confirmClearHistory()")}
       ${row(ic('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'),'Apariencia','Temas y colores personalizados',"showToast('Apariencia — próximamente')",'<span class="badge">Próximamente</span>')}
       ${row(ic('<path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/>'),'Notificaciones','Controles del reproductor en la barra de notificaciones',"showToast('Notificaciones — próximamente')",'<span class="badge">Próximamente</span>')}
-      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.10.13-c) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
+      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.10.13-d) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
     </div>
   `;
 }
@@ -5040,9 +5042,9 @@ function animateTrackChange(dir){
   const cls = dir<0 ? 'trk-in-l' : (dir>0 ? 'trk-in-r' : 'trk-in-0');
   ['playerArt','playerTitle','playerSub','playerAlbum','miniArt','miniTitle','miniSub'].forEach((eid,i)=>{
     const el = document.getElementById(eid); if(!el) return;
-    el.classList.remove('trk-in-l','trk-in-r','trk-in-0'); void el.offsetWidth;
+    el.classList.remove('trk-in-l','trk-in-r','trk-in-0','trk-fade'); void el.offsetWidth;
     el.style.animationDelay = (i%4===0?0: (i%4)*0.035)+'s';
-    el.classList.add(cls);
+    el.classList.add(eid==='miniArt' ? 'trk-fade' : cls);
   });
 }
 
