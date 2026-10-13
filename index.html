@@ -105,14 +105,14 @@ header.top{
 .drawer-circle-item{display:flex;flex-direction:column;align-items:center;width:76px;cursor:pointer;}
 .drawer-circle-av{width:64px;height:64px;border-radius:50%;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;position:relative;overflow:visible;transition:border-color .2s;}
 .drawer-circle-av img,.drawer-circle-av svg{width:100%;height:100%;border-radius:50%;object-fit:cover;}
-.drawer-circle-av.playing{border-color:#3fd15e;}
+.drawer-circle-av.playing{border-color:#ece8e7;box-shadow:0 0 0 3px rgba(236,232,231,.14),0 0 18px rgba(236,232,231,.22);}
 .drawer-circle-invite{background:var(--surface-2);color:var(--text-dim);border-style:dashed;}
 .drawer-circle-invite svg{width:24px;height:24px;border-radius:0;}
 .drawer-circle-badge{position:absolute;bottom:-3px;right:-3px;width:22px;height:22px;border-radius:6px;overflow:hidden;border:2px solid var(--bg);background:var(--surface-2);display:none;}
 .drawer-circle-badge img{width:100%;height:100%;object-fit:cover;}
 .drawer-circle-item .t{font-size:11.5px;font-weight:700;margin-top:8px;text-align:center;line-height:1.25;}
 .drawer-circle-item .s{font-size:10.5px;color:var(--text-faint);margin-top:1px;}
-.drawer-circle-item .s.on{color:#3fd15e;}
+.drawer-circle-item .s.on{color:#ece8e7;}
 .brand{
   font-family:var(--font-head);
   font-size:20px;
@@ -1214,6 +1214,40 @@ nav.bottom button.active .jpn{color:rgba(255,255,255,.55);}
 .pk-item.sel{background:var(--box-2);border-color:rgba(255,255,255,.35);}
 .pk-name{font-size:12.5px;}
 .picker-done{z-index:2;border-radius:18px;padding:15px 42px;}
+
+/* ===== página de letras (cajones) ===== */
+#overlayLyrics .lyrics-bg{background:linear-gradient(180deg,#2a2425 0%,#1b1718 38%,#0e0c0d 100%);transition:background .6s ease;}
+#overlayLyrics .lyrics-bg::after{content:'歌';position:absolute;right:-18px;top:92px;font-family:var(--font-jp);font-size:230px;line-height:1;font-weight:700;color:rgba(255,255,255,.035);pointer-events:none;}
+.ly-top{display:flex;align-items:center;gap:10px;padding:calc(12px + env(safe-area-inset-top)) 14px 8px;flex-shrink:0;}
+.ly-btn{width:42px;height:42px;border-radius:14px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--box,#2b2627);border:1px solid var(--box-line,rgba(255,255,255,.09));color:#fff;padding:0;transition:transform .15s ease, background .15s ease;}
+.ly-btn:active{transform:scale(.93);background:var(--box-2,#352f30);}
+.ly-btn.sm{width:38px;height:38px;border-radius:12px;color:rgba(255,255,255,.75);}
+.ly-btn.play{width:58px;height:58px;border-radius:19px;background:linear-gradient(180deg,#fff,#d6d1d2);border-color:transparent;color:#161213;}
+.ly-btn.play svg{fill:#161213;}
+.ly-head{flex:1;min-width:0;background:var(--box,#2b2627);border:1px solid var(--box-line,rgba(255,255,255,.09));border-radius:16px;padding:7px 12px 8px;text-align:center;}
+.ly-kicker{display:flex;align-items:center;justify-content:center;gap:8px;font-size:9.5px;letter-spacing:.24em;color:rgba(255,255,255,.42);font-weight:600;margin-bottom:2px;}
+.ly-kicker .jp{font-family:var(--font-jp);letter-spacing:.2em;font-size:11px;}
+.ly-head .tt{font-size:14px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ly-head .ta{font-size:11.5px;color:rgba(255,255,255,.58);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#overlayLyrics .lyrics-scroll{padding:0 24px;overscroll-behavior:contain;
+  -webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 9%,#000 86%,transparent 100%);mask-image:linear-gradient(to bottom,transparent 0,#000 9%,#000 86%,transparent 100%);}
+#lyricsSyncedView{padding:34vh 0 40vh;}
+#lyricsPlainView{padding:22px 0 40px;}
+#lyricsEditWrap{padding:22px 0 30px;}
+#lyricsPlainView p{font-size:20px;font-weight:700;line-height:1.5;color:rgba(255,255,255,.86);margin:0 0 26px;}
+#lyricsSyncedView .lrc-line{
+  font-size:25px;font-weight:800;line-height:1.3;padding:0;margin:0 0 26px;color:#fff;
+  opacity:.34;transform:scale(.9);transform-origin:left center;will-change:transform,opacity;
+  transition:opacity .55s cubic-bezier(.22,.8,.3,1), transform .6s cubic-bezier(.22,.8,.3,1);
+  cursor:pointer;-webkit-tap-highlight-color:transparent;overflow-wrap:anywhere;}
+#lyricsSyncedView .lrc-line.near{opacity:.55;}
+#lyricsSyncedView .lrc-line.past{opacity:.26;}
+#lyricsSyncedView .lrc-line.active{opacity:1;transform:scale(1);font-size:25px;color:#fff;}
+.lyrics-resume{bottom:calc(172px + env(safe-area-inset-bottom));background:#e9e5e6;border-radius:14px;}
+.ly-dock{flex-shrink:0;margin:6px 12px calc(12px + env(safe-area-inset-bottom));padding:12px 16px 12px;background:var(--box,#2b2627);border:1px solid var(--box-line,rgba(255,255,255,.09));border-radius:24px;}
+.ly-dock input[type=range]{width:100%;accent-color:#fff;height:3px;margin:0;}
+.ly-dock .times{display:flex;justify-content:space-between;font-size:11px;color:rgba(255,255,255,.55);margin-top:4px;font-variant-numeric:tabular-nums;}
+.ly-dock .ctrls{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:8px;}
 </style>
 </head>
 <body>
@@ -1346,16 +1380,17 @@ nav.bottom button.active .jpn{color:rgba(255,255,255,.55);}
   <div class="overlay" id="overlayLyrics"><div class="sheet">
     <div class="lyrics-bg" id="lyricsBg"></div>
     <div class="lyrics-fg">
-      <div class="lyrics-top">
-        <button onclick="closeOverlay('overlayLyrics')">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+      <div class="ly-top">
+        <button class="ly-btn" onclick="closeOverlay('overlayLyrics')" aria-label="Cerrar">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
         </button>
-        <div class="lyrics-top-meta">
+        <div class="ly-head">
+          <div class="ly-kicker"><span class="jp">歌詞</span><span>LETRA</span></div>
           <div class="tt" id="lyricsHeadTitle"></div>
           <div class="ta" id="lyricsHeadArtist"></div>
         </div>
-        <button onclick="toggleLyricsEditMode()" id="lyricsEditToggle">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>
+        <button class="ly-btn" onclick="toggleLyricsEditMode()" id="lyricsEditToggle" aria-label="Editar letra">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
         </button>
       </div>
       <div class="lyrics-scroll" id="lyricsScroll">
@@ -1377,17 +1412,15 @@ nav.bottom button.active .jpn{color:rgba(255,255,255,.55);}
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
         Ir a la línea actual
       </button>
-      <div class="lyrics-icon-row">
-        <button onclick="shareCurrentTrack()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.3 10.7l7.4-4.4M8.3 13.3l7.4 4.4"/></svg></button>
-        <button onclick="openTrackMenu(currentTrack.id,'')"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>
-      </div>
-      <div class="lyrics-mini-controls">
+      <div class="ly-dock">
         <input type="range" id="lyricsSeek" min="0" max="100" value="0" oninput="previewSeek(this.value)" onchange="commitSeek(this.value)">
         <div class="times"><span id="lyricsCurTime">0:00</span><span id="lyricsDurTime">0:00</span></div>
         <div class="ctrls">
-          <button onclick="prevTrack()"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zM20 6L9 12l11 6V6z"/></svg></button>
-          <button onclick="togglePlay()" id="lyricsPlayBtn"></button>
-          <button onclick="nextTrack()"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M16 6h2v12h-2zM4 6l11 6-11 6V6z"/></svg></button>
+          <button class="ly-btn sm" onclick="shareCurrentTrack()" aria-label="Compartir"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.3 10.7l7.4-4.4M8.3 13.3l7.4 4.4"/></svg></button>
+          <button class="ly-btn" onclick="prevTrack()" aria-label="Anterior"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zM20 6L9 12l11 6V6z"/></svg></button>
+          <button class="ly-btn play" onclick="togglePlay()" id="lyricsPlayBtn" aria-label="Reproducir o pausar"></button>
+          <button class="ly-btn" onclick="nextTrack()" aria-label="Siguiente"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M16 6h2v12h-2zM4 6l11 6-11 6V6z"/></svg></button>
+          <button class="ly-btn sm" onclick="openTrackMenu(currentTrack.id,'')" aria-label="Más opciones"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>
         </div>
       </div>
     </div>
@@ -4542,7 +4575,7 @@ function renderAppSettings(main){
       ${row(ic('<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>'),'Almacenamiento y datos','Borrar estadísticas de reproducción guardadas en este dispositivo',"confirmClearHistory()")}
       ${row(ic('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'),'Apariencia','Temas y colores personalizados',"showToast('Apariencia — próximamente')",'<span class="badge">Próximamente</span>')}
       ${row(ic('<path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/>'),'Notificaciones','Controles del reproductor en la barra de notificaciones',"showToast('Notificaciones — próximamente')",'<span class="badge">Próximamente</span>')}
-      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.10.12-w) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
+      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.10.12-y) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
     </div>
   `;
 }
@@ -4685,12 +4718,16 @@ function prevTrack(){
 function otherAudio(){ return audio===audioA? audioB: audioA; }
 function chainFor(el){ return el===audioA? chainA: chainB; }
 let xf = null;
+function resetChainGain(c){
+  if(!c) return;
+  try{ c.gain.gain.cancelScheduledValues(0); }catch(e){}
+  try{ c.gain.gain.value = 1; }catch(e){}
+}
 function cancelCrossfade(){
   if(!xf) return;
-  const x = xf; xf = null; clearInterval(x.iv);
+  const x = xf; xf = null; clearTimeout(x.to);
   try{ x.incoming.pause(); x.incoming.currentTime = 0; }catch(e){}
-  const oc = chainFor(x.outgoing), ic = chainFor(x.incoming);
-  if(oc) oc.gain.gain.value = 1; if(ic) ic.gain.gain.value = 1;
+  resetChainGain(chainFor(x.outgoing)); resetChainGain(chainFor(x.incoming));
   crossfading = false;
 }
 function finishCrossfade(){ if(xf) xf.complete(); }
@@ -4698,23 +4735,33 @@ function crossfadeSecondsFor(dur){ return Math.max(1, Math.min(crossfadeState.se
 function startCrossfade(){
   const nextT = peekNextTrack();
   if(!nextT || crossfading || repeatMode===1) return;
+  resumeAudioCtx(); // el contexto puede estar suspendido: sin esto el fundido sería silencio
+  if(!audioCtx || !chainA || !chainB) return; // sin Web Audio no hay fundido posible: se queda el corte normal
   crossfading = true;
-  ensureEQGraph();
   const outgoing = audio, incoming = otherAudio();
   const oc = chainFor(outgoing), ic = chainFor(incoming);
   incoming.src = nextT.url; incoming.currentTime = 0; applySpeed(incoming);
-  if(ic) ic.gain.gain.value = 0;
-  safePlay(incoming);
   const remain = isFinite(outgoing.duration) ? Math.max(0.5, outgoing.duration - outgoing.currentTime - 0.3) : 99;
   const dur = Math.min(crossfadeSecondsFor(outgoing.duration), remain);
-  const steps = Math.max(24, Math.round(dur*12));
-  let step = 0;
+  // Las rampas de volumen las ejecuta el motor de audio directamente (no un temporizador de JS), así el
+  // fundido no se traba ni se corta aunque la app esté en segundo plano o la pantalla apagada.
+  const N = 64, down = new Float32Array(N), up = new Float32Array(N);
+  for(let i=0;i<N;i++){ const t=i/(N-1); down[i]=Math.cos(t*Math.PI/2); up[i]=Math.sin(t*Math.PI/2); }
+  const t0 = audioCtx.currentTime + 0.03;
+  try{
+    oc.gain.gain.cancelScheduledValues(0); ic.gain.gain.cancelScheduledValues(0);
+    oc.gain.gain.setValueAtTime(1, t0);  oc.gain.gain.setValueCurveAtTime(down, t0, dur);
+    ic.gain.gain.setValueAtTime(0, 0);   ic.gain.gain.setValueCurveAtTime(up, t0, dur);
+  }catch(e){ try{ oc.gain.gain.value=0; ic.gain.gain.value=1; }catch(_){} }
+  try{
+    const p = incoming.play();
+    if(p && p.catch) p.catch(()=>{ if(xf && xf.incoming===incoming){ cancelCrossfade(); } }); // si no pudo arrancar, no se pierde la canción actual
+  }catch(e){}
   const complete = ()=>{
     if(!xf) return;
-    clearInterval(xf.iv); xf = null;
+    clearTimeout(xf.to); xf = null;
     outgoing.pause(); outgoing.currentTime = 0;
-    if(oc) oc.gain.gain.value = 1;
-    if(ic) ic.gain.gain.value = 1;
+    resetChainGain(oc); resetChainGain(ic);
     audio = incoming;
     const idx = currentQueue.indexOf(nextT);
     currentIndex = idx>=0? idx : currentIndex;
@@ -4726,15 +4773,7 @@ function startCrossfade(){
     if(document.getElementById('overlayQueue').classList.contains('show')) renderQueueList();
     crossfading = false;
   };
-  const iv = setInterval(()=>{
-    step++;
-    const t = Math.min(1, step/steps);
-    // curva de potencia constante: el volumen total no se hunde a la mitad del fundido
-    if(oc) oc.gain.gain.value = Math.cos(t*Math.PI/2);
-    if(ic) ic.gain.gain.value = Math.sin(t*Math.PI/2);
-    if(step>=steps) complete();
-  }, dur*1000/steps);
-  xf = {iv, incoming, outgoing, complete};
+  xf = {to:setTimeout(complete, dur*1000+120), incoming, outgoing, complete, endAt: performance.now()+dur*1000+120};
 }
 
 function onAudioPlay(e){ if(e.target!==audio) return; isPlaying=true; consecutivePlayErrors=0; updatePlayIcons(); if('mediaSession' in navigator) navigator.mediaSession.playbackState='playing'; }
@@ -4790,6 +4829,7 @@ function onAudioTimeUpdate(e){
   if(crossfadeState.enabled && !crossfading && !audio.paused && !sleepTimerEndOfTrack && repeatMode!==1 && isFinite(audio.duration) && audio.duration>2 && (audio.duration-audio.currentTime)<=crossfadeSecondsFor(audio.duration)){
     startCrossfade();
   }
+  if(xf && performance.now()>=xf.endAt) finishCrossfade();
   updateLRCNow();
 }
 
@@ -4830,7 +4870,7 @@ function lyricsMarkUserScroll(){
   lyricsUserScrolling = true;
   document.getElementById('lyricsResumeBtn').classList.add('show');
   clearTimeout(lyricsUserScrollTimer);
-  lyricsUserScrollTimer = setTimeout(()=>{ lyricsUserScrolling = false; }, 3200);
+  lyricsUserScrollTimer = setTimeout(()=>{ lyricsUserScrolling = false; const rb=document.getElementById('lyricsResumeBtn'); if(rb) rb.classList.remove('show'); lyrLoopStart(); }, 4500);
 }
 function lyricsResumeAutoScroll(){
   clearTimeout(lyricsUserScrollTimer);
@@ -4854,26 +4894,7 @@ function updateLRCNow(){
   }
   if(idx!==lastCardLrcIdx){ lastCardLrcIdx = idx; updateLyricsCardActiveLine(idx); }
   if(document.getElementById('overlayLyrics').classList.contains('show') && document.getElementById('lyricsSyncedView').style.display!=='none'){
-    // Antes esto se repetía en CADA actualización de tiempo (varias veces por segundo), aunque la
-    // línea activa fuera la misma, y cada llamada relanzaba su propia animación de scroll de 550ms
-    // sin cancelar la anterior. Con el audio avanzando más rápido que esas animaciones, se acumulaban
-    // varias corriendo a la vez peleando por la posición — eso era el temblor. Ahora solo se dispara
-    // cuando la línea activa de verdad cambia.
-    if(idx!==lastOverlayLrcIdx){
-      lastOverlayLrcIdx = idx;
-      document.querySelectorAll('.lrc-line.active').forEach(e=>e.classList.remove('active'));
-      if(idx>=0){
-        const lineEl = document.getElementById('lrc_'+idx);
-        const scrollBox = document.getElementById('lyricsScroll');
-        if(lineEl && scrollBox){
-          lineEl.classList.add('active');
-          if(!lyricsUserScrolling){ // si el usuario está desplazando la letra a mano, no le quitamos el control
-            const target = lineEl.offsetTop - (scrollBox.clientHeight/2) + (lineEl.clientHeight/2);
-            animateScrollTo(scrollBox, Math.max(0, target), 550);
-          }
-        }
-      }
-    }
+    lyrLoopStart(); // el cuadro a cuadro lo maneja lyrLoop: la línea activa y el desplazamiento siguen al audio en vivo
   } else {
     lastOverlayLrcIdx = -999; // se reinicia al cerrar, para que al volver a abrir se reubique de una
     if(lyricsUserScrolling){ lyricsUserScrolling = false; clearTimeout(lyricsUserScrollTimer); const rb=document.getElementById('lyricsResumeBtn'); if(rb) rb.classList.remove('show'); }
@@ -5244,6 +5265,61 @@ function updateLyricsCardActiveLine(idx){
   el.classList.add('active');
   animateScrollTo(box, Math.max(0, el.offsetTop - box.clientHeight*0.3), 550);
 }
+/* --- motor de letra sincronizada ---
+   Antes la línea activa solo se revisaba con 'timeupdate' (unas 4 veces por segundo) y el desplazamiento
+   era una animación de 550 ms que se reiniciaba en cada cambio. Ahora un bucle por cuadro (solo mientras la
+   página de letras está abierta) sigue el audio en vivo y el desplazamiento se acerca a su destino con
+   suavizado exponencial: si el destino cambia a mitad de camino, el movimiento continúa sin tirones.
+   El resaltado usa solo opacity/transform (aceleradas por GPU) y el tamaño de letra nunca cambia, así
+   no hay re-acomodos de texto. */
+let lyScrollRaf = 0, lyLastT = 0;
+function lyrLoopStart(){ if(lyScrollRaf) return; lyLastT = performance.now(); lyScrollRaf = requestAnimationFrame(lyrLoop); }
+function lyrSetActive(idx){
+  const n = currentTrackLRC? currentTrackLRC.length : 0;
+  for(let i=0;i<n;i++){
+    const el = document.getElementById('lrc_'+i); if(!el) continue;
+    el.classList.toggle('active', i===idx);
+    el.classList.toggle('near', i>idx && i<=idx+2);
+    el.classList.toggle('past', i<idx);
+  }
+}
+function lyrTargetTop(idx, box){
+  const el = document.getElementById('lrc_'+idx);
+  if(!el) return null;
+  return Math.max(0, el.offsetTop - box.clientHeight/2 + el.offsetHeight/2);
+}
+function lyrLoop(now){
+  lyScrollRaf = 0;
+  const ov = document.getElementById('overlayLyrics');
+  const sv = document.getElementById('lyricsSyncedView');
+  const box = document.getElementById('lyricsScroll');
+  if(!ov || !ov.classList.contains('show') || !sv || sv.style.display==='none' || !currentTrackLRC || !currentTrackLRC.length || !box) return;
+  const dt = Math.min(0.05, Math.max(0.001, (now-lyLastT)/1000)); lyLastT = now;
+  const idx = lrcIndexAt(audio.currentTime + 0.12); // un pelín de adelanto: la línea se enciende justo cuando se empieza a oír
+  if(idx!==lastOverlayLrcIdx){ lastOverlayLrcIdx = idx; lyrSetActive(idx); }
+  let moving = false;
+  if(!lyricsUserScrolling && idx>=0){
+    const target = lyrTargetTop(idx, box);
+    if(target!==null){
+      let diff = target - box.scrollTop;
+      const far = box.clientHeight*1.1;
+      if(Math.abs(diff)>far){ box.scrollTop = target - Math.sign(diff)*far; diff = target - box.scrollTop; } // salto largo (adelantar la canción): se acerca rápido
+      if(Math.abs(diff)>0.4){ box.scrollTop = box.scrollTop + diff*(1-Math.exp(-dt*5.5)); moving = true; }
+      else if(diff!==0){ box.scrollTop = target; }
+    }
+  }
+  if(isPlaying || moving) lyScrollRaf = requestAnimationFrame(lyrLoop);
+}
+(function(){
+  const sv = document.getElementById('lyricsSyncedView');
+  if(!sv) return;
+  sv.addEventListener('click', e=>{
+    const el = e.target.closest('.lrc-line'); if(!el || !currentTrackLRC) return;
+    const i = +el.id.slice(4); const l = currentTrackLRC[i]; if(!l) return;
+    try{ audio.currentTime = l.time; }catch(_){}
+    lyricsResumeAutoScroll();
+  });
+})();
 function animateScrollTo(el, targetTop, duration){
   const startTop = el.scrollTop, change = targetTop-startTop, startTime = performance.now();
   if(Math.abs(change)<1) return;
@@ -5872,10 +5948,11 @@ function openLyrics(){
   extractDominantColor(currentTrack.cover, (rgb)=>{
     const bg = document.getElementById('lyricsBg');
     if(rgb){
-      const [r,g,b] = rgb.map(c=>Math.round(c*0.5)); // oscurecemos para que el texto blanco siempre se lea bien
-      bg.style.background = `linear-gradient(180deg, rgb(${r},${g},${b}) 0%, #0A0909 70%)`;
+      const base=[44,38,39]; // el fondo sigue siendo gris; la portada solo lo tiñe un poco
+      const [r,g,b] = rgb.map((c,i)=>Math.round(base[i]*0.62 + c*0.3*0.62));
+      bg.style.background = `linear-gradient(180deg, rgb(${r},${g},${b}) 0%, #1b1718 40%, #0e0c0d 100%)`;
     } else {
-      bg.style.background = 'linear-gradient(180deg,#2a1f22 0%,#0A0909 70%)';
+      bg.style.background = '';
     }
   });
   document.getElementById('overlayLyrics').classList.add('show');
@@ -5904,15 +5981,14 @@ function renderSyncedLyrics(){
   if(!currentTrackLRC || !currentTrackLRC.length){ box.innerHTML=''; return; }
   box.innerHTML = currentTrackLRC.map((l,i)=>`<p class="lrc-line" id="lrc_${i}">${escapeHtml(l.text||'♪')}</p>`).join('');
   const idx = Math.max(0, lrcIndexAt(audio.currentTime));
-  lastOverlayLrcIdx = idx; // updateLRCNow ya no necesita repetir este mismo posicionamiento en el próximo tick
+  lastOverlayLrcIdx = idx;
   lyricsUserScrolling = false; clearTimeout(lyricsUserScrollTimer);
   const resumeBtn = document.getElementById('lyricsResumeBtn'); if(resumeBtn) resumeBtn.classList.remove('show');
-  const lineEl = document.getElementById('lrc_'+idx);
+  lyrSetActive(idx);
   const scrollBox = document.getElementById('lyricsScroll');
-  if(lineEl && scrollBox){
-    lineEl.classList.add('active');
-    scrollBox.scrollTop = Math.max(0, lineEl.offsetTop - (scrollBox.clientHeight/2) + (lineEl.clientHeight/2));
-  }
+  const tgt = scrollBox? lyrTargetTop(idx, scrollBox) : null;
+  if(tgt!==null) scrollBox.scrollTop = tgt;
+  lyrLoopStart();
 }
 function toggleLyricsEditMode(){
   const editWrap = document.getElementById('lyricsEditWrap');
@@ -6174,6 +6250,7 @@ function setBand(i,val){ eqState.bands[i]=+val; eqState.preset='Manual'; applyEQ
 function applyPreset(name){ eqState.bands=[...eqPresetsData[name]]; eqState.preset=name; eqState.enabled=true; applyEQGains(); openEQ(); saveEQState(); }
 function toggleCrossfade(){
   crossfadeState.enabled = !crossfadeState.enabled;
+  if(crossfadeState.enabled) resumeAudioCtx(); // se prepara el audio ahora, con el toque del usuario, no a mitad de canción
   document.getElementById('cfSwitch').classList.toggle('on', crossfadeState.enabled);
   document.getElementById('cfDurations').style.display = crossfadeState.enabled? 'flex':'none';
   saveCrossfadeState();
