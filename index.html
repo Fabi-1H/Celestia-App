@@ -754,8 +754,8 @@ nav.bottom button.active svg{transform:translateY(-2px) scale(1.12);}
 #queueUndoBtn:not(:disabled), #queueRedoBtn:not(:disabled){opacity:1;}
 #queueUndoBtn, #queueRedoBtn{transition:opacity .3s ease, transform .45s var(--ease-soft);}
 
-@keyframes tabOutL{to{opacity:0;transform:translateX(-22px);}}
-@keyframes tabOutR{to{opacity:0;transform:translateX(22px);}}
+@keyframes tabOutL{to{opacity:0;transform:translateX(-14px);}}
+@keyframes tabOutR{to{opacity:0;transform:translateX(14px);}}
 @keyframes tabInL{from{opacity:0;transform:translateX(-22px);}to{opacity:1;transform:translateX(0);}}
 @keyframes tabInR{from{opacity:0;transform:translateX(22px);}to{opacity:1;transform:translateX(0);}}
 main.tab-out-l{animation:tabOutL .13s ease forwards;}
@@ -1378,6 +1378,18 @@ main.nav-pop{animation:navPop .42s var(--ease-soft);}
 @keyframes trkInR{from{opacity:0;transform:translateX(26px) scale(.97);}to{opacity:1;transform:none;}}
 @keyframes trkInL{from{opacity:0;transform:translateX(-26px) scale(.97);}to{opacity:1;transform:none;}}
 @keyframes trkIn0{from{opacity:0;transform:translateY(8px) scale(.97);}to{opacity:1;transform:none;}}
+
+/* transiciones de pantalla: más sobrias — solo la pantalla nueva aparece (sin superponer la anterior) */
+main.nav-push{animation:navPush2 .3s cubic-bezier(.22,.8,.3,1);}
+main.nav-pop{animation:navPop2 .3s cubic-bezier(.22,.8,.3,1);}
+main.anim{animation:navFade2 .28s cubic-bezier(.22,.8,.3,1);}
+@keyframes navPush2{from{opacity:0;transform:translateX(14px);}to{opacity:1;transform:none;}}
+@keyframes navPop2{from{opacity:0;transform:translateX(-14px);}to{opacity:1;transform:none;}}
+@keyframes navFade2{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+@keyframes tabInL{from{opacity:0;transform:translateX(-14px);}to{opacity:1;transform:translateX(0);}}
+@keyframes tabInR{from{opacity:0;transform:translateX(14px);}to{opacity:1;transform:translateX(0);}}
+main.tab-in-l{animation:tabInL .3s cubic-bezier(.22,.8,.3,1);}
+main.tab-in-r{animation:tabInR .3s cubic-bezier(.22,.8,.3,1);}
 </style>
 </head>
 <body>
@@ -3122,7 +3134,7 @@ function renderCore(soft){
     const dir = window.__tabSlideDir; window.__tabSlideDir = null;
     main.classList.remove('anim','tab-in-l','tab-in-r','nav-push','nav-pop'); void main.offsetWidth;
     if(dir){ main.classList.add(dir===1 ? 'tab-in-r' : 'tab-in-l'); }
-    else if(navDir!==0){ navGhost(main, navDir, prevScroll); main.classList.add(navDir>0 ? 'nav-push' : 'nav-pop'); }
+    else if(navDir!==0){ main.classList.add(navDir>0 ? 'nav-push' : 'nav-pop'); }
     else main.classList.add('anim');
   }
   const detailScreens = ['search','messages','playlistDetail','artistDetail','albumDetail','likedDetail','profile','appSettings','recentAdded','statsDetail','history','recent'];
@@ -4848,7 +4860,7 @@ function renderAppSettings(main){
       ${row(ic('<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>'),'Almacenamiento y datos','Borrar estadísticas de reproducción guardadas en este dispositivo',"confirmClearHistory()")}
       ${row(ic('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'),'Apariencia','Temas y colores personalizados',"showToast('Apariencia — próximamente')",'<span class="badge">Próximamente</span>')}
       ${row(ic('<path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/>'),'Notificaciones','Controles del reproductor en la barra de notificaciones',"showToast('Notificaciones — próximamente')",'<span class="badge">Próximamente</span>')}
-      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.10.13-b) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
+      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.10.13-c) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
     </div>
   `;
 }
