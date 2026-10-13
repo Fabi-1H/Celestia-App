@@ -1441,6 +1441,16 @@ main.tab-in-r{animation:tabInR .3s cubic-bezier(.22,.8,.3,1);}
 .lib-header .ly-btn{width:38px;height:38px;border-radius:13px;}
 .lib-title{font-size:21px;white-space:nowrap;}
 .lib-title .jp{font-size:.5em;margin-left:7px;}
+
+.lb-search{display:grid;grid-template-rows:0fr;opacity:0;transition:grid-template-rows .35s var(--ease-soft), opacity .3s ease, margin .35s var(--ease-soft);margin:0;}
+.lb-search.open{grid-template-rows:1fr;opacity:1;margin:12px 0 0;}
+.lb-search-in{overflow:hidden;min-height:0;display:flex;align-items:center;gap:10px;background:var(--box);border:1px solid var(--box-line);border-radius:16px;padding:0 6px 0 14px;height:46px;color:rgba(255,255,255,.55);}
+.lb-search:not(.open) .lb-search-in{border-color:transparent;padding:0;}
+.lb-search-in svg{flex-shrink:0;}
+.lb-search-in input{flex:1;min-width:0;background:none;border:none;outline:none;color:#fff;font-size:15px;font-family:inherit;}
+.lb-search-in input::placeholder{color:rgba(255,255,255,.4);}
+.lb-search-in button{width:32px;height:32px;border-radius:10px;background:var(--box-2);border:none;color:rgba(255,255,255,.7);align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+.ly-btn.on{background:linear-gradient(180deg,#fff,#d6d1d2);color:#161213;border-color:transparent;}
 </style>
 </head>
 <body>
@@ -3970,7 +3980,7 @@ function libToggleView(){ libSet('view', libGet('view')==='grid'?'list':'grid');
 function libToggleSort(){ libSet('sort', libGet('sort')==='alpha'?'recent':'alpha'); window.__libAnim = true; render(true); }
 function libTab(c,btn){
   if(window.__libFilter===c) return;
-  window.__libFilter = c; slidePill(btn);
+  window.__libFilter = c; window.__libQuery = ''; slidePill(btn);
   setTimeout(()=>{ if(activeTab==='playlists'){ window.__libAnim = true; render(true); } }, 300);
 }
 function libItems(filter, sort){
@@ -4010,49 +4020,80 @@ function libItemHTML(item, view, i, anim){
   return `<div class="lb-row ${item.type}" onclick="${click}"${st}><div class="lb-rart">${libArtFluid(item)}</div>
     <div class="lb-meta"><div class="lb-t">${escapeHtml(item.name)}</div><div class="lb-s">${escapeHtml(item.type==='album'? item.sub+' · '+item.extra : item.sub)}</div></div><span class="lb-chev">›</span></div>`;
 }
-function renderPlaylists(main){
-  if(!LIB_TABS.includes(window.__libFilter)) window.__libFilter = 'Playlists';
+function libNorm(x){ return String(x||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase(); }
+function libContentHTML(anim){
   const f = window.__libFilter, view = libGet('view'), sort = libGet('sort');
-  const anim = window.__libAnim; window.__libAnim = false;
-  const items = libItems(f, sort);
-  const nPl = playlists.length+1, nAl = getAlbums().length, nAr = getArtists().length;
-  const counts = {'Playlists':nPl,'Álbumes':nAl,'Artistas':nAr};
+  const q = libNorm((window.__libQuery||'').trim());
+  let items = libItems(f, sort);
+  if(q) items = items.filter(it=>libNorm(it.name+' '+(it.sub||'')).includes(q));
   const noun = {'Playlists':['playlist','playlists'],'Álbumes':['álbum','álbumes'],'Artistas':['artista','artistas']}[f];
   const likedN = tracks.filter(t=>t.liked).length;
-  const grouped = sort==='alpha' && items.length>6;
+  const showLiked = f==='Playlists' && (!q || libNorm('tus me gusta').includes(q));
+  const grouped = !q && sort==='alpha' && items.length>6;
   let body = '', i = 0, lastL = null;
   items.forEach(it=>{
     if(grouped){ const L = libLetter(it.name); if(L!==lastL){ lastL = L; body += `<div class="lb-letter">${L}</div>`; } }
     body += libItemHTML(it, view, i++, anim);
   });
-  const liked = f==='Playlists' ? `<div class="lb-liked" onclick="openLiked()">
+  const liked = showLiked ? `<div class="lb-liked" onclick="openLiked()">
       <div class="lb-liked-art"><svg width="26" height="26" viewBox="0 0 24 24" fill="#fff" stroke="none"><path d="M12 21s-7.5-4.8-10-9.3C.5 8 2 4.5 5.5 4 8 3.6 10 5 12 7.5 14 5 16 3.6 18.5 4 22 4.5 23.5 8 22 11.7 19.5 16.2 12 21 12 21z"/></svg></div>
       <div class="lb-meta"><div class="lb-t">Tus me gusta<span class="jp">愛</span></div><div class="lb-s">${likedN} ${likedN===1?'canción':'canciones'}</div></div>
       <button class="lb-lplay" onclick="event.stopPropagation();playCollection('liked')" ${likedN?'':'disabled'} aria-label="Reproducir">${SP_ICON.play}</button>
     </div>` : '';
-  const empty = !items.length ? (f==='Playlists'
-      ? `<div class="lk-empty" style="margin-top:10px;"><span class="jp0">曲</span><p>Todavía no tienes playlists propias.</p><button class="btn" style="margin-top:12px;" onclick="openCreateSheet()">Crear playlist</button></div>`
-      : `<div class="lk-empty" style="margin-top:10px;"><span class="jp0">音</span><p>Importa música para ver tus ${noun[1]} aquí.</p></div>`) : '';
-  const tools = items.length ? `<div class="lb-tools">
+  let empty = '';
+  if(!items.length && !showLiked){
+    empty = q ? `<div class="lk-empty" style="margin-top:10px;"><span class="jp0">探</span><p>No hay resultados para “${escapeHtml(window.__libQuery.trim())}”.</p></div>`
+      : (f==='Playlists'
+        ? `<div class="lk-empty" style="margin-top:10px;"><span class="jp0">曲</span><p>Todavía no tienes playlists propias.</p><button class="btn" style="margin-top:12px;" onclick="openCreateSheet()">Crear playlist</button></div>`
+        : `<div class="lk-empty" style="margin-top:10px;"><span class="jp0">音</span><p>Importa música para ver tus ${noun[1]} aquí.</p></div>`);
+  }
+  const tools = (items.length||showLiked) ? `<div class="lb-tools">
       <div class="lb-count">${items.length} ${items.length===1?noun[0]:noun[1]}</div><div style="flex:1"></div>
-      <button class="lb-btn" onclick="libToggleSort()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4v16M8 20l-4-4M8 20l4-4M16 4v16M16 4l-4 4M16 4l4 4" style="display:none"/><path d="M7 4v14M7 18l-3-3M7 18l3-3M17 20V6M17 6l-3 3M17 6l3 3"/></svg>${sort==='alpha'?'A–Z':'Recientes'}</button>
+      <button class="lb-btn" onclick="libToggleSort()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v14M7 18l-3-3M7 18l3-3M17 20V6M17 6l-3 3M17 6l3 3"/></svg>${sort==='alpha'?'A–Z':'Recientes'}</button>
       <button class="lb-btn sq" onclick="libToggleView()" aria-label="Cambiar vista">${view==='grid'?
         `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>`:
         `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/></svg>`}</button>
     </div>` : '';
+  return `${liked}${tools}<div class="${view==='grid'? 'lb-grid three' : 'lb-list'}">${body}</div>${empty}`;
+}
+/* buscador de la biblioteca: filtra dentro de la pestaña actual (playlists, álbumes o artistas) */
+function libToggleSearch(){
+  const on = !window.__libSearchOn;
+  window.__libSearchOn = on;
+  const bar = document.getElementById('lbSearch'); if(!bar) return;
+  bar.classList.toggle('open', on);
+  const inp = document.getElementById('lbSearchInput');
+  if(on){ setTimeout(()=>{ try{ inp.focus(); }catch(e){} }, 120); }
+  else { inp.value = ''; libFilter(''); inp.blur(); }
+}
+function libFilter(v){
+  window.__libQuery = v;
+  const c = document.getElementById('lbContent'); if(c) c.innerHTML = libContentHTML(false);
+  const x = document.getElementById('lbSearchClear'); if(x) x.style.display = v? 'flex':'none';
+}
+function libClearSearch(){ const inp = document.getElementById('lbSearchInput'); inp.value=''; libFilter(''); inp.focus(); }
+function renderPlaylists(main){
+  if(!LIB_TABS.includes(window.__libFilter)) window.__libFilter = 'Playlists';
+  const f = window.__libFilter;
+  const anim = window.__libAnim; window.__libAnim = false;
+  const counts = {'Playlists':playlists.length+1,'Álbumes':getAlbums().length,'Artistas':getArtists().length};
+  const on = !!window.__libSearchOn, q = window.__libQuery || '';
+  const ph = {'Playlists':'Buscar en tus playlists','Álbumes':'Buscar en tus álbumes','Artistas':'Buscar en tus artistas'}[f];
   main.innerHTML = `
     <div class="lib-header">
       <div class="lib-title">Tu biblioteca<span class="jp">ライブラリ</span></div>
       <div style="display:flex;gap:8px;">
-        <button class="ly-btn" onclick="showTab('search')" aria-label="Buscar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3" stroke-linecap="round"/></svg></button>
+        <button class="ly-btn ${on?'on':''}" id="lbSearchBtn" onclick="libToggleSearch()" aria-label="Buscar en la biblioteca"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3" stroke-linecap="round"/></svg></button>
         <button class="ly-btn" onclick="openCreateSheet()" aria-label="Crear"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg></button>
       </div>
     </div>
+    <div class="lb-search ${on?'open':''}" id="lbSearch"><div class="lb-search-in">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3" stroke-linecap="round"/></svg>
+      <input id="lbSearchInput" type="text" placeholder="${ph}" value="${escapeHtml(q)}" oninput="libFilter(this.value)" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <button id="lbSearchClear" onclick="libClearSearch()" style="display:${q?'flex':'none'}" aria-label="Borrar">✕</button>
+    </div></div>
     <div class="pill-seg lb-seg"><div class="pill-thumb"></div>${LIB_TABS.map(c=>`<button class="${f===c?'active':''}" onclick="libTab('${c}',this)">${c}<small>${counts[c]}</small></button>`).join('')}</div>
-    ${liked}
-    ${tools}
-    <div class="${view==='grid'? 'lb-grid three' : 'lb-list'}">${body}</div>
-    ${empty}`;
+    <div id="lbContent">${libContentHTML(anim)}</div>`;
 }
 function openPlaylist(id){ currentPlaylistViewId=id; plEditMode=false; plSearchQuery=''; activeTab='playlistDetail'; render(); }
 function fmtDurationTotal(totalSeconds){
@@ -4973,7 +5014,7 @@ function renderAppSettings(main){
       ${row(ic('<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>'),'Almacenamiento y datos','Borrar estadísticas de reproducción guardadas en este dispositivo',"confirmClearHistory()")}
       ${row(ic('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'),'Apariencia','Temas y colores personalizados',"showToast('Apariencia — próximamente')",'<span class="badge">Próximamente</span>')}
       ${row(ic('<path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/>'),'Notificaciones','Controles del reproductor en la barra de notificaciones',"showToast('Notificaciones — próximamente')",'<span class="badge">Próximamente</span>')}
-      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.10.13-f) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
+      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.10.13-g) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
     </div>
   `;
 }
