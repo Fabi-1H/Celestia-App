@@ -1248,6 +1248,75 @@ nav.bottom button.active .jpn{color:rgba(255,255,255,.55);}
 .ly-dock input[type=range]{width:100%;accent-color:#fff;height:3px;margin:0;}
 .ly-dock .times{display:flex;justify-content:space-between;font-size:11px;color:rgba(255,255,255,.55);margin-top:4px;font-variant-numeric:tabular-nums;}
 .ly-dock .ctrls{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:8px;}
+
+/* ===== estadísticas (rediseño) ===== */
+.st2-tabs{margin:12px 0 14px;padding:4px;background:var(--box);border:1px solid var(--box-line);border-radius:18px;gap:4px;}
+.st2-tabs button{border:none;background:transparent;border-radius:14px;padding:9px 0;font-size:12px;letter-spacing:.02em;transition:background .3s ease,color .3s ease;}
+.st2-tabs button.active{background:linear-gradient(180deg,#fff,#d9d4d5);color:#161213;}
+.st2-hero{position:relative;overflow:hidden;background:linear-gradient(160deg,#322c2d 0%,#262122 55%,#201c1d 100%);border:1px solid var(--box-line);border-radius:26px;padding:18px 18px 14px;margin-bottom:10px;cursor:pointer;}
+.st2-hero::after{content:'聴';position:absolute;right:-6px;top:-14px;font-family:var(--font-jp);font-size:120px;line-height:1;font-weight:700;color:rgba(255,255,255,.04);pointer-events:none;}
+.st2-kick{display:flex;align-items:center;gap:9px;font-size:11px;letter-spacing:.14em;color:rgba(255,255,255,.5);font-weight:600;margin-bottom:8px;text-transform:uppercase;}
+.st2-kick .jp0{font-family:var(--font-jp);letter-spacing:.2em;color:rgba(255,255,255,.38);font-size:12px;}
+.st2-chev{margin-left:auto;font-size:20px;color:rgba(255,255,255,.4);letter-spacing:0;}
+.st2-minrow{display:flex;align-items:flex-end;gap:12px;}
+.st2-min{font-family:var(--font-head);font-size:58px;line-height:.95;font-weight:700;letter-spacing:-.02em;}
+.st2-unit{font-size:12.5px;line-height:1.25;color:rgba(255,255,255,.55);padding-bottom:5px;}
+.st2-delta{display:inline-flex;align-items:center;gap:6px;margin-top:11px;padding:5px 10px;border-radius:10px;font-size:11.5px;font-weight:600;background:rgba(255,255,255,.07);color:rgba(255,255,255,.8);}
+.st2-days{display:flex;gap:7px;margin-top:16px;height:92px;}
+.st2-day{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;}
+.st2-col{flex:1;width:100%;display:flex;align-items:flex-end;background:rgba(255,255,255,.05);border-radius:9px;overflow:hidden;}
+.st2-col i{display:block;width:100%;border-radius:9px;background:linear-gradient(180deg,#e6e1e2,#8d8788);transform-origin:bottom;animation:st2grow .7s var(--ease-soft) both;}
+.st2-day.today .st2-col{background:rgba(255,255,255,.12);}
+.st2-day span{font-size:10.5px;color:rgba(255,255,255,.45);font-weight:600;}
+.st2-day.today span{color:#fff;}
+@keyframes st2grow{from{transform:scaleY(.05);opacity:.4;}to{transform:scaleY(1);opacity:1;}}
+.st2-mini{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;}
+.st2-mini>div{background:var(--box);border:1px solid var(--box-line);border-radius:18px;padding:12px 10px;text-align:center;}
+.st2-mini b{display:block;font-family:var(--font-head);font-size:21px;font-weight:700;}
+.st2-mini b small{font-size:12px;color:rgba(255,255,255,.45);font-weight:600;}
+.st2-mini span{display:block;font-size:10.5px;color:rgba(255,255,255,.5);margin-top:2px;}
+.st2-top{display:flex;align-items:center;gap:14px;background:var(--box);border:1px solid var(--box-line);border-radius:22px;padding:12px 14px 12px 12px;cursor:pointer;}
+.st2-top-art{width:84px;height:84px;border-radius:16px;overflow:hidden;flex-shrink:0;background:var(--surface);display:flex;align-items:center;justify-content:center;color:var(--text-faint);}
+.st2-top-art img{width:100%;height:100%;object-fit:cover;}
+.st2-top-info{flex:1;min-width:0;}
+.st2-top-name{font-family:var(--font-head);font-size:22px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.st2-top-sub{font-size:12.5px;color:rgba(255,255,255,.55);margin-top:2px;}
+.st2-list{display:flex;flex-direction:column;gap:7px;margin:10px 0 4px;}
+.st2-row{display:flex;align-items:center;gap:11px;background:var(--box);border:1px solid var(--box-line);border-radius:18px;padding:9px 12px 9px 11px;cursor:pointer;}
+.st2-n{width:18px;text-align:center;font-family:var(--font-head);font-weight:700;font-size:15px;color:rgba(255,255,255,.5);}
+.st2-row:nth-child(1) .st2-n{color:#fff;}
+.st2-art{width:46px;height:46px;border-radius:12px;overflow:hidden;flex-shrink:0;background:var(--surface);display:flex;align-items:center;justify-content:center;color:var(--text-faint);}
+.st2-art img{width:100%;height:100%;object-fit:cover;}
+.st2-info{flex:1;min-width:0;}
+.st2-t{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.st2-s{font-size:11.5px;color:rgba(255,255,255,.5);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;}
+.st2-bar{height:5px;border-radius:4px;background:rgba(255,255,255,.07);margin-top:6px;overflow:hidden;}
+.st2-bar i{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,#8d8788,#f1eded);}
+.st2-count{font-family:var(--font-head);font-weight:700;font-size:16px;min-width:34px;text-align:right;}
+.st2-count small{font-size:11px;color:rgba(255,255,255,.45);margin-left:1px;}
+.st2-empty{color:var(--text-dim);font-size:13px;margin:4px 2px;}
+
+/* ===== letras del reproductor: sin cambios de tamaño de letra, solo opacidad/escala ===== */
+#player .lyrics-line.line-anim{animation:plLineIn .42s cubic-bezier(.22,.8,.3,1);}
+@keyframes plLineIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+#player .p-lyr .lyrics-line.line-anim{animation:plLineIn .42s cubic-bezier(.22,.8,.3,1);}
+#player .lyrics-card-lines p{font-size:19px;font-weight:800;line-height:1.3;margin:0 0 14px;color:#fff;opacity:.34;
+  transform:scale(.92);transform-origin:left center;will-change:transform,opacity;
+  transition:opacity .5s cubic-bezier(.22,.8,.3,1), transform .55s cubic-bezier(.22,.8,.3,1);}
+#player .lyrics-card-lines p.near{opacity:.55;}
+#player .lyrics-card-lines p.past{opacity:.24;}
+#player .lyrics-card-lines p.active{opacity:1;transform:scale(1);font-size:19px;color:#fff;}
+#player .lyrics-card-lines p.line-anim{animation:none;}
+#player .lyrics-card-lines p[style]{opacity:1;transform:none;}
+#player .lyrics-card-lines::after{content:'';display:block;height:170px;}
+
+/* una regla global de botones pisaba la transición de "Siguiendo" (ancho/relleno): por eso salía y se ocultaba de golpe */
+#tabsBar .tab-seg .tab-follow{transition:max-width .6s var(--ease-soft), padding .6s var(--ease-soft), color .4s ease, opacity .4s ease;}
+#tabsBar .tab-seg .tab-follow .tf-inner{transition:transform .6s var(--ease-soft), opacity .4s ease;opacity:0;}
+#tabsBar .tab-seg.open .tab-follow .tf-inner{opacity:1;}
+.st2-sec .jp{display:none;}
+.st2-sec{font-size:15px;}
+.st2-tabs button{font-size:11.5px;white-space:nowrap;padding:9px 2px;}
 </style>
 </head>
 <body>
@@ -2605,6 +2674,23 @@ function syncTabsBar(){
   if(!seg) return;
   const wasOpen = seg.classList.contains('open');
   const isOpen = activeTab==='songs' || activeTab==='following';
+  // "Siguiendo" sale y vuelve a esconderse con animación: el ancho se anima desde/hacia su tamaño real
+  // (antes iba desde/hacia un máximo de 130px, así que al cerrar los primeros instantes no se veía nada)
+  const fol = seg.querySelector('.tab-follow');
+  if(fol && wasOpen!==isOpen){
+    const inner = fol.querySelector('.tf-inner');
+    clearTimeout(fol.__clr);
+    if(isOpen){
+      fol.style.maxWidth = '0px';
+      void fol.offsetWidth;
+      fol.style.maxWidth = ((inner? inner.scrollWidth : 90)+32)+'px';
+    } else {
+      fol.style.maxWidth = fol.offsetWidth+'px';
+      void fol.offsetWidth;
+      fol.style.maxWidth = '0px';
+    }
+    fol.__clr = setTimeout(()=>{ fol.style.maxWidth = ''; }, 700);
+  }
   seg.classList.toggle('open', isOpen);
   document.querySelectorAll('#tabSeg .tab-seg-btn').forEach(b=>b.classList.toggle('active', b.dataset.tab===activeTab));
   // la primera vez (o si la sección estaba cerrada) la píldora se coloca sin animar, para que no "viaje" desde cero
@@ -2615,7 +2701,8 @@ function positionTabThumb(skipAnim){
   if(!seg || !thumb) return;
   const go = ()=>{
     const active = seg.querySelector('.tab-seg-btn.active');
-    const target = active || seg.querySelector('.tab-seg-btn');
+    if(!active){ thumb.style.opacity = '0'; return; } // al cerrarse la sección, la píldora se desvanece en su sitio en vez de saltar
+    const target = active;
     if(!target) return;
     if(skipAnim){ thumb.style.transition = 'none'; }
     thumb.style.left = target.offsetLeft+'px';
@@ -2858,6 +2945,7 @@ const TAB_ORDER = ['home','songs','following','podcasts'];
 function showTab(tab){
   const oldTab = activeTab;
   activeTab = tab;
+  try{ syncTabsBar(); }catch(e){} // la píldora reacciona al instante, sin esperar a que termine la salida del contenido
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===tab));
   const navTab = (tab==='following') ? 'home' : tab; // Siguiendo vive dentro de Inicio
   document.querySelectorAll('nav.bottom button').forEach(b=>b.classList.toggle('active', b.dataset.tab===navTab || (navTab!=='home'&&navTab!=='search'&&b.dataset.tab==='playlists')));
@@ -4297,49 +4385,71 @@ function renderHistory(main){
   const minutes = Math.round((w.totalSeconds||0)/60);
   const topArtist = artistsArr[0]? artistsArr[0][0] : null;
 
-  main.innerHTML = `
-    <div class="stats-header">${backBtn}<div class="stats-title">Estadísticas de reproducción</div></div>
-    <div class="week-tabs" style="margin-top:14px;">${weeksOrdered.map((wk,i)=>`<button class="${i===window.__histWeekIdx?'active':''}" onclick="window.__histWeekIdx=${i};render()">${weekTabLabel(wk)}</button>`).join('')}</div>
-    <div class="stats-week-title">${weekLabel}</div>
-    <div class="stats-week-range">${w.rangeLabel||''}</div>
+  const prevW = weeksOrdered[window.__histWeekIdx+1] || null;
+  const prevMin = prevW? Math.round((prevW.totalSeconds||0)/60) : null;
+  let delta = '';
+  if(prevMin!==null && prevMin>0){
+    const pct = Math.round((minutes-prevMin)/prevMin*100);
+    delta = `<span class="st2-delta ${pct>=0?'up':'down'}">${pct>=0?ST_UP:ST_DOWN}${Math.abs(pct)} % vs. la semana anterior</span>`;
+  } else if(prevMin===0 && minutes>0){ delta = `<span class="st2-delta up">${ST_UP}Semana nueva</span>`; }
+  const days = (w.daySeconds||[0,0,0,0,0,0,0]).map(x=>Math.round((x||0)/60));
+  const maxDay = Math.max(1,...days);
+  const todayIdx = weeksAgo(w)===0 ? (new Date().getDay()+6)%7 : -1;
+  const dayNames = ['L','M','X','J','V','S','D'];
+  const totalPlays = songs.reduce((n,x)=>n+x.c,0);
+  const activeDays = days.filter(x=>x>0).length;
+  const topArtistPlays = artistsArr[0]? artistsArr[0][1] : 0;
+  const songRow = (x,i)=>`
+      <div class="st2-row" onclick="playTrack('${jsq(x.t.id)}','all')">
+        <div class="st2-n">${i+1}</div>
+        <div class="st2-art">${trackArt(x.t,80,true)}</div>
+        <div class="st2-info"><div class="st2-t">${escapeHtml(x.t.title)}</div><div class="st2-s">${escapeHtml(x.t.artist)}</div>
+          <div class="st2-bar"><i style="width:${Math.max(4,x.c/maxSong*100)}%"></i></div></div>
+        <div class="st2-count">${x.c}<small>x</small></div>
+      </div>`;
+  const artistRow = ([an,c],i)=>`
+      <div class="st2-row" onclick="openArtist('${encA(an)}')">
+        <div class="st2-n">${i+1}</div>
+        <div class="st2-art">${artistArt(an,80,true)}</div>
+        <div class="st2-info"><div class="st2-t">${escapeHtml(an)}</div>
+          <div class="st2-bar"><i style="width:${Math.max(4,c/maxArtist*100)}%"></i></div></div>
+        <div class="st2-count">${c}<small>x</small></div>
+      </div>`;
 
-    <div class="stats-card" onclick="openStatsDetail('minutes')" style="cursor:pointer;">
-      <div class="stats-card-label" style="display:flex;justify-content:space-between;align-items:center;">Minutos escuchados <span style="font-size:18px;">›</span></div>
-      <div class="stats-big-num">${minutes.toLocaleString('es')}</div>
+  main.innerHTML = `
+    <div class="stats-header big">${backBtn}<div class="stats-title">Estadísticas<span class="jp">統計</span></div><span></span></div>
+    <div class="week-tabs st2-tabs">${weeksOrdered.map((wk,i)=>`<button class="${i===window.__histWeekIdx?'active':''}" onclick="window.__histWeekIdx=${i};render()">${weekTabLabel(wk)}</button>`).join('')}</div>
+
+    <div class="st2-hero" onclick="openStatsDetail('minutes')">
+      <div class="st2-kick"><span class="jp0">週</span><span>${compactRange(w)}</span><span class="st2-chev">›</span></div>
+      <div class="st2-minrow"><div class="st2-min">${minutes.toLocaleString('es')}</div><div class="st2-unit">minutos<br>escuchados</div></div>
+      ${delta}
+      <div class="st2-days">${days.map((m,i)=>`
+        <div class="st2-day ${i===todayIdx?'today':''}"><div class="st2-col"><i style="height:${m>0?Math.max(8,m/maxDay*100):3}%"></i></div><span>${dayNames[i]}</span></div>`).join('')}</div>
     </div>
 
-    ${topArtist? `<div class="stats-card" onclick="openArtist('${encA(topArtist)}')" style="cursor:pointer;">
-      <div class="stats-card-label">Artista principal</div>
-      <div class="stats-artist-name">${escapeHtml(topArtist)}</div>
-      <div class="stats-artist-art">${topArtist? artistFullImg(topArtist):''}</div>
+    <div class="st2-mini">
+      <div><b>${totalPlays.toLocaleString('es')}</b><span>reproducciones</span></div>
+      <div><b>${songs.length.toLocaleString('es')}</b><span>canciones</span></div>
+      <div><b>${activeDays}<small>/7</small></b><span>días activos</span></div>
+    </div>
+
+    ${topArtist? `<div class="st2-top" onclick="openArtist('${encA(topArtist)}')">
+      <div class="st2-top-art">${artistArt(topArtist,200)}</div>
+      <div class="st2-top-info">
+        <div class="st2-kick" style="margin:0 0 6px;"><span class="jp0">一番</span><span>ARTISTA PRINCIPAL</span></div>
+        <div class="st2-top-name">${escapeHtml(topArtist)}</div>
+        <div class="st2-top-sub">${topArtistPlays} reproducciones</div>
+      </div>
+      <span class="st2-chev">›</span>
     </div>`:''}
 
-    <div class="section-title" style="margin-top:26px;cursor:pointer;" onclick="openStatsDetail('songs')">Canciones más reproducidas
+    <div class="section-title st2-sec" style="margin-top:26px;cursor:pointer;" onclick="openStatsDetail('songs')">Canciones más reproducidas
       <span class="see-all">Ver todo ›</span></div>
-    <div class="stat-bar-wrap">
-    ${songs.length? songs.slice(0,5).map((s,i)=>`
-      <div class="stat-bar-row">
-        <div class="n">${i+1}</div>
-        <div class="track" onclick="playTrack('${jsq(s.t.id)}','all')" style="cursor:pointer">
-          <div style="font-size:13.5px;font-weight:600;">${escapeHtml(s.t.title)}</div>
-          <div class="bar-bg"><div class="bar-fill" style="width:${(s.c/maxSong*100)}%"></div></div>
-        </div>
-        <div class="count">${s.c}x</div>
-      </div>`).join('') : `<p style="color:var(--text-dim);font-size:13px;">Sin reproducciones esta semana.</p>`}
-    </div>
-    <div class="section-title" style="cursor:pointer;" onclick="openStatsDetail('artists')">Artistas más reproducidos
+    <div class="st2-list">${songs.length? songs.slice(0,5).map(songRow).join('') : `<p class="st2-empty">Sin reproducciones esta semana.</p>`}</div>
+    <div class="section-title st2-sec" style="cursor:pointer;" onclick="openStatsDetail('artists')">Artistas más reproducidos
       <span class="see-all">Ver todo ›</span></div>
-    <div class="stat-bar-wrap">
-    ${artistsArr.length? artistsArr.slice(0,5).map(([a,c],i)=>`
-      <div class="stat-bar-row">
-        <div class="n">${i+1}</div>
-        <div class="track">
-          <div style="font-size:13.5px;font-weight:600;">${escapeHtml(a)}</div>
-          <div class="bar-bg"><div class="bar-fill" style="width:${(c/maxArtist*100)}%"></div></div>
-        </div>
-        <div class="count">${c}x</div>
-      </div>`).join('') : `<p style="color:var(--text-dim);font-size:13px;">Sin datos.</p>`}
-    </div>`;
+    <div class="st2-list">${artistsArr.length? artistsArr.slice(0,5).map(artistRow).join('') : `<p class="st2-empty">Sin datos.</p>`}</div>`;
 }
 
 function shareStatsText(text){
@@ -4575,7 +4685,7 @@ function renderAppSettings(main){
       ${row(ic('<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>'),'Almacenamiento y datos','Borrar estadísticas de reproducción guardadas en este dispositivo',"confirmClearHistory()")}
       ${row(ic('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'),'Apariencia','Temas y colores personalizados',"showToast('Apariencia — próximamente')",'<span class="badge">Próximamente</span>')}
       ${row(ic('<path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/>'),'Notificaciones','Controles del reproductor en la barra de notificaciones',"showToast('Notificaciones — próximamente')",'<span class="badge">Próximamente</span>')}
-      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.10.12-y) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
+      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.10.12-z) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
     </div>
   `;
 }
@@ -4885,14 +4995,7 @@ function lyricsResumeAutoScroll(){
 })();
 function updateLRCNow(){
   if(!currentTrackLRC || !currentTrackLRC.length) return;
-  const idx = lrcIndexAt(audio.currentTime);
-  const text = idx>=0? currentTrackLRC[idx].text : currentTrackLRC[0].text;
-  const el = document.getElementById('playerLyricsLine');
-  if(el && text!=null && el.textContent!==text){
-    el.textContent = text;
-    el.classList.remove('line-anim'); void el.offsetWidth; el.classList.add('line-anim');
-  }
-  if(idx!==lastCardLrcIdx){ lastCardLrcIdx = idx; updateLyricsCardActiveLine(idx); }
+  if(document.getElementById('player').classList.contains('show')) lyrLoopStart(); // la línea del reproductor y el cuadro de letras las mueve lyrLoop, cuadro a cuadro
   if(document.getElementById('overlayLyrics').classList.contains('show') && document.getElementById('lyricsSyncedView').style.display!=='none'){
     lyrLoopStart(); // el cuadro a cuadro lo maneja lyrLoop: la línea activa y el desplazamiento siguen al audio en vivo
   } else {
@@ -5256,14 +5359,27 @@ function renderPlayerLyricsCard(){
     box.innerHTML = lines.map((l,i)=>`<p class="${i===0?'active':''} line-anim">${escapeHtml(l)}</p>`).join('');
   }
 }
-function updateLyricsCardActiveLine(idx){
+function cardSetActive(idx){
+  const n = currentTrackLRC? currentTrackLRC.length : 0;
+  for(let i=0;i<n;i++){
+    const el = document.getElementById('cardline_'+i); if(!el) continue;
+    el.classList.toggle('active', i===idx);
+    el.classList.toggle('near', i>idx && i<=idx+2);
+    el.classList.toggle('past', i<idx);
+  }
+}
+function updateLyricsCardActiveLine(idx){ // uso directo (al dibujar la tarjeta): se coloca de una, sin animar
   const box = document.getElementById('lyricsCardLines');
   if(!box) return;
-  box.querySelectorAll('p.active').forEach(p=>p.classList.remove('active'));
+  cardSetActive(idx);
   const el = document.getElementById('cardline_'+idx);
-  if(!el) return;
-  el.classList.add('active');
-  animateScrollTo(box, Math.max(0, el.offsetTop - box.clientHeight*0.3), 550);
+  if(el) box.scrollTop = Math.max(0, el.offsetTop - box.clientHeight*0.3);
+}
+function setPlayerLine(text){
+  const el = document.getElementById('playerLyricsLine');
+  if(!el || text==null || el.textContent===text) return;
+  el.textContent = text;
+  el.classList.remove('line-anim'); void el.offsetWidth; el.classList.add('line-anim');
 }
 /* --- motor de letra sincronizada ---
    Antes la línea activa solo se revisaba con 'timeupdate' (unas 4 veces por segundo) y el desplazamiento
@@ -5288,27 +5404,42 @@ function lyrTargetTop(idx, box){
   if(!el) return null;
   return Math.max(0, el.offsetTop - box.clientHeight/2 + el.offsetHeight/2);
 }
+function lyrFollow(box, target, dt, rate, userHold){
+  // acerca el scroll al destino con suavizado exponencial; devuelve true si aún se está moviendo
+  if(userHold || target===null) return false;
+  let diff = target - box.scrollTop;
+  const far = box.clientHeight*1.1;
+  if(Math.abs(diff)>far){ box.scrollTop = target - Math.sign(diff)*far; diff = target - box.scrollTop; }
+  if(Math.abs(diff)>0.4){ box.scrollTop = box.scrollTop + diff*(1-Math.exp(-dt*rate)); return true; }
+  if(diff!==0) box.scrollTop = target;
+  return false;
+}
 function lyrLoop(now){
   lyScrollRaf = 0;
+  if(!currentTrackLRC || !currentTrackLRC.length) return;
+  const dt = Math.min(0.05, Math.max(0.001, (now-lyLastT)/1000)); lyLastT = now;
+  const t = audio.currentTime + 0.12; // un pelín de adelanto: la línea se enciende justo cuando se empieza a oír
+  const idx = lrcIndexAt(t);
+  let keep = false, moving = false;
+  // --- reproductor: línea bajo la carátula y cuadro de letras ---
+  const pl = document.getElementById('player');
+  if(pl && pl.classList.contains('show')){
+    keep = true;
+    setPlayerLine(idx>=0? currentTrackLRC[idx].text : currentTrackLRC[0].text);
+    if(idx!==lastCardLrcIdx){ lastCardLrcIdx = idx; cardSetActive(idx); }
+    const cb = document.getElementById('lyricsCardLines'), ce = document.getElementById('cardline_'+idx);
+    if(cb && ce) moving = lyrFollow(cb, Math.max(0, ce.offsetTop - cb.clientHeight*0.3), dt, 6, false) || moving;
+  }
+  // --- página de letras completa ---
   const ov = document.getElementById('overlayLyrics');
   const sv = document.getElementById('lyricsSyncedView');
   const box = document.getElementById('lyricsScroll');
-  if(!ov || !ov.classList.contains('show') || !sv || sv.style.display==='none' || !currentTrackLRC || !currentTrackLRC.length || !box) return;
-  const dt = Math.min(0.05, Math.max(0.001, (now-lyLastT)/1000)); lyLastT = now;
-  const idx = lrcIndexAt(audio.currentTime + 0.12); // un pelín de adelanto: la línea se enciende justo cuando se empieza a oír
-  if(idx!==lastOverlayLrcIdx){ lastOverlayLrcIdx = idx; lyrSetActive(idx); }
-  let moving = false;
-  if(!lyricsUserScrolling && idx>=0){
-    const target = lyrTargetTop(idx, box);
-    if(target!==null){
-      let diff = target - box.scrollTop;
-      const far = box.clientHeight*1.1;
-      if(Math.abs(diff)>far){ box.scrollTop = target - Math.sign(diff)*far; diff = target - box.scrollTop; } // salto largo (adelantar la canción): se acerca rápido
-      if(Math.abs(diff)>0.4){ box.scrollTop = box.scrollTop + diff*(1-Math.exp(-dt*5.5)); moving = true; }
-      else if(diff!==0){ box.scrollTop = target; }
-    }
+  if(ov && ov.classList.contains('show') && sv && sv.style.display!=='none' && box){
+    keep = true;
+    if(idx!==lastOverlayLrcIdx){ lastOverlayLrcIdx = idx; lyrSetActive(idx); }
+    if(idx>=0) moving = lyrFollow(box, lyrTargetTop(idx, box), dt, 5.5, lyricsUserScrolling) || moving;
   }
-  if(isPlaying || moving) lyScrollRaf = requestAnimationFrame(lyrLoop);
+  if(keep && (isPlaying || moving)) lyScrollRaf = requestAnimationFrame(lyrLoop);
 }
 (function(){
   const sv = document.getElementById('lyricsSyncedView');
@@ -5559,7 +5690,7 @@ function tickLoop(now){
 }
 document.addEventListener('visibilitychange', ()=>{ document.body.classList.toggle('bg-hidden', document.hidden); kickTicks(); });
 if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', initTickFX); else initTickFX();
-function openPlayer(){ document.getElementById('player').classList.add('show'); startWave(); }
+function openPlayer(){ document.getElementById('player').classList.add('show'); startWave(); lastCardLrcIdx = -999; lyrLoopStart(); }
 /* ola de progreso: la parte reproducida ondula (solo mientras suena), el resto es una línea tenue; el marcador es una raya vertical */
 let waveRun = false, waveAmp = 0, wavePhase = 0, waveLast = 0;
 function startWave(){ if(waveRun) return; waveRun = true; waveLast = performance.now(); requestAnimationFrame(waveTick); }
