@@ -1562,6 +1562,35 @@ body.is-playing .hm-eq i{animation:hmEq 1.1s ease-in-out infinite;}
 .hm-tile-bars i.now{background:#ece8e7;}
 .hm-tile-num{font-family:var(--font-head);font-weight:700;font-size:30px;line-height:1;}
 .hm-tile-num small{font-size:13px;font-weight:600;color:var(--text-dim);}
+
+/* ===== Inicio v4: cada sección con su propia forma ===== */
+.hm-mixc{position:relative;flex:0 0 auto;width:150px;height:196px;border-radius:20px;overflow:hidden;background:#161314;cursor:pointer;}
+.hm-mixc-art{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--text-faint);}
+.hm-mixc-art img{width:100%;height:100%;object-fit:cover;}
+.hm-mixc::after{content:"";position:absolute;inset:auto 0 0 0;height:62%;background:linear-gradient(to top,rgba(10,9,9,.92),rgba(10,9,9,0));pointer-events:none;}
+.hm-mixc-t{position:absolute;left:12px;right:12px;bottom:11px;z-index:2;display:flex;flex-direction:column;gap:2px;}
+.hm-mixc-t b{font-size:14px;font-weight:700;line-height:1.2;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+.hm-mixc-t span{font-size:11px;color:rgba(255,255,255,.65);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.hm-badge.top{top:9px;right:9px;bottom:auto;z-index:2;}
+.hm-mixc:active{transform:scale(.98);}
+.hm-pgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 14px;}
+.hm-pl{display:flex;align-items:center;gap:10px;min-width:0;padding:6px;border-radius:16px;background:rgba(0,0,0,.24);cursor:pointer;}
+.hm-pl:active{background:rgba(255,255,255,.08);}
+.hm-pl-art{width:52px;height:52px;flex-shrink:0;border-radius:12px;overflow:hidden;background:rgba(0,0,0,.3);}
+.hm-pl-art>*{width:100%!important;height:100%!important;}
+.hm-pl-b{min-width:0;display:flex;flex-direction:column;gap:2px;}
+.hm-pl-b b{font-size:13px;font-weight:600;line-height:1.2;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+.hm-pl-b span{font-size:10.5px;color:var(--text-dim);}
+.hm-list2{padding:0 8px;}
+.hm-list2 .row{background:transparent;border:none;box-shadow:none;border-radius:14px;padding:6px 8px;}
+.hm-list2 .row+.row{border-top:1px solid rgba(255,255,255,.06);border-radius:0 0 14px 14px;}
+.hm-list2 .row .art{width:48px;height:48px;border-radius:12px;}
+.hm-avs{gap:14px;}
+.hm-av{flex:0 0 auto;width:76px;text-align:center;cursor:pointer;}
+.hm-av-art{width:76px;height:76px;border-radius:24px;overflow:hidden;background:rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;color:var(--text-faint);}
+.hm-av-art img{width:100%;height:100%;object-fit:cover;}
+.hm-av .n{font-size:12px;font-weight:600;margin-top:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.hm-av:active .hm-av-art{transform:scale(.95);} .hm-av-art{transition:transform .18s ease;}
 </style>
 </head>
 <body>
@@ -3491,13 +3520,13 @@ function renderHome(main){
         <div class="hm-tile-num">${hasWk?mins:'—'}<small> min</small></div>
       </div>
     </div>
-    ${mixes.length? `<div class="hm-box"><div class="hm-box-h"><span class="dot"></span><span class="tt">Para ti</span><span class="jp">あなたへ</span></div>
-      <div class="hm-rail">${mixes.map(a=>
-      `<div class="hm-sq" onclick="playCollection('radio:artist:${encA(a)}')"><div class="hm-sq-art">${artistArt(a,84)}<span class="hm-badge"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5l12 7-12 7V5z"/></svg></span></div><div class="t">Mix de ${escapeHtml(a)}</div><div class="s">${escapeHtml(a)} y más</div></div>`).join('')}</div></div>`:''}
-    ${playlists.length? box('Tus playlists','プレイリスト', playlists.length>8?moreBtn("showTab('playlists')"):'', `<div class="hm-rail">${playlists.slice(0,8).map(pl=>sq(playlistArtHTML(pl,108,{radius:'0px',fluid:true}), pl.name, (pl.trackIds||[]).length+' canciones', `openPlaylist('${pl.id}')`)).join('')}</div>`):''}
-    ${box('Agregadas recientemente','最近', musicTracks().length>8?moreBtn('goToRecentAdded()'):'', `<div class="hm-rail">${recents.map(t=>sq(trackArt(t,84,true), t.title, t.artist, `playTrack('${jsq(t.id)}','all')`)).join('')}</div>`)}
+    ${mixes.length? box('Para ti','あなたへ','', `<div class="hm-rail">${mixes.map(a=>
+      `<div class="hm-mixc" onclick="playCollection('radio:artist:${encA(a)}')"><div class="hm-mixc-art">${artistArt(a,150)}</div><span class="hm-badge top"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5l12 7-12 7V5z"/></svg></span><div class="hm-mixc-t"><b>Mix de ${escapeHtml(a)}</b><span>${escapeHtml(a)} y más</span></div></div>`).join('')}</div>`):''}
+    ${playlists.length? box('Tus playlists','プレイリスト', playlists.length>4?moreBtn("showTab('playlists')"):'', `<div class="hm-pgrid">${playlists.slice(0,4).map(pl=>
+      `<div class="hm-pl" onclick="openPlaylist('${pl.id}')"><div class="hm-pl-art">${playlistArtHTML(pl,52,{radius:'0px',fluid:true})}</div><div class="hm-pl-b"><b>${escapeHtml(pl.name)}</b><span>${(pl.trackIds||[]).length} canciones</span></div></div>`).join('')}</div>`):''}
+    ${box('Agregadas recientemente','最近', musicTracks().length>4?moreBtn('goToRecentAdded()'):'', `<div class="hm-list2">${recents.slice(0,4).map(t=>trackRow(t)).join('')}</div>`)}
     ${albumsTop.length? box('Álbumes','アルバム','', `<div class="hm-rail">${albumsTop.map(({al,idx})=>sq(trackArt(bestCoverTrack(al.tracks),84,true), al.album, al.artist, `openAlbum(${idx})`)).join('')}</div>`):''}
-    ${artistsList.length? box('Artistas','アーティスト', getArtists().length>8?moreBtn('goToLibraryArtists()'):'', `<div class="hm-rail">${artistsList.map(a=>sq(artistArt(a,84), a, 'Artista', `openArtist('${encA(a)}')`)).join('')}</div>`):''}
+    ${artistsList.length? box('Artistas','アーティスト', getArtists().length>8?moreBtn('goToLibraryArtists()'):'', `<div class="hm-rail hm-avs">${artistsList.map(a=>`<div class="hm-av" onclick="openArtist('${encA(a)}')"><div class="hm-av-art">${artistArt(a,72)}</div><div class="n">${escapeHtml(a)}</div></div>`).join('')}</div>`):''}
     <div class="hm-end" aria-hidden="true">静かな夜</div>
   `;
 }
@@ -5202,7 +5231,7 @@ function renderAppSettings(main){
       ${row(ic('<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>'),'Almacenamiento y datos','Borrar estadísticas de reproducción guardadas en este dispositivo',"confirmClearHistory()")}
       ${row(ic('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'),'Apariencia','Temas y colores personalizados',"showToast('Apariencia — próximamente')",'<span class="badge">Próximamente</span>')}
       ${row(ic('<path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/>'),'Notificaciones','Controles del reproductor en la barra de notificaciones',"showToast('Notificaciones — próximamente')",'<span class="badge">Próximamente</span>')}
-      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.10.14-f) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
+      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.10.14-g) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
     </div>
   `;
 }
