@@ -3494,6 +3494,10 @@ function renderHome(main){
     ${mixes.length? `<div class="hm-box"><div class="hm-box-h"><span class="dot"></span><span class="tt">Para ti</span><span class="jp">あなたへ</span></div>
       <div class="hm-rail">${mixes.map(a=>
       `<div class="hm-sq" onclick="playCollection('radio:artist:${encA(a)}')"><div class="hm-sq-art">${artistArt(a,84)}<span class="hm-badge"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5l12 7-12 7V5z"/></svg></span></div><div class="t">Mix de ${escapeHtml(a)}</div><div class="s">${escapeHtml(a)} y más</div></div>`).join('')}</div></div>`:''}
+    ${playlists.length? box('Tus playlists','プレイリスト', playlists.length>8?moreBtn("showTab('playlists')"):'', `<div class="hm-rail">${playlists.slice(0,8).map(pl=>sq(playlistArtHTML(pl,108,{radius:'0px',fluid:true}), pl.name, (pl.trackIds||[]).length+' canciones', `openPlaylist('${pl.id}')`)).join('')}</div>`):''}
+    ${box('Agregadas recientemente','最近', musicTracks().length>8?moreBtn('goToRecentAdded()'):'', `<div class="hm-rail">${recents.map(t=>sq(trackArt(t,84,true), t.title, t.artist, `playTrack('${jsq(t.id)}','all')`)).join('')}</div>`)}
+    ${albumsTop.length? box('Álbumes','アルバム','', `<div class="hm-rail">${albumsTop.map(({al,idx})=>sq(trackArt(bestCoverTrack(al.tracks),84,true), al.album, al.artist, `openAlbum(${idx})`)).join('')}</div>`):''}
+    ${artistsList.length? box('Artistas','アーティスト', getArtists().length>8?moreBtn('goToLibraryArtists()'):'', `<div class="hm-rail">${artistsList.map(a=>sq(artistArt(a,84), a, 'Artista', `openArtist('${encA(a)}')`)).join('')}</div>`):''}
     <div class="hm-end" aria-hidden="true">静かな夜</div>
   `;
 }
@@ -5198,7 +5202,7 @@ function renderAppSettings(main){
       ${row(ic('<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>'),'Almacenamiento y datos','Borrar estadísticas de reproducción guardadas en este dispositivo',"confirmClearHistory()")}
       ${row(ic('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'),'Apariencia','Temas y colores personalizados',"showToast('Apariencia — próximamente')",'<span class="badge">Próximamente</span>')}
       ${row(ic('<path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/>'),'Notificaciones','Controles del reproductor en la barra de notificaciones',"showToast('Notificaciones — próximamente')",'<span class="badge">Próximamente</span>')}
-      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.10.14-e) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
+      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.10.14-f) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
     </div>
   `;
 }
