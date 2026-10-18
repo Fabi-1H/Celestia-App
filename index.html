@@ -1617,6 +1617,27 @@ body.is-playing .hm-eq i{animation:hmEq 1.1s ease-in-out infinite;}
 .lb-auto-g{font-family:var(--font-jp);font-size:28px;font-weight:600;color:#ece8e7;line-height:1;}
 .lb-auto-g.big{font-size:56px;}
 .lk-hero:has(.lb-auto-g)::after{content:'';}
+
+/* ===== Tu historial y volumen parejo ===== */
+.st3{margin-top:22px;padding-bottom:16px;}
+.st3-mini{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:0 16px 14px;}
+.st3-mini div{display:flex;flex-direction:column;gap:2px;}
+.st3-mini b{font-family:var(--font-head);font-size:17px;font-weight:700;}
+.st3-mini span{font-size:11px;color:var(--text-dim);}
+.st3-bars{display:flex;gap:5px;align-items:flex-end;height:96px;padding:0 16px;}
+.st3-b{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:5px;height:100%;}
+.st3-c{width:100%;flex:1;display:flex;align-items:flex-end;}
+.st3-c i{display:block;width:100%;border-radius:4px;background:rgba(255,255,255,.2);min-height:3px;}
+.st3-b.now .st3-c i{background:#ece8e7;}
+.st3-b span{font-size:9px;color:var(--text-faint);line-height:1;}
+.st3-b.now span{color:var(--text);}
+.st3-tops{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:14px 16px 0;}
+.st3-tops div{display:flex;flex-direction:column;gap:2px;min-width:0;padding:10px 12px;border-radius:16px;background:rgba(0,0,0,.24);cursor:pointer;}
+.st3-tops span{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-dim);}
+.st3-tops b{font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.st3-tops small{font-size:10.5px;color:var(--text-faint);}
+.set-state{font-size:12px;font-weight:700;padding:5px 10px;border-radius:10px;background:rgba(255,255,255,.08);color:var(--text-dim);}
+.set-state.on{background:#ece8e7;color:#141414;}
 </style>
 </head>
 <body>
@@ -2470,7 +2491,52 @@ async function saveArtistNotes(){ lsSet('celestia:artist-notes', artistNotes); }
 async function saveWikiCache(){ lsSet('celestia:wiki-cache-v2', wikiCache); }
 async function saveSongWikiCache(){ lsSet('celestia:song-wiki-cache', songWikiCache); }
 async function savePlaylists(){ lsSet('miku:playlists', playlists); }
-async function saveHistory(){ lsSet('miku:history', historyWeeks); }
+async function saveHistory(){ lsSet('miku:history', historyWeeks); if(monthStats) lsSet('celestia:months', monthStats); }
+/* Totales por mes: las semanas solo se guardan 3, así que aquí se acumula lo que no se debe perder (para el resumen del año y las listas automáticas). */
+let monthStats = null;
+function monthKeyNow(d){ d = d || new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); }
+function newMonth(){ return {sec:0, plays:0, artists:{}, tracks:{}}; }
+function ensureMonths(){
+  if(monthStats) return monthStats;
+  const saved = lsGet('celestia:months', null);
+  if(saved && typeof saved==='object'){ monthStats = saved; return monthStats; }
+  monthStats = {};
+  (historyWeeks||[]).forEach(w=>{ // primera vez: se parte de las semanas que ya existen
+    const mon = isoWeekMonday(w.weekKey); if(!mon) return;
+    const th = new Date(mon); th.setDate(mon.getDate()+3);
+    const k = monthKeyNow(th); const b = monthStats[k] || (monthStats[k] = newMonth());
+    b.sec += w.totalSeconds||0;
+    Object.entries(w.artistPlays||{}).forEach(([a,c])=>{ b.artists[a]=(b.artists[a]||0)+c; b.plays+=c; });
+    Object.entries(w.plays||{}).forEach(([id,c])=>{ const t = tracks.find(x=>x.id===id); if(t){ const tk = trackKey(t); b.tracks[tk]=(b.tracks[tk]||0)+c; } });
+  });
+  lsSet('celestia:months', monthStats);
+  return monthStats;
+}
+function monthBucket(){ const ms = ensureMonths(), k = monthKeyNow(); return ms[k] || (ms[k] = newMonth()); }
+function longPlayCount(t, key){
+  const ms = ensureMonths(), k = key || trackKey(t); let n = 0;
+  Object.values(ms).forEach(m=>{ n += (m.tracks && m.tracks[k]) || 0; });
+  return Math.max(n, trackPlayCount(t.id));
+}
+function fmtMinLong(min){ if(min<60) return min+' min'; const h=Math.floor(min/60), m=min%60; return h+' h'+(m?' '+m+' min':''); }
+function historyLongHTML(){
+  const ms = ensureMonths(), keys = Object.keys(ms).sort(); if(!keys.length) return '';
+  const now = new Date(), cur = monthKeyNow(now), yr = String(now.getFullYear());
+  const sec = k=>(ms[k]&&ms[k].sec)||0;
+  const mMin = Math.round(sec(cur)/60), yKeys = keys.filter(k=>k.startsWith(yr));
+  const yMin = Math.round(yKeys.reduce((n,k)=>n+sec(k),0)/60), allMin = Math.round(keys.reduce((n,k)=>n+sec(k),0)/60);
+  const bars = []; for(let i=11;i>=0;i--){ const d = new Date(now.getFullYear(), now.getMonth()-i, 1); const k = monthKeyNow(d); bars.push({k, m:MONTHS_STATS[d.getMonth()], v:sec(k)}); }
+  const mx = Math.max(1,...bars.map(b=>b.v));
+  const aT = {}, tT = {};
+  yKeys.forEach(k=>{ const m = ms[k]; Object.entries(m.artists||{}).forEach(([a,c])=>{ aT[a]=(aT[a]||0)+c; }); Object.entries(m.tracks||{}).forEach(([a,c])=>{ tT[a]=(tT[a]||0)+c; }); });
+  const top = o=>Object.entries(o).sort((a,b)=>b[1]-a[1])[0];
+  const ta = top(aT), tt = top(tT), idx = keyIndex(), tTrack = tt ? idx.get(tt[0]) : null;
+  return `<div class="hm-box st3"><div class="hm-box-h"><span class="dot"></span><span class="tt">Tu historial</span><span class="jp">履歴</span></div>
+    <div class="st3-mini"><div><b>${fmtMinLong(mMin)}</b><span>este mes</span></div><div><b>${fmtMinLong(yMin)}</b><span>en ${yr}</span></div><div><b>${fmtMinLong(allMin)}</b><span>en total</span></div></div>
+    <div class="st3-bars">${bars.map(b=>`<div class="st3-b ${b.k===cur?'now':''}"><div class="st3-c"><i style="height:${b.v>0?Math.max(6,b.v/mx*100):3}%"></i></div><span>${b.m}</span></div>`).join('')}</div>
+    ${(ta||tTrack)?`<div class="st3-tops">${ta?`<div onclick="openArtist('${encA(ta[0])}')"><span>Artista del año</span><b>${escapeHtml(ta[0])}</b><small>${ta[1]} reproducciones</small></div>`:''}${tTrack?`<div onclick="playTrack('${jsq(tTrack.id)}','all')"><span>Canción del año</span><b>${escapeHtml(tTrack.title)}</b><small>${tt[1]} reproducciones</small></div>`:''}</div>`:''}
+  </div>`;
+}
 async function saveRecent(){ lsSet('celestia:recent', recentPlays); }
 async function saveEQState(){ lsSet('miku:eq', eqState); }
 
@@ -4929,6 +4995,7 @@ function registerPlay(track){
   w.plays[track.id] = (w.plays[track.id]||0)+1;
   const an = (track.artist||'').replace(/\s+/g,' ').trim();
   w.artistPlays[an] = (w.artistPlays[an]||0)+1;
+  try{ const mb = monthBucket(); mb.plays++; mb.artists[an]=(mb.artists[an]||0)+1; const tk = trackKey(track); mb.tracks[tk]=(mb.tracks[tk]||0)+1; }catch(e){}
   saveHistory();
 }
 function logPlayEvent(track){
@@ -4945,6 +5012,7 @@ function addListenSeconds(sec){
   w.totalSeconds = (w.totalSeconds||0) + sec;
   if(!w.daySeconds) w.daySeconds = [0,0,0,0,0,0,0];
   w.daySeconds[(new Date().getDay()+6)%7] += sec; // lunes = 0
+  try{ monthBucket().sec += sec; }catch(e){}
   clearTimeout(listenSaveTimer);
   listenSaveTimer = setTimeout(saveHistory, 4000);
 }
@@ -5038,7 +5106,8 @@ function renderHistory(main){
     <div class="st2-list">${songs.length? songs.slice(0,5).map(songRow).join('') : `<p class="st2-empty">Sin reproducciones esta semana.</p>`}</div>
     <div class="section-title st2-sec" style="cursor:pointer;" onclick="openStatsDetail('artists')">Artistas más reproducidos
       <span class="see-all">Ver todo ›</span></div>
-    <div class="st2-list">${artistsArr.length? artistsArr.slice(0,5).map(artistRow).join('') : `<p class="st2-empty">Sin datos.</p>`}</div>`;
+    <div class="st2-list">${artistsArr.length? artistsArr.slice(0,5).map(artistRow).join('') : `<p class="st2-empty">Sin datos.</p>`}</div>
+    ${historyLongHTML()}`;
 }
 
 function shareStatsText(text){
@@ -5267,6 +5336,7 @@ function renderAppSettings(main){
     <div id="setList">
       ${row(ic('<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>'),'Cuenta','Nombre de usuario y foto de perfil',"openProfileEdit()")}
       ${row(ic('<path d="M4 21V14M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/>'),'Reproducción','Ecualizador y crossfade entre canciones',"openEQ()")}
+      ${row(ic('<path d="M3 10v4M7 7v10M11 4v16M15 8v8M19 10v4"/>'),'Volumen parejo',normOn()?'Activado · baja las canciones más fuertes para que suenen parecido':'Desactivado',"toggleNorm()",`<span class="set-state ${normOn()?'on':''}">${normOn()?'Sí':'No'}</span>`)}
       ${row(ic('<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/>'),'Imágenes desde internet','Busca carátulas de álbumes y fotos de artistas al importar. Solo se envían los nombres del artista y del álbum.',"toggleArtOnline()",`<div class="switch ${artOnlineEnabled()?'on':''}"><div class="knob"></div></div>`)}
       ${row(ic('<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>'),'Buscar imágenes ahora','Reintenta con toda tu biblioteca, incluso lo que no se encontró antes',"manualArtSearch()")}
       ${row(ic('<path d="M9 18V5l12-2v13M9 9l12-2"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>'),'Letras sincronizadas','Busca la letra de tus canciones al importar. Solo se envían el título y el artista.',"toggleLyricsOnline()",`<div class="switch ${lyricsOnlineEnabled()?'on':''}"><div class="knob"></div></div>`)}
@@ -5277,7 +5347,7 @@ function renderAppSettings(main){
       ${row(ic('<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>'),'Almacenamiento y datos','Borrar estadísticas de reproducción guardadas en este dispositivo',"confirmClearHistory()")}
       ${row(ic('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'),'Apariencia','Temas y colores personalizados',"showToast('Apariencia — próximamente')",'<span class="badge">Próximamente</span>')}
       ${row(ic('<path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/>'),'Notificaciones','Controles del reproductor en la barra de notificaciones',"showToast('Notificaciones — próximamente')",'<span class="badge">Próximamente</span>')}
-      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.10.17-a) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
+      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.10.17-b) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
     </div>
   `;
 }
@@ -5385,7 +5455,8 @@ function loadCurrent(autoplay){
   if(eqState.enabled || crossfadeState.enabled) ensureEQGraph(); // el audio normal no pasa por Web Audio, así sigue sonando en segundo plano
   const chain = chainFor(audio);
   if(chain) chain.gain.gain.value = 1;
-  if(autoplay){ resumeAudioCtx(); safePlay(audio); fadeInAudio(audio); } else { clearInterval(fadeInIv); if(!sleepFadeIv) audio.volume = 1; }
+  if(autoplay){ resumeAudioCtx(); safePlay(audio); fadeInAudio(audio); } else { clearInterval(fadeInIv); if(!sleepFadeIv) audio.volume = normVol(currentTrack); }
+  normSchedule();
   updatePlayerUI();
   renderMini();
   animateTrackChange(window.__trkDir||0); window.__trkDir = 0;
@@ -5424,11 +5495,12 @@ function fadeInAudio(el){
   clearInterval(fadeInIv);
   if(sleepFadeIv){ return; }
   el.volume = 0;
+  const tv = normVol(currentTrack); // volumen parejo: la canción llega a su nivel, no siempre a 1
   const t0 = performance.now(), D = 240;
   fadeInIv = setInterval(()=>{
     const k = Math.min(1,(performance.now()-t0)/D);
-    el.volume = k*k*(3-2*k); // curva suave
-    if(k>=1){ clearInterval(fadeInIv); el.volume = 1; }
+    el.volume = k*k*(3-2*k)*tv; // curva suave
+    if(k>=1){ clearInterval(fadeInIv); fadeInIv = null; el.volume = tv; }
   }, 16);
 }
 function nextTrack(){
@@ -5493,7 +5565,7 @@ function startCrossfade(){
   const outgoing = audio, incoming = otherAudio();
   const oc = chainFor(outgoing), ic = chainFor(incoming);
   incoming.src = nextT.url; incoming.currentTime = 0; applySpeed(incoming);
-  if(!sleepFadeIv) incoming.volume = 1;
+  if(!sleepFadeIv) incoming.volume = normVol(nextT);
   const remain = isFinite(outgoing.duration) ? Math.max(0.5, outgoing.duration - outgoing.currentTime - 0.3) : 99;
   const dur = Math.min(crossfadeSecondsFor(outgoing.duration), remain);
   // Las rampas de volumen las ejecuta el motor de audio directamente (no un temporizador de JS), así el
@@ -5892,13 +5964,13 @@ function openSleepTimer(){
   document.getElementById('overlaySleepTimer').classList.add('show');
 }
 let sleepFadeIv = null;
-function stopSleepFade(){ clearInterval(sleepFadeIv); sleepFadeIv = null; audioA.volume = 1; audioB.volume = 1; }
+function stopSleepFade(){ clearInterval(sleepFadeIv); sleepFadeIv = null; audioA.volume = 1; audioB.volume = 1; try{ audio.volume = normVol(currentTrack); }catch(e){} }
 function sleepFadeAndPause(){
   clearInterval(sleepFadeIv);
   let step = 0; const steps = 40;
   sleepFadeIv = setInterval(()=>{
-    step++; const v = Math.max(0, 1 - step/steps);
-    audioA.volume = v; audioB.volume = v;
+    step++; const v = Math.max(0, 1 - step/steps), nv = normVol(currentTrack);
+    audioA.volume = v*nv; audioB.volume = v;
     if(step>=steps){ stopSleepFade(); finishCrossfade(); audio.pause(); }
   }, 250);
 }
@@ -7232,23 +7304,107 @@ function openSettingsSheet(){
 }
 async function confirmClearHistory(){
   if(!confirm('¿Borrar todas tus estadísticas de reproducción? Esta acción no se puede deshacer.')) return;
-  historyWeeks = [];
+  historyWeeks = []; monthStats = {}; normMap = normMap; 
   await saveHistory();
   closeOverlay('overlaySettings');
   if(activeTab==='history') render();
   showToast('Estadísticas borradas');
 }
 
+
+/* ============ VOLUMEN PAREJO ============
+   Mide una vez qué tan fuerte es cada canción y baja el volumen de las más fuertes para que todas suenen parecido.
+   Solo BAJA (nunca sube), usa el volumen del reproductor y no pasa por Web Audio: así no afecta la
+   reproducción en segundo plano. La medición se hace de a una canción, en pausas, y se guarda para no repetirla. */
+let normMap = lsGet('celestia:norm', {}); // id de canción -> nivel medido (RMS); -1 = no se pudo medir
+function normOn(){ return lsGet('celestia:norm-on', true)!==false; }
+function normTarget(){
+  const v = Object.values(normMap).filter(x=>x>0).sort((a,b)=>a-b);
+  if(v.length<5) return 0.10;
+  return Math.max(0.06, Math.min(0.14, v[Math.floor(v.length*0.35)]));
+}
+function normVol(t){
+  if(!t || !normOn()) return 1;
+  const r = normMap[t.id]; if(!(r>0)) return 1;
+  return Math.max(0.3, Math.min(1, normTarget()/r));
+}
+const normQ = []; let normBusy = false, normDirty = false, normRampIv = null;
+function normEnqueue(t, first){
+  if(!t || !normOn() || normMap[t.id]!==undefined || normQ.some(x=>x.id===t.id)) return;
+  if(first) normQ.unshift(t); else normQ.push(t);
+  normPump();
+}
+function normSchedule(){
+  if(!normOn()) return;
+  clearTimeout(window.__normT);
+  window.__normT = setTimeout(()=>{
+    normEnqueue(currentTrack, true);
+    for(let k=1;k<=3;k++){ const t = currentQueue[currentIndex+k]; if(t) normEnqueue(t); }
+  }, 1200);
+}
+async function analyzeRms(t){
+  const res = await fetch(t.url); const buf = await res.arrayBuffer();
+  if(buf.byteLength > 80e6) return -1;
+  const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext; if(!OAC) return -1;
+  const oc = new OAC(1, 1, 8000); // decodifica a 8 kHz: poca memoria
+  const ab = await oc.decodeAudioData(buf);
+  const chans = []; for(let c=0;c<ab.numberOfChannels;c++) chans.push(ab.getChannelData(c));
+  const B = 3200, n = ab.length, blocks = [];
+  for(let i=0;i+B<=n;i+=B){
+    let sum = 0; for(const d of chans){ for(let j=i;j<i+B;j++){ const x=d[j]; sum += x*x; } }
+    blocks.push(sum/(B*chans.length));
+  }
+  if(!blocks.length) return -1;
+  const mean = blocks.reduce((a,b)=>a+b,0)/blocks.length;
+  const kept = blocks.filter(x=>x>1e-5 && x>=mean*0.1);
+  if(!kept.length) return -1;
+  return Math.sqrt(kept.reduce((a,b)=>a+b,0)/kept.length);
+}
+async function normPump(){
+  if(normBusy) return; normBusy = true;
+  try{
+    while(normQ.length){
+      const t = normQ.shift();
+      if(!tracks.includes(t) || normMap[t.id]!==undefined) continue;
+      let r = -1; try{ r = await analyzeRms(t); }catch(e){ r = -1; }
+      normMap[t.id] = r>0 ? +r.toFixed(4) : -1; normDirty = true;
+      if(currentTrack && currentTrack.id===t.id) normApplyCurrent();
+      await new Promise(res=>setTimeout(res,300)); // pausa: la app no se traba mientras mide
+    }
+  } finally {
+    normBusy = false;
+    if(normDirty){ normDirty = false; lsSet('celestia:norm', normMap); }
+  }
+}
+function normApplyCurrent(){
+  if(!currentTrack || fadeInIv || sleepFadeIv || crossfading || xf || swapPending) return;
+  const target = normVol(currentTrack), el = audio; if(Math.abs(el.volume-target)<0.01) return;
+  clearInterval(normRampIv);
+  const v0 = el.volume, t0 = performance.now(), D = 700;
+  normRampIv = setInterval(()=>{
+    const k = Math.min(1,(performance.now()-t0)/D);
+    if(el!==audio || sleepFadeIv || crossfading){ clearInterval(normRampIv); return; }
+    el.volume = v0 + (target-v0)*k;
+    if(k>=1) clearInterval(normRampIv);
+  }, 30);
+}
+function toggleNorm(){
+  const on = !normOn(); lsSet('celestia:norm-on', on);
+  if(on) normSchedule(); else { clearInterval(normRampIv); normQ.length = 0; }
+  try{ clearInterval(fadeInIv); fadeInIv = null; if(!sleepFadeIv) audio.volume = normVol(currentTrack); }catch(e){}
+  render(); showToast(on ? 'Volumen parejo activado' : 'Volumen parejo desactivado');
+}
+
 /* ============ PLAYLISTS AUTOMÁTICAS ============ */
 const AUTO_META = {
-  top:       {name:'Más escuchadas',   jp:'人気',   glyph:'多', sub:'Lo que más has puesto estas últimas semanas'},
-  forgotten: {name:'Olvidadas',        jp:'忘れ物', glyph:'忘', sub:'Canciones que no has puesto en las últimas semanas'},
+  top:       {name:'Más escuchadas',   jp:'人気',   glyph:'多', sub:'Lo que más has puesto, según tu historial'},
+  forgotten: {name:'Olvidadas',        jp:'忘れ物', glyph:'忘', sub:'Canciones que no has puesto desde que Celestia lleva la cuenta'},
   'new':     {name:'Recién agregadas', jp:'新着',   glyph:'新', sub:'Lo último que importaste'}
 };
 function autoList(kind){
   const mus = musicTracks(), now = Date.now(), DAY = 864e5;
-  if(kind==='top') return mus.map(t=>({t,n:trackPlayCount(t.id)})).filter(x=>x.n>0).sort((a,b)=>b.n-a.n).slice(0,50).map(x=>x.t);
-  if(kind==='forgotten') return mus.filter(t=>trackPlayCount(t.id)===0 && (!t.addedAt || now-t.addedAt>14*DAY)).sort((a,b)=>(a.addedAt||0)-(b.addedAt||0)).slice(0,50);
+  if(kind==='top'){ const seen=new Set(); return mus.map(t=>({t,n:longPlayCount(t)})).filter(x=>x.n>0).sort((a,b)=>b.n-a.n||(a.t.id===b.t.id?0:(trackPlayCount(b.t.id)-trackPlayCount(a.t.id)))).filter(x=>{const k=trackKey(x.t); if(seen.has(k)) return false; seen.add(k); return true;}).slice(0,50).map(x=>x.t); }
+  if(kind==='forgotten') return mus.filter(t=>longPlayCount(t)===0 && (!t.addedAt || now-t.addedAt>14*DAY)).sort((a,b)=>(a.addedAt||0)-(b.addedAt||0)).slice(0,50);
   if(kind==='new') return mus.slice().sort((a,b)=>(b.addedAt||0)-(a.addedAt||0)).slice(0,30);
   return [];
 }
@@ -7310,6 +7466,7 @@ async function buildBackup(){
     history: historyWeeks.map(w=>({weekKey:w.weekKey, rangeLabel:w.rangeLabel, totalSeconds:w.totalSeconds||0, daySeconds:w.daySeconds||null, artistPlays:w.artistPlays||{},
       plays:Object.entries(w.plays||{}).map(([id,n])=>{ const r=ref.get(id); return r?{t:r.t,a:r.a,n}:null; }).filter(Boolean)})),
     profile: Object.assign({}, profile),
+    months: ensureMonths(),
     ls:{}, artistPhotos:[]
   };
   try{ for(let i=0;i<localStorage.length;i++){ const k = localStorage.key(i); if(k && backupLsAllowed(k)) data.ls[k] = localStorage.getItem(k); } }catch(e){}
@@ -7386,6 +7543,7 @@ async function restoreBackup(d){
     const plays = {}; (w.plays||[]).forEach(x=>{ const t = find(x); if(t) plays[t.id] = (plays[t.id]||0) + (x.n||0); });
     historyWeeks.push({weekKey:w.weekKey, rangeLabel:w.rangeLabel||'', plays, artistPlays:w.artistPlays||{}, totalSeconds:w.totalSeconds||0, daySeconds:w.daySeconds||null});
   });
+  { const ms = ensureMonths(); Object.entries(d.months||{}).forEach(([k,m])=>{ if(!ms[k] && m && typeof m==='object') ms[k] = m; }); }
   historyWeeks.sort((a,b)=>String(a.weekKey).localeCompare(String(b.weekKey)));
   while(historyWeeks.length>3) historyWeeks.shift();
   if(d.profile && typeof d.profile==='object'){
