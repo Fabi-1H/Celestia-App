@@ -1638,6 +1638,36 @@ body.is-playing .hm-eq i{animation:hmEq 1.1s ease-in-out infinite;}
 .st3-tops small{font-size:10.5px;color:var(--text-faint);}
 .set-state{font-size:12px;font-weight:700;padding:5px 10px;border-radius:10px;background:rgba(255,255,255,.08);color:var(--text-dim);}
 .set-state.on{background:#ece8e7;color:#141414;}
+
+/* ===== Buscar: inicio y resultados ===== */
+.sx-auto{display:flex;flex-direction:column;gap:8px;margin-top:2px;}
+.sx-ar{display:flex;align-items:center;gap:12px;padding:10px 14px 10px 10px;border-radius:18px;background:linear-gradient(135deg,rgba(255,255,255,.1),rgba(255,255,255,.04));border:1px solid rgba(255,255,255,.1);cursor:pointer;color:var(--text-dim);transition:transform .25s var(--ease-soft);}
+.sx-ar:active{transform:scale(.98);}
+.sx-ar .g{width:44px;height:44px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-family:var(--font-jp);font-size:22px;color:var(--text);background:rgba(0,0,0,.3);}
+.sx-ar .m{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;}
+.sx-ar .m b{font-size:15px;font-weight:600;color:var(--text);}
+.sx-ar .m span{font-size:12.5px;}
+.sx-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.sx-c{position:relative;overflow:hidden;min-height:96px;padding:12px;border-radius:20px;background:linear-gradient(145deg,rgba(255,255,255,.11),rgba(255,255,255,.04));border:1px solid rgba(255,255,255,.1);cursor:pointer;display:flex;flex-direction:column;gap:2px;justify-content:flex-end;transition:transform .25s var(--ease-soft);}
+.sx-c:active{transform:scale(.97);}
+.sx-c:last-child:nth-child(odd){grid-column:1/-1;min-height:96px;}
+.srch-best .a svg{opacity:.45;}
+.sx-c .ic{position:absolute;left:12px;top:12px;width:34px;height:34px;border-radius:11px;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.3);color:var(--text);}
+.sx-c .ic svg{width:19px;height:19px;}
+.sx-c .n{font-family:var(--font-head);font-weight:700;font-size:15.5px;position:relative;}
+.sx-c .s{font-size:12px;color:var(--text-dim);position:relative;}
+.sx-c .bg{position:absolute;right:8px;top:-4px;font-family:var(--font-jp);font-size:54px;line-height:1;color:rgba(255,255,255,.07);pointer-events:none;}
+.srch-best{display:flex;align-items:center;gap:14px;padding:14px;border-radius:22px;background:linear-gradient(135deg,rgba(255,255,255,.12),rgba(255,255,255,.04));border:1px solid rgba(255,255,255,.1);cursor:pointer;}
+.srch-best:active{transform:scale(.99);}
+.srch-best .a{width:72px;height:72px;border-radius:16px;overflow:hidden;flex:none;background:rgba(0,0,0,.3);}
+.srch-best .a.round{border-radius:50%;}
+.srch-best .a img,.srch-best .a svg{width:100%;height:100%;object-fit:cover;display:block;}
+.srch-best .m{display:flex;flex-direction:column;gap:3px;min-width:0;}
+.srch-best .m b{font-family:var(--font-head);font-size:19px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.srch-best .m span{font-size:12.5px;color:var(--text-dim);}
+.srch-none{padding:46px 24px;text-align:center;}
+.srch-none .big{font-family:var(--font-jp);font-size:64px;line-height:1;color:rgba(255,255,255,.14);margin-bottom:10px;}
+body.nojp .jp,body.nojp .jp0,body.nojp .jpn,body.nojp .jp-tag,body.nojp .jp-note,body.nojp .sx-c .bg{display:none !important;}
 </style>
 </head>
 <body>
@@ -4861,23 +4891,25 @@ function closeSearchMode(){
 }
 const SRCH_COLORS = ['linear-gradient(145deg,#554d4f,#2b2527)','linear-gradient(145deg,#484447,#262224)','linear-gradient(145deg,#5a5254,#2d2729)','linear-gradient(145deg,#454649,#242325)','linear-gradient(145deg,#4f4749,#292325)','linear-gradient(145deg,#4a4648,#272426)','linear-gradient(145deg,#585052,#2c2628)','linear-gradient(145deg,#434043,#232123)'];
 function searchLandingHTML(){
-  const pls = playlists.slice().reverse().slice(0,10);
-  const mt = musicTracks();
-  const art = (t)=> t ? `<div class="xa">${trackArt(t,66)}</div>` : '';
-  const artists = getArtists(), albums = getAlbums();
+  const mt = musicTracks(), artists = getArtists(), albums = getAlbums();
+  const pods = tracks.filter(t=>t.isPodcast).length, likedN = mt.filter(t=>t.liked).length;
+  const I = d=>`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+  const n1 = (n,s,p)=> n+' '+(n===1?s:p);
   const cats = [
-    ['Tus me gusta','openLiked()', art(mt.find(t=>t.liked))],
-    ['Canciones',"showTab('songs')", art(bestCoverTrack(mt)||mt[0])],
-    ['Artistas',"showTab('artists')", artists.length? `<div class="xa">${artistArt(artists[0],66)}</div>` : ''],
-    ['Álbumes',"showTab('albums')", albums.length? art(bestCoverTrack(albums[0].tracks)) : ''],
-    ['Playlists',"showTab('playlists')", pls.length? `<div class="xa">${playlistArtHTML(pls[0],66,{fluid:true,radius:'0'})}</div>` : ''],
-    ['Podcasts',"showTab('podcasts')", ''],
-    ['Estadísticas',"showTab('history')", '']
+    ['Tus me gusta','愛',"openLiked()", n1(likedN,'canción','canciones'), I('<path d="M12 20s-7-4.4-7-10a4 4 0 017-2.6A4 4 0 0119 10c0 5.6-7 10-7 10z"/>')],
+    ['Canciones','曲',"showTab('songs')", n1(mt.length,'canción','canciones'), I('<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>')],
+    ['Artistas','人',"showTab('artists')", n1(artists.length,'artista','artistas'), I('<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>')],
+    ['Álbumes','盤',"showTab('albums')", n1(albums.length,'álbum','álbumes'), I('<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.5"/>')],
+    ['Playlists','表',"showTab('playlists')", n1(playlists.length,'playlist','playlists'), I('<path d="M3 6h13M3 12h13M3 18h8M19 15v6M16 18h6"/>')],
+    ['Podcasts','声',"showTab('podcasts')", n1(pods,'episodio','episodios'), I('<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/>')],
+    ['Estadísticas','数',"showTab('history')", 'Tu actividad', I('<path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/>')]
   ];
+  const autos = Object.keys(AUTO_META).map(k=>({k, m:AUTO_META[k], n:autoList(k).length})).filter(x=>x.n>0);
   return `
-    ${pls.length ? `<div class="section-title">Tus playlists</div><div class="hgrid">${pls.map(p=>`<div class="pl-tall" onclick="openPlaylist('${jsq(p.id)}')"><div class="a">${playlistArtHTML(p,122,{fluid:true,radius:'0'})}</div><div class="g"></div><div class="n">${escapeHtml(p.name)}</div></div>`).join('')}</div>` : ''}
+    ${autos.length ? `<div class="section-title">Para descubrir<span class="jp">発見</span></div>
+    <div class="sx-auto">${autos.map(x=>`<div class="sx-ar" onclick="openAuto('${x.k}')"><div class="g">${x.m.glyph}</div><div class="m"><b>${x.m.name}</b><span>${n1(x.n,'canción','canciones')}</span></div><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></div>`).join('')}</div>` : ''}
     <div class="section-title">Explorar todo<span class="jp">探索</span></div>
-    <div class="xgrid">${cats.map((c,i)=>`<div class="xcard" style="background:${SRCH_COLORS[i%SRCH_COLORS.length]}" onclick="${c[1]}">${c[0]}${c[2]}</div>`).join('')}</div>`;
+    <div class="sx-grid">${cats.map(c=>`<div class="sx-c" onclick="${c[2]}"><div class="ic">${c[4]}</div><div class="n">${c[0]}</div><div class="s">${c[3]}</div><span class="bg">${c[1]}</span></div>`).join('')}</div>`;
 }
 function srchNorm(x){ return String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase(); }
 let searchFilter = 'all';
@@ -4931,11 +4963,21 @@ function doSearch(q){
   const artists = getArtists().filter(a=>srchNorm(a).includes(n));
   const albums = getAlbums().map((al,idx)=>({al,idx})).filter(x=>srchNorm(x.al.album).includes(n));
   const pls = playlists.filter(p=>srchNorm(p.name).includes(n));
-  if(!songs.length && !artists.length && !albums.length && !pls.length){ box.innerHTML = `<div class="empty"><p>No se encontraron resultados para "${escapeHtml(q)}".</p></div>`; return; }
+  if(!songs.length && !artists.length && !albums.length && !pls.length){ box.innerHTML = `<div class="empty srch-none"><div class="big">探</div><h3>Sin resultados</h3><p>No encontré nada para "${escapeHtml(q)}". Prueba con otro nombre de canción, artista o álbum.</p></div>`; return; }
   const F = searchFilter, all = F==='all';
   const chips = [['all','Todo'],['songs','Canciones'],['artists','Artistas'],['albums','Álbumes'],['playlists','Playlists']]
     .map(([k,l])=>`<div class="srch-chip ${F===k?'active':''}" onclick="setSearchFilter('${k}')">${l}</div>`).join('');
   let h = `<div class="lib-chips srch-chips">${chips}</div>`, body = '';
+  if(all){
+    let best = null;
+    const aEx = artists.find(a=>srchNorm(a).startsWith(n)), sEx = songs.find(t=>srchNorm(t.title).startsWith(n));
+    if(aEx) best = {k:'artist', v:aEx}; else if(sEx) best = {k:'song', v:sEx}; else if(artists[0]) best = {k:'artist', v:artists[0]}; else if(songs[0]) best = {k:'song', v:songs[0]};
+    if(best){
+      body += `<div class="section-title">Mejor resultado<span class="jp">最良</span></div>` + (best.k==='artist'
+        ? `<div class="srch-best" data-rk="artist" data-rid="${escapeHtml(best.v)}" onclick="openArtist('${encA(best.v)}')"><div class="a round">${artistArt(best.v,72)}</div><div class="m"><b>${escapeHtml(best.v)}</b><span>Artista</span></div></div>`
+        : `<div class="srch-best" data-tid="${escapeHtml(best.v.id)}" data-rk="song" data-rid="${escapeHtml(best.v.id)}" onclick="playTrack('${jsq(best.v.id)}','all')"><div class="a">${trackArt(best.v,72)}</div><div class="m"><b>${escapeHtml(best.v.title)}</b><span>Canción • ${escapeHtml(best.v.artist)}</span></div></div>`);
+    }
+  }
   if((all||F==='songs') && songs.length) body += `<div class="section-title">Canciones</div>` + (all? songs.slice(0,6) : songs).map(t=>trackRow(t,{showAlbum:true})).join('');
   if((all||F==='artists') && artists.length) body += `<div class="section-title">Artistas</div>` + (all? artists.slice(0,3) : artists).map(a=>`<div class="row" data-rk="artist" data-rid="${escapeHtml(a)}" onclick="openArtist('${encA(a)}')"><div class="art" style="border-radius:50%">${artistArt(a,46)}</div><div class="meta"><div class="t">${escapeHtml(a)}</div><div class="s">Artista</div></div></div>`).join('');
   if((all||F==='albums') && albums.length) body += `<div class="section-title">Álbumes</div>` + (all? albums.slice(0,3) : albums).map(x=>`<div class="row" data-rk="album" data-rid="${escapeHtml(x.al.album+'|||'+x.al.artist)}" onclick="openAlbum(${x.idx})"><div class="art">${trackArt(bestCoverTrack(x.al.tracks),46)}</div><div class="meta"><div class="t">${escapeHtml(x.al.album)}</div><div class="s">Álbum • ${escapeHtml(x.al.artist)}</div></div></div>`).join('');
@@ -5345,9 +5387,8 @@ function renderAppSettings(main){
       ${row(ic('<path d="M12 21V9M7 14l5-5 5 5M4 3h16"/>'),'Restaurar copia o importar playlist','Elige un archivo de Celestia. Importa primero tus canciones',"openDataFile()")}
       ${row(ic('<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2h2"/>'),'Canciones duplicadas','Busca copias repetidas de una misma canción',"openDupes()")}
       ${row(ic('<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>'),'Almacenamiento y datos','Borrar estadísticas de reproducción guardadas en este dispositivo',"confirmClearHistory()")}
-      ${row(ic('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'),'Apariencia','Temas y colores personalizados',"showToast('Apariencia — próximamente')",'<span class="badge">Próximamente</span>')}
-      ${row(ic('<path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/>'),'Notificaciones','Controles del reproductor en la barra de notificaciones',"showToast('Notificaciones — próximamente')",'<span class="badge">Próximamente</span>')}
-      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.10.17-b) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
+      ${row(ic('<path d="M12 3v3M5 8h14M8 8c0 5 3 8 7 10M16 8c0 4-3 8-9 10"/>'),'Caracteres japoneses','Muestra los detalles decorativos junto a los títulos (音, 検索…)',"toggleJp()",`<span class="set-state ${jpOn()?'on':''}">${jpOn()?'Sí':'No'}</span>`)}
+      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.10.18-a) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
     </div>
   `;
 }
@@ -7388,6 +7429,10 @@ function normApplyCurrent(){
     if(k>=1) clearInterval(normRampIv);
   }, 30);
 }
+function jpOn(){ return lsGet('celestia:jp', true)!==false; }
+function applyJp(){ document.body.classList.toggle('nojp', !jpOn()); }
+try{ applyJp(); }catch(e){}
+function toggleJp(){ lsSet('celestia:jp', !jpOn()); applyJp(); render(); showToast(jpOn()?'Caracteres japoneses activados':'Caracteres japoneses ocultos'); }
 function toggleNorm(){
   const on = !normOn(); lsSet('celestia:norm-on', on);
   if(on) normSchedule(); else { clearInterval(normRampIv); normQ.length = 0; }
