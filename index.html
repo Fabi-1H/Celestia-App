@@ -1679,10 +1679,19 @@ html[data-tone="grafito"] .pf-banner::after,html[data-tone="ceniza"] .pf-banner:
 .lu-rose.base{background:linear-gradient(180deg,#f4f0ef 0%,#cfc9c9 55%,#a9a3a4 100%);}
 .lu-rose.shine{background:linear-gradient(108deg,transparent 36%,rgba(255,255,255,.95) 50%,transparent 64%);background-size:320% 100%;background-position:130% 0;opacity:0;}
 .lu-gl{position:absolute;width:15px;height:15px;margin:-7.5px 0 0 -7.5px;background:#fff;clip-path:polygon(50% 0,59% 41%,100% 50%,59% 59%,50% 100%,41% 59%,0 50%,41% 41%);opacity:0;transform:scale(.3);filter:drop-shadow(0 0 3px rgba(255,255,255,.9));}
-.lu-card.on .lu-art{animation:luFloat 7s ease-in-out infinite;}
+/* tres estados: apagada (apagón suave) · en sesión (respira y brilla) · hablando (pulso, halo y destellos rápidos) */
+.lu-art{opacity:.42;filter:saturate(.2) brightness(.85);transition:opacity 1s ease,filter 1s ease;}
+.lu-card.on .lu-art{opacity:1;filter:drop-shadow(0 0 7px rgba(236,232,231,.28));animation:luFloat 7s ease-in-out infinite,luHalo 4.4s ease-in-out infinite;}
 .lu-card.on .lu-rose.shine{opacity:1;animation:luSweep 4.6s ease-in-out infinite;}
 .lu-card.on .lu-gl{animation:luGlint 3s ease-in-out infinite;}
 .lu-card.on .lu-gl.g2{animation-delay:.6s;} .lu-card.on .lu-gl.g3{animation-delay:1.2s;} .lu-card.on .lu-gl.g4{animation-delay:1.8s;} .lu-card.on .lu-gl.g5{animation-delay:2.4s;}
+.lu-card.on.say{border-color:rgba(236,232,231,.5);box-shadow:0 8px 26px rgba(0,0,0,.3),0 0 46px rgba(236,232,231,.16);}
+.lu-card.on.say .lu-art{animation:luFloat 7s ease-in-out infinite,luTalk 1.7s ease-in-out infinite;}
+.lu-card.on.say .lu-rose.shine{animation:luSweep 2.3s ease-in-out infinite;}
+.lu-card.on.say .lu-gl{animation:luGlint 1.5s ease-in-out infinite;}
+.lu-card.on.say .lu-sub{color:var(--text);transition:color .4s;}
+@keyframes luHalo{0%,100%{filter:drop-shadow(0 0 5px rgba(236,232,231,.18));}50%{filter:drop-shadow(0 0 14px rgba(236,232,231,.5));}}
+@keyframes luTalk{0%,100%{filter:drop-shadow(0 0 10px rgba(236,232,231,.4));scale:1;}50%{filter:drop-shadow(0 0 22px rgba(255,255,255,.8));scale:1.05;}}
 @keyframes luFloat{0%,100%{transform:translateY(0) rotate(0deg);}50%{transform:translateY(-4px) rotate(.8deg);}}
 @keyframes luSweep{0%{background-position:130% 0;}55%,100%{background-position:-30% 0;}}
 @keyframes luGlint{0%,62%,100%{opacity:0;transform:scale(.3);}78%{opacity:1;transform:scale(1.15);}90%{opacity:.4;transform:scale(.7);}}
@@ -1702,6 +1711,7 @@ html[data-tone="grafito"] .pf-banner::after,html[data-tone="ceniza"] .pf-banner:
 #lukaSay.ls-top{bottom:auto;top:calc(16px + env(safe-area-inset-top));transform:translate(-50%,-16px);}
 #lukaSay.show{opacity:1;transform:translate(-50%,0);}
 #lukaSay .ls-em{position:relative;flex:none;inset:auto;width:36px;height:54px;background:linear-gradient(180deg,#f4f0ef,#a9a3a4);animation:luFloat 5s ease-in-out infinite;}
+#lukaSay.show .ls-em{animation:luFloat 5s ease-in-out infinite,luHalo 2.2s ease-in-out infinite;}
 #lukaSay .ls-t{display:flex;flex-direction:column;gap:2px;min-width:0;}
 #lukaSay .ls-t b{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--text-dim);}
 #lukaSay .ls-t b .jp{margin-left:7px;letter-spacing:.1em;}
@@ -5407,7 +5417,6 @@ function renderAppSettings(main){
     <div id="setList">
       ${row(ic('<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>'),'Cuenta','Nombre de usuario y foto de perfil',"openProfileEdit()")}
       ${row(ic('<path d="M4 21V14M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/>'),'Reproducción','Ecualizador y crossfade entre canciones',"openEQ()")}
-      ${('speechSynthesis' in window)? row(ic('<path d="M12 3a3 3 0 00-3 3v6a3 3 0 006 0V6a3 3 0 00-3-3zM5 11a7 7 0 0014 0M12 18v3"/>'),'Voz de Luka',lukaVoiceOn()?'Luka habla además de escribir':'Luka solo escribe',"toggleLukaVoice()",`<span class="set-state ${lukaVoiceOn()?'on':''}">${lukaVoiceOn()?'Sí':'No'}</span>`) : ''}
       ${row(ic('<path d="M3 10v4M7 7v10M11 4v16M15 8v8M19 10v4"/>'),'Volumen parejo',normOn()?'Activado · baja las canciones más fuertes para que suenen parecido':'Desactivado',"toggleNorm()",`<span class="set-state ${normOn()?'on':''}">${normOn()?'Sí':'No'}</span>`)}
       ${row(ic('<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/>'),'Imágenes desde internet','Busca carátulas de álbumes y fotos de artistas al importar. Solo se envían los nombres del artista y del álbum.',"toggleArtOnline()",`<div class="switch ${artOnlineEnabled()?'on':''}"><div class="knob"></div></div>`)}
       ${row(ic('<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>'),'Buscar imágenes ahora','Reintenta con toda tu biblioteca, incluso lo que no se encontró antes',"manualArtSearch()")}
@@ -5419,7 +5428,7 @@ function renderAppSettings(main){
       ${row(ic('<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>'),'Almacenamiento y datos','Borrar estadísticas de reproducción guardadas en este dispositivo',"confirmClearHistory()")}
       <div class="app-settings-row tone-row" data-txt="${escapeHtml(artNorm('Apariencia tono de grises fondo'))}" style="cursor:default;">${ic('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>')}<div style="flex:1;min-width:0;"><div class="t">Apariencia</div><div class="s">Tono de grises de toda la app</div></div>
         <div class="tone-pick">${TONES.map(t=>`<button class="tone-sw ${toneNow()===t.id?'on':''}" onclick="setTone('${t.id}')"><i style="background:${t.sw}"></i><span>${t.name}</span></button>`).join('')}</div></div>
-      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.10.19-b) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
+      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.10.19-c) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
     </div>
   `;
 }
@@ -7493,80 +7502,94 @@ function toggleNorm(){
 /* ============ LUKA: selector de música ============
    Todo ocurre dentro de la app (sin internet, sin cuentas): arma una sesión con TU música según lo que más escuchas,
    lo que dejaste olvidado y lo que acabas de agregar, y de vez en cuando opina. No es una IA externa. */
-let luka = {fresh:true, sinceSay:0, skips:0, used:{}, lastId:null};
-function lukaVoiceOn(){ return lsGet('celestia:luka-voice', false)===true && ('speechSynthesis' in window); }
-function toggleLukaVoice(){
-  const on = !(lsGet('celestia:luka-voice', false)===true); lsSet('celestia:luka-voice', on);
-  if(!on){ try{ speechSynthesis.cancel(); }catch(e){} }
-  render(); showToast(on ? 'Luka hablará además de escribir' : 'Luka solo escribirá');
+let luka = {fresh:true, sinceSay:0, skips:0, used:{}, lastId:null, lastText:''};
+/* Luka solo escribe: sin voz, sin audio. Cada línea se arma con datos reales de la canción y de tu biblioteca. */
+function lukaCtx(t){
+  const nm = String((profile&&profile.name)||'').trim().split(/\s+/)[0];
+  const first = (nm && !/^t[uú]$/i.test(nm)) ? nm : '';
+  const age = (t && t.addedAt) ? Math.max(0, Math.floor((Date.now()-t.addedAt)/864e5)) : 0;
+  const ak = t ? akey(t.artist) : '';
+  return {t, title:t?t.title:'esta', artist:t?t.artist:'', first, age,
+    n: t ? longPlayCount(t) : 0,
+    artistCount: t ? musicTracks().filter(x=>akey(x.artist)===ak).length : 0,
+    h: new Date().getHours(),
+    time: new Date().toLocaleTimeString('es',{hour:'numeric',minute:'2-digit'}),
+    liked: !!(t && t.liked)};
 }
+const lkCm = c=> (c.first && Math.random()<.55) ? ', '+c.first : '';
+const lkSpan = d=> d>=60 ? Math.floor(d/30)+' meses' : (d>=30 ? 'un mes' : d+(d===1?' día':' días'));
+const lkAgo = d=> d<=0 ? 'hoy' : (d===1 ? 'ayer' : 'hace '+d+' días');
 const LUKA_LINES = {
   open:[
-    'Permíteme encargarme de esto. Sé exactamente lo que necesitas.',
-    'Qué gusto verte de nuevo. Admito que me hacías falta; a mí, claro, no tanto.',
-    'Ya elegí por ti. Ahora solo déjate querer… por la música, desde luego.',
-    'No me digas qué quieres escuchar. Es más elegante que lo adivine yo.',
-    'Si me permites, el gusto lo pongo yo. El tuyo ya lo conozco de sobra.',
-    'Hermosa decisión la de venir a buscarme. Procedamos.'
+    c=>`Permíteme encargarme${lkCm(c)}. Empezamos con «${c.title}», de ${c.artist}; ya sabía que la querías.`,
+    c=>`Qué gusto verte${lkCm(c)}. Admito que me hacías falta; a mí, claro, no tanto. Comencemos con «${c.title}».`,
+    c=>`Ya elegí por ti. Ahora solo déjate querer… por la música, desde luego. Primera: «${c.title}».`,
+    c=>`No me digas qué quieres escuchar. Es más elegante que lo adivine yo. Empiezo con «${c.title}».`,
+    c=>`Si me permites, el gusto lo pongo yo. El tuyo ya lo conozco de sobra.`,
+    c=>`Hermosa decisión la de venir a buscarme${lkCm(c)}. Procedamos con ${c.artist}.`
   ],
   openNight:[
-    'Es tarde, y aun así vienes a mí. Me halaga, aunque no me sorprende.',
-    'A esta hora solo yo sé cómo acompañarte. Permíteme.'
+    c=>`Son las ${c.time} y aquí sigues, conmigo. Me halaga, aunque no me sorprende.`,
+    c=>`A esta hora solo yo sé cómo acompañarte${lkCm(c)}. Permíteme: «${c.title}».`
   ],
   openMorning:[
-    'Buenos días. Ya sé cómo quieres empezar; fue fácil, siempre lo es contigo.',
-    'Temprano y con buen gusto: empiezas bien. Conmigo, siempre.'
+    c=>`Buenos días${lkCm(c)}. Ya sé cómo quieres empezar; fue fácil, siempre lo es contigo.`,
+    c=>`Temprano y con buen gusto: empiezas bien. Conmigo, siempre. Arrancamos con «${c.title}».`
   ],
   fav:[
-    'Esta te la sabes de memoria. Aun así, no puedo negarte el placer.',
-    '{title}. Evidentemente es de tus favoritas. Yo lo supe antes que tú.',
-    'Tienes un gusto exquisito. Admito que parte del mérito es mío.',
-    '{artist} otra vez… Qué fidelidad. Ojalá me la tuvieras así a mí.',
-    'No te culpo por repetirla. Yo también lo haría, tengo buen gusto; el mío es mejor.'
+    c=>c.n>=4 ? `«${c.title}», ${c.n} veces ya. No te juzgo${lkCm(c)}; te comprendo, que es más elegante.` : null,
+    c=>`${c.artist} otra vez. Qué fidelidad. Ojalá me la tuvieras así a mí.`,
+    c=>c.n>=2 ? `La llevo contando: ${c.n} veces. Atento soy, aunque jamás lo admitiría.` : null,
+    c=>c.artistCount>=4 ? `Tienes ${c.artistCount} canciones de ${c.artist}. Ya noté la obsesión; la encuentro encantadora.` : null,
+    c=>`«${c.title}». Mi criterio y tu corazón coinciden otra vez${lkCm(c)}. Casualidad no es.`,
+    c=>`Tienes un gusto exquisito. Admito que parte del mérito es mío.`
   ],
   forgot:[
-    'La habías olvidado. Qué descuido. Yo no olvido nada que valga la pena.',
-    '{title}. Esperaba por ti en silencio. Como yo, cuando no me escuchas.',
-    'Para que recuerdes lo que te pierdes cuando decides sin mí.',
-    'No tienes que agradecérmelo. Aunque me encantaría que lo hicieras.'
+    c=>c.age>=7 ? `«${c.title}» lleva ${lkSpan(c.age)} en tu biblioteca sin que la pongas. Qué descuido${lkCm(c)}. Yo no te habría hecho eso.` : null,
+    c=>c.age>=7 ? `${lkSpan(c.age)} de olvido para ${c.artist}. La rescato yo; es lo que hago por quienes lo merecen.` : null,
+    c=>`Ni una sola vez la pusiste${lkCm(c)}. «${c.title}» esperaba en silencio. Como yo, cuando no me escuchas.`,
+    c=>`Para que recuerdes lo que te pierdes cuando decides sin mí.`,
+    c=>`No tienes que agradecérmelo. Aunque me encantaría que lo hicieras.`
   ],
   fresh:[
-    'Algo nuevo en tu biblioteca. Sabía que no resistirías la tentación; conmigo tampoco lo haces.',
-    'Recién llegada y ya está en mis manos. Así me gusta: con iniciativa.',
-    'Novedades. Me encanta cuando la curiosidad te gana.'
+    c=>`«${c.title}» llegó ${lkAgo(c.age)}. Sabía que no resistirías la tentación; conmigo tampoco lo haces.`,
+    c=>`Novedad de ${c.artist}. Tu curiosidad es de las cualidades tuyas que más me gustan.`,
+    c=>`Recién llegada y ya está en mis manos. Así me gusta: con iniciativa.`
   ],
   liked:[
-    'Le diste corazón. Qué generoso. Yo sigo esperando el mío.',
-    'De tus me gusta. Acertar contigo es casi demasiado fácil.'
+    c=>`Le diste corazón a «${c.title}». Yo sigo esperando el mío.`,
+    c=>`De tus me gusta. Acertar contigo es casi demasiado fácil${lkCm(c)}.`
   ],
   mid:[
-    'Sigamos. Todo va exactamente como lo planeé; siempre es así.',
-    'Hay un plan, y es impecable. Como yo.',
-    'No cambies nada. Estás exactamente donde te quería.',
-    'Confía en mí. Hasta ahora, ¿he fallado?'
+    c=>`Ahora, ${c.artist}. Todo va exactamente como lo planeé; siempre es así.`,
+    c=>`«${c.title}». No la elegí al azar: nada de lo que hago lo es.`,
+    c=>`Confía en mí${lkCm(c)}. Hasta ahora, ¿he fallado?`,
+    c=>(c.h>=22 || c.h<4) ? `Pasadas las ${c.time}, solo se escucha lo esencial. Y lo esencial soy yo.` : null,
+    c=>`No cambies nada. Estás exactamente donde te quería.`
   ],
   skip:[
-    '¿La saltaste? Qué atrevimiento. Te lo perdono: tienes encanto.',
-    'Como quieras. Ya sabía que lo harías; me gusta que seas predecible conmigo.',
-    'Anotado. Cuestionable, pero tu insolencia tiene su gracia.',
-    'La saltaste. Respeto tu opinión, aunque jamás la compartiré.'
+    c=>`¿Saltaste «${c.title}»? Qué atrevimiento. Te lo perdono: tienes encanto.`,
+    c=>`Como quieras. Ya sabía que lo harías; me gusta que seas predecible conmigo.`,
+    c=>`Anotado${lkCm(c)}. Cuestionable, pero tu insolencia tiene su gracia.`,
+    c=>`La saltaste. Respeto tu opinión, aunque jamás la compartiré.`
   ],
   close:[
-    'Ya casi termina. Volverás; siempre vuelves a mí.',
-    'Última canción. Puedes aplaudir… en silencio, con elegancia.'
+    c=>`Última canción: «${c.title}». Volverás; siempre vuelves a mí.`,
+    c=>`Y con ${c.artist} cerramos. Puedes aplaudir… en silencio, con elegancia.`
   ],
   end:[
-    'Entendido. Cuando me eches de menos, ya sabes dónde encontrarme.',
-    'Como desees. La fila sigue; mi criterio, también.'
+    c=>`Entendido${lkCm(c)}. Cuando me eches de menos, ya sabes dónde encontrarme.`,
+    c=>`Como desees. La fila sigue; mi criterio, también.`
   ]
 };
 function lukaPick(cat, t){
-  const arr = LUKA_LINES[cat] || LUKA_LINES.mid;
+  const arr = LUKA_LINES[cat] || LUKA_LINES.mid, c = lukaCtx(t);
   const used = luka.used[cat] || (luka.used[cat] = []);
   let free = arr.map((_,i)=>i).filter(i=>!used.includes(i));
   if(!free.length){ used.length = 0; free = arr.map((_,i)=>i); }
-  const i = free[Math.floor(Math.random()*free.length)]; used.push(i);
-  return arr[i].replace('{title}', t?t.title:'esta').replace('{artist}', t?t.artist:'');
+  for(let k=free.length-1;k>0;k--){ const j=Math.floor(Math.random()*(k+1)); [free[k],free[j]]=[free[j],free[k]]; }
+  for(const i of free){ const s = arr[i](c); if(s){ used.push(i); return s; } }
+  return LUKA_LINES.mid[0](c);
 }
 function lukaBuild(){
   const blocked = lsGet('celestia:blocked-artists', []).map(x=>akey(x));
@@ -7579,8 +7602,8 @@ function lukaBuild(){
   const forgot = info.filter(x=>x.n===0 && x.age>14);
   const fresh = info.filter(x=>x.age<=14 && !favIds.has(x.t.id));
   const used = new Set();
-  const take = (arr, w)=>{
-    const pool = arr.filter(x=>!used.has(x.t.id)); if(!pool.length) return null;
+  const take = (arr, w, ex)=>{
+    const pool = arr.filter(x=>!used.has(x.t.id) && (!ex || akey(x.t.artist)!==ex)); if(!pool.length) return null;
     const ws = pool.map(x=>w(x)); let r = Math.random()*ws.reduce((a,b)=>a+b,0), i = 0;
     while(i<pool.length-1 && (r-=ws[i])>0) i++;
     return pool[i];
@@ -7593,14 +7616,10 @@ function lukaBuild(){
   let lastArtist = '';
   for(let k=0;k<N;k++){
     let kind = k===0 ? (fav.length?'fav':'mid') : (k===N-1 && fav.length ? 'fav' : pattern[(k-1)%pattern.length]);
-    let pick = null;
-    for(let tries=0; tries<8 && !pick; tries++){
-      const src = kind==='fav'?fav : kind==='forgot'?forgot : kind==='fresh'?fresh : rest;
-      const c = take(src, kind==='fav'?wFav:w1) || take(rest,w1) || take(info,w1);
-      if(!c) break;
-      if(akey(c.t.artist)===lastArtist && tries<7){ continue; }
-      pick = c; kind = favIds.has(c.t.id)?'fav' : (c.n===0&&c.age>14?'forgot' : (c.age<=14?'fresh':'mid'));
-    }
+    const src = kind==='fav'?fav : kind==='forgot'?forgot : kind==='fresh'?fresh : rest;
+    const wk = kind==='fav'?wFav:w1;
+    const pick = take(src,wk,lastArtist) || take(rest,w1,lastArtist) || take(info,w1,lastArtist) || take(info,w1,'');
+    if(pick) kind = favIds.has(pick.t.id)?'fav' : (pick.n===0&&pick.age>14?'forgot' : (pick.age<=14?'fresh':'mid'));
     if(!pick) break;
     used.add(pick.t.id); lastArtist = akey(pick.t.artist);
     list.push(pick.t); tags[pick.t.id] = kind;
@@ -7612,7 +7631,7 @@ function lukaStart(){
   if(lukaIsOn()){ lukaEnd(); return; }
   const q = lukaBuild(); if(!q) return;
   window.__lukaQueue = q.list; window.__lukaTags = q.tags;
-  luka = {fresh:true, sinceSay:0, skips:0, used:{}, lastId:null};
+  luka = {fresh:true, sinceSay:0, skips:0, used:{}, lastId:null, lastText:''};
   if(shuffleOn) toggleShuffle(); // Luka cuida el orden: con aleatorio activo no tendría sentido
   playTrack(q.list[0].id, 'luka');
 }
@@ -7635,14 +7654,15 @@ function lukaTrackChanged(){
   else if(skip){ luka.skips++; luka.sinceSay++; if(luka.skips===1 || luka.skips%5===0) cat = 'skip'; }
   else {
     luka.sinceSay++;
-    if(luka.sinceSay>=3 || (luka.sinceSay>=2 && tag!=='mid')){
-      cat = (t.liked && Math.random()<.35) ? 'liked' : tag;
+    if(luka.sinceSay>=2 || (luka.sinceSay>=1 && (tag==='forgot'||tag==='fresh'))){
+      cat = (t.liked && tag==='mid' && Math.random()<.4) ? 'liked' : tag;
     }
   }
   if(!cat) return;
   luka.sinceSay = 0; lukaSay(cat, t);
 }
 let lukaBubbleT = 0;
+function lukaSubText(){ return lukaIsOn() ? 'En sesión · toca para terminar' : 'Tu música, en el orden que mereces'; }
 function lukaSay(cat, t){
   const text = lukaPick(cat, t);
   let b = document.getElementById('lukaSay');
@@ -7655,34 +7675,27 @@ function lukaSay(cat, t){
   b.classList.toggle('ls-top', !!(pl && pl.classList.contains('show')));
   document.getElementById('lukaSayTxt').textContent = text;
   b.classList.remove('show'); void b.offsetWidth; b.classList.add('show');
-  clearTimeout(lukaBubbleT); lukaBubbleT = setTimeout(()=>b.classList.remove('show'), Math.min(8500, 3800 + text.length*45));
-  lukaSpeak(text);
-}
-function lukaSpeak(text){
-  if(!lukaVoiceOn()) return;
-  try{
-    speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    const vs = speechSynthesis.getVoices() || [];
-    const v = vs.find(x=>/^es[-_](419|MX|CO|US)/i.test(x.lang)) || vs.find(x=>/^es/i.test(x.lang));
-    if(v){ u.voice = v; u.lang = v.lang; } else u.lang = 'es-419';
-    u.rate = .92; u.pitch = .8;
-    const back = ()=>{ try{ if(!sleepFadeIv && !fadeInIv) audio.volume = normVol(currentTrack); }catch(e){} };
-    u.onstart = ()=>{ try{ audio.volume = Math.max(.05, normVol(currentTrack)*.3); }catch(e){} };
-    u.onend = back; u.onerror = back;
-    speechSynthesis.speak(u);
-  }catch(e){}
+  const dur = Math.min(9000, 4200 + text.length*48);
+  window.__lukaSaying = true;
+  const card = document.getElementById('lukaCard');
+  if(card){ card.classList.add('say'); const sb = card.querySelector('.lu-sub'); if(sb && lukaIsOn()) sb.textContent = text; }
+  clearTimeout(lukaBubbleT);
+  lukaBubbleT = setTimeout(()=>{
+    b.classList.remove('show'); window.__lukaSaying = false;
+    const c2 = document.getElementById('lukaCard');
+    if(c2){ c2.classList.remove('say'); const sb = c2.querySelector('.lu-sub'); if(sb) sb.textContent = lukaSubText(); }
+  }, dur);
 }
 function lukaCardHTML(){
   const on = lukaIsOn();
   const btn = on ? `<span class="lu-eq"><i></i><i></i><i></i></span>` : SP_ICON.play;
-  return `<div class="lu-card ${on?'on':''}" id="lukaCard" onclick="lukaStart()">
+  return `<div class="lu-card ${on?'on':''} ${on&&window.__lukaSaying?'say':''}" id="lukaCard" onclick="lukaStart()">
       <span class="lu-bgjp" aria-hidden="true">月</span>
       <div class="lu-art" aria-hidden="true"><div class="lu-rose base"></div><div class="lu-rose shine"></div><i class="lu-gl g1" style="left:50.8%;top:14.2%"></i><i class="lu-gl g2" style="left:78.1%;top:15.7%"></i><i class="lu-gl g3" style="left:26.5%;top:45.7%"></i><i class="lu-gl g4" style="left:81.2%;top:66.8%"></i><i class="lu-gl g5" style="left:49.9%;top:81.8%"></i></div>
       <div class="lu-body">
         <div class="lu-kick">LUKA<span class="jp">選曲家</span></div>
         <div class="lu-line">${on?'Yo me encargo. Tú solo escucha.':'Yo elijo. Tú escuchas.'}</div>
-        <div class="lu-row"><button class="lu-btn" aria-label="Luka" onclick="event.stopPropagation();lukaStart()">${btn}</button><span class="lu-sub">${on?'En sesión · toca para terminar':'Tu música, en el orden que mereces'}</span></div>
+        <div class="lu-row"><button class="lu-btn" aria-label="Luka" onclick="event.stopPropagation();lukaStart()">${btn}</button><span class="lu-sub">${lukaSubText()}</span></div>
       </div>
     </div>`;
 }
