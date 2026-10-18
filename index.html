@@ -1643,9 +1643,18 @@ body.is-playing .hm-eq i{animation:hmEq 1.1s ease-in-out infinite;}
 
 
 /* ===== Tonos de gris ===== */
-html[data-tone="grafito"]{--bg:#161616;--bg-top:#1d1d1e;--surface:#202021;--surface-2:#2a2a2b;--surface-hover:#343435;--line:#3b3b3c;}
-html[data-tone="ceniza"]{--bg:#212122;--bg-top:#29292a;--surface:#2b2b2c;--surface-2:#363637;--surface-hover:#404041;--line:#4a4a4b;}
-html[data-tone="tinta"]{--bg:#050505;--bg-top:#0a0a0a;--surface:#0f0f0f;--surface-2:#181818;--surface-hover:#222;--line:#262626;}
+html[data-tone="grafito"]{--bg:#161616;--bg-top:#1d1d1e;--surface:#202021;--surface-2:#2a2a2b;--surface-hover:#343435;--line:#3b3b3c;--tA:#303031;--tB:#252526;--tC:#1c1c1d;--tD:#151516;--pA:#4a4a4b;--pB:#2f2f30;--pC:#1d1d1e;--tS:#2c2c2d;--nav:rgba(26,26,27,.985);--mini:#1f1f20;}
+html[data-tone="ceniza"]{--bg:#212122;--bg-top:#29292a;--surface:#2b2b2c;--surface-2:#363637;--surface-hover:#404041;--line:#4a4a4b;--tA:#434344;--tB:#363637;--tC:#2b2b2c;--tD:#232324;--pA:#5c5c5d;--pB:#404041;--pC:#2c2c2d;--tS:#3d3d3e;--nav:rgba(40,40,41,.985);--mini:#303031;}
+html[data-tone="tinta"]{--bg:#050505;--bg-top:#0a0a0a;--surface:#0f0f0f;--surface-2:#181818;--surface-hover:#222;--line:#262626;--tA:#101010;--tB:#0a0a0a;--tC:#060606;--tD:#030303;--pA:#1c1c1c;--pB:#0e0e0e;--pC:#060606;--tS:#0f0f0f;--nav:rgba(5,5,5,.985);--mini:#0d0d0d;}
+html[data-tone="grafito"] #app,html[data-tone="ceniza"] #app,html[data-tone="tinta"] #app,
+html[data-tone="grafito"] .picker,html[data-tone="ceniza"] .picker,html[data-tone="tinta"] .picker{background:linear-gradient(180deg,var(--tA) 0%,var(--tB) 300px,var(--tC) 720px,var(--tD) 100%);}
+html[data-tone="grafito"] .sheet,html[data-tone="ceniza"] .sheet,html[data-tone="tinta"] .sheet{background:linear-gradient(180deg,var(--tS),var(--tC));}
+html[data-tone="grafito"] .drawer,html[data-tone="ceniza"] .drawer,html[data-tone="tinta"] .drawer{background:linear-gradient(180deg,var(--tA),var(--tC) 55%,var(--tD));}
+html[data-tone="grafito"] #player,html[data-tone="ceniza"] #player,html[data-tone="tinta"] #player{background:linear-gradient(180deg,var(--pA) 0%,var(--pB) 42%,var(--pC) 100%);}
+html[data-tone="grafito"] #overlayLyrics .lyrics-bg,html[data-tone="ceniza"] #overlayLyrics .lyrics-bg,html[data-tone="tinta"] #overlayLyrics .lyrics-bg{background:linear-gradient(180deg,var(--tA) 0%,var(--tB) 38%,var(--tD) 100%);}
+html[data-tone="grafito"] .picker::before,html[data-tone="ceniza"] .picker::before,html[data-tone="tinta"] .picker::before{background:linear-gradient(180deg,transparent,var(--tD) 70%);}
+html[data-tone="grafito"] nav.bottom,html[data-tone="ceniza"] nav.bottom,html[data-tone="tinta"] nav.bottom{background:var(--nav);}
+html[data-tone="grafito"] #mini,html[data-tone="ceniza"] #mini,html[data-tone="tinta"] #mini{background:var(--mini) !important;}
 .tone-row{flex-wrap:wrap;align-content:flex-start;row-gap:0;}
 .tone-pick{flex-basis:100%;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:12px 0 0 38px;}
 .tone-sw{display:flex;flex-direction:column;align-items:center;gap:6px;background:none;border:0;padding:0;color:var(--text-dim);font:inherit;font-size:11.5px;cursor:pointer;}
@@ -1653,6 +1662,7 @@ html[data-tone="tinta"]{--bg:#050505;--bg-top:#0a0a0a;--surface:#0f0f0f;--surfac
 .tone-sw:active i{transform:scale(.95);}
 .tone-sw.on{color:var(--text);}
 .tone-sw.on i{border-color:#ece8e7;box-shadow:0 0 0 2px rgba(236,232,231,.2);}
+.lb-autos{margin-top:18px;display:flex;flex-direction:column;gap:2px;}
 </style>
 </head>
 <body>
@@ -4394,7 +4404,7 @@ function libContentHTML(anim){
         `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/></svg>`}</button>
     </div>` : '';
   const autos = (f==='Playlists' && !q) ? ['top','forgotten','new'].filter(k=>autoList(k).length).map(k=>{ const m=AUTO_META[k], n=autoList(k).length; return `<div class="lb-liked lb-auto" data-g="${m.glyph}" onclick="openAuto('${k}')"><div class="lb-liked-art"><span class="lb-auto-g">${m.glyph}</span></div><div class="lb-meta"><div class="lb-t">${m.name}<span class="jp">${m.jp}</span></div><div class="lb-s">${n} ${n===1?'canción':'canciones'} · automática</div></div><button class="lb-lplay" onclick="event.stopPropagation();playCollection('auto:${k}')" aria-label="Reproducir">${SP_ICON.play}</button></div>`; }).join('') : '';
-  return `${liked}${autos}${tools}<div class="${view==='grid'? 'lb-grid three' : 'lb-list'}">${body}</div>${empty}`;
+  return `${liked}${tools}<div class="${view==='grid'? 'lb-grid three' : 'lb-list'}">${body}</div>${empty}${autos?`<div class="lb-autos">${autos}</div>`:''}`;
 }
 /* buscador de la biblioteca: filtra dentro de la pestaña actual (playlists, álbumes o artistas) */
 function libToggleSearch(){
@@ -5363,7 +5373,7 @@ function renderAppSettings(main){
       ${row(ic('<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>'),'Almacenamiento y datos','Borrar estadísticas de reproducción guardadas en este dispositivo',"confirmClearHistory()")}
       <div class="app-settings-row tone-row" data-txt="${escapeHtml(artNorm('Apariencia tono de grises fondo'))}" style="cursor:default;">${ic('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>')}<div style="flex:1;min-width:0;"><div class="t">Apariencia</div><div class="s">Tono de grises de toda la app</div></div>
         <div class="tone-pick">${TONES.map(t=>`<button class="tone-sw ${toneNow()===t.id?'on':''}" onclick="setTone('${t.id}')"><i style="background:${t.sw}"></i><span>${t.name}</span></button>`).join('')}</div></div>
-      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.10.18-b) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
+      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.10.18-d) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
     </div>
   `;
 }
@@ -7429,7 +7439,7 @@ function toggleNorm(){
 const AUTO_META = {
   top:       {name:'Más escuchadas',   jp:'人気',   glyph:'多', sub:'Lo que más has puesto, según tu historial'},
   forgotten: {name:'Olvidadas',        jp:'忘れ物', glyph:'忘', sub:'Canciones que no has puesto desde que Celestia lleva la cuenta'},
-  'new':     {name:'Recién agregadas', jp:'新着',   glyph:'新', sub:'Lo último que importaste'}
+  'new':     {name:'Nuevas', jp:'新着',   glyph:'新', sub:'Lo último que importaste'}
 };
 function autoList(kind){
   const mus = musicTracks(), now = Date.now(), DAY = 864e5;
