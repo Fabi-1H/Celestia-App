@@ -5449,7 +5449,7 @@ function renderAppSettings(main){
       ${row(ic('<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>'),'Almacenamiento y datos','Borrar estadísticas de reproducción guardadas en este dispositivo',"confirmClearHistory()")}
       <div class="app-settings-row tone-row" data-txt="${escapeHtml(artNorm('Apariencia tono de grises fondo'))}" style="cursor:default;">${ic('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>')}<div style="flex:1;min-width:0;"><div class="t">Apariencia</div><div class="s">Tono de grises de toda la app</div></div>
         <div class="tone-pick">${TONES.map(t=>`<button class="tone-sw ${toneNow()===t.id?'on':''}" onclick="setTone('${t.id}')"><i style="background:${t.sw}"></i><span>${t.name}</span></button>`).join('')}</div></div>
-      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.10.19-f) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
+      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.10.19-g) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
     </div>
   `;
 }
@@ -5574,7 +5574,7 @@ function loadCurrent(autoplay){
 function togglePlay(){
   finishCrossfade(); // si se pausa a mitad de un fundido, este termina al instante
   if(!currentTrack){ if(tracks.length){ playTrack(tracks[0].id,'all'); } return; }
-  if(audio.paused){ resumeAudioCtx(); safePlay(audio); } else { audio.pause(); }
+  if(audio.paused){ resumeAudioCtx(); safePlay(audio); lukaPauseEvt(false); } else { audio.pause(); lukaPauseEvt(true); }
 }
 function peekNextTrack(){
   if(!currentQueue.length) return null;
@@ -5611,7 +5611,7 @@ function fadeInAudio(el){
 }
 function nextTrack(){
   if(!currentQueue.length) return;
-  window.__lukaSkip = !window.__lukaAuto && audio.currentTime<30; window.__lukaAuto = false;
+  window.__lukaWhy = window.__lukaAuto ? 'auto' : (audio.currentTime<30 ? 'skip' : 'manual'); window.__lukaAuto = false;
   softSwitch(()=>{
     cancelCrossfade();
     currentIndex = (currentIndex+1) % currentQueue.length; // con aleatorio la fila ya está barajada, así no se repite ninguna
@@ -5704,6 +5704,7 @@ function startCrossfade(){
     if(activeTab==='history') render();
     if(document.getElementById('overlayQueue').classList.contains('show')) renderQueueList();
     crossfading = false;
+    window.__lukaWhy = 'auto';
     try{ lukaTrackChanged(); }catch(e){}
   };
   xf = {to:setTimeout(complete, dur*1000+120), incoming, outgoing, complete, endAt: performance.now()+dur*1000+120};
@@ -5861,8 +5862,8 @@ function onAudioError(e){
 /* ============ CONTROL EN NOTIFICACIONES (MediaSession) ============ */
 function setupMediaSession(){
   if(!('mediaSession' in navigator)) return;
-  navigator.mediaSession.setActionHandler('play', ()=>{ resumeAudioCtx(); safePlay(audio); });
-  navigator.mediaSession.setActionHandler('pause', ()=>audio.pause());
+  navigator.mediaSession.setActionHandler('play', ()=>{ resumeAudioCtx(); safePlay(audio); lukaPauseEvt(false); });
+  navigator.mediaSession.setActionHandler('pause', ()=>{ audio.pause(); lukaPauseEvt(true); });
   navigator.mediaSession.setActionHandler('previoustrack', prevTrack);
   navigator.mediaSession.setActionHandler('nexttrack', nextTrack);
   try{
@@ -7523,7 +7524,7 @@ function toggleNorm(){
 /* ============ LUKA: selector de música ============
    Todo ocurre dentro de la app (sin internet, sin cuentas): arma una sesión con TU música según lo que más escuchas,
    lo que dejaste olvidado y lo que acabas de agregar, y de vez en cuando opina. No es una IA externa. */
-let luka = {fresh:true, sinceSay:0, skips:0, used:{}, lastId:null, lastText:''};
+let luka = {fresh:true, sinceSay:0, skips:0, used:{}, lastId:null, lastText:'', prev:null, cur:null, skipTs:[], streak:0, played:0, lastSayAt:0, pauses:0, resumes:0, pausedAt:0};
 /* Luka solo escribe: sin voz, sin audio. Cada línea se arma con datos reales de la canción y de tu biblioteca. */
 function lukaCtx(t){
   const nm = String((profile&&profile.name)||'').trim().split(/\s+/)[0];
@@ -7535,28 +7536,142 @@ function lukaCtx(t){
     artistCount: t ? musicTracks().filter(x=>akey(x.artist)===ak).length : 0,
     h: new Date().getHours(),
     time: new Date().toLocaleTimeString('es',{hour:'numeric',minute:'2-digit'}),
-    liked: !!(t && t.liked)};
+    liked: !!(t && t.liked),
+    pt: luka.prev ? luka.prev.title : 'esa canción', skipN: (luka.skipTs||[]).length || 3,
+    streak: luka.streak||0, played: luka.played||0};
 }
 const lkCm = c=> (c.first && Math.random()<.55) ? ', '+c.first : '';
 const lkSpan = d=> d>=60 ? Math.floor(d/30)+' meses' : (d>=30 ? 'un mes' : d+(d===1?' día':' días'));
 const lkAgo = d=> d<=0 ? 'hoy' : (d===1 ? 'ayer' : 'hace '+d+' días');
+const lkNum = n=> ({2:'Dos',3:'Tres',4:'Cuatro',5:'Cinco',6:'Seis'}[n] || String(n));
 const LUKA_LINES = {
+  /* ---- al activar ---- */
   open:[
-    c=>`Permíteme encargarme${lkCm(c)}. Empezamos con «${c.title}», de ${c.artist}; ya sabía que la querías.`,
-    c=>`Qué gusto verte${lkCm(c)}. Admito que me hacías falta; a mí, claro, no tanto. Comencemos con «${c.title}».`,
-    c=>`Ya elegí por ti. Ahora solo déjate querer… por la música, desde luego. Primera: «${c.title}».`,
-    c=>`No me digas qué quieres escuchar. Es más elegante que lo adivine yo. Empiezo con «${c.title}».`,
-    c=>`Si me permites, el gusto lo pongo yo. El tuyo ya lo conozco de sobra.`,
-    c=>`Hermosa decisión la de venir a buscarme${lkCm(c)}. Procedamos con ${c.artist}.`
+    c=>`Vaya, por fin${lkCm(c)}. Empezaba a pensar que tendría que tomar la iniciativa. Arranco con «${c.title}».`,
+    c=>`Aquí estoy. ¿Qué vamos a escuchar hoy? Espero que tengas algo interesante en mente… aunque ya elegí yo: «${c.title}».`,
+    c=>`A tu servicio${lkCm(c)}. Aunque debo admitir que me agrada más cuando me buscas por otros motivos.`,
+    c=>`Ya era hora${lkCm(c)}. Vamos, dime qué quieres escuchar. Es broma: ya lo sé. Empezamos con ${c.artist}.`,
+    c=>`Presente. ¿Me dejarás elegir esta vez o piensas cuestionar cada una de mis decisiones?`,
+    c=>`Mira quién ha decidido acordarse de mí${lkCm(c)}. Bien, ¿qué se te ofrece?`,
+    c=>`Aquí me tienes. Procura que valga la pena interrumpir mi descanso.`
   ],
   openNight:[
     c=>`Son las ${c.time} y aquí sigues, conmigo. Me halaga, aunque no me sorprende.`,
-    c=>`A esta hora solo yo sé cómo acompañarte${lkCm(c)}. Permíteme: «${c.title}».`
+    c=>`A esta hora solo yo sé cómo acompañarte${lkCm(c)}. Permíteme: «${c.title}».`,
+    c=>`Aquí me tienes, a las ${c.time}. Procura que valga la pena interrumpir mi descanso.`
   ],
   openMorning:[
     c=>`Buenos días${lkCm(c)}. Ya sé cómo quieres empezar; fue fácil, siempre lo es contigo.`,
     c=>`Temprano y con buen gusto: empiezas bien. Conmigo, siempre. Arrancamos con «${c.title}».`
   ],
+  /* ---- al desactivar ---- */
+  end:[
+    c=>`¿Ya te vas${lkCm(c)}? Qué lástima, empezaba a disfrutar de la compañía.`,
+    c=>`Muy bien, me retiro. Intenta no aburrirte demasiado sin mí.`,
+    c=>`Hasta la próxima. No tardes mucho; la música pierde parte de su encanto sin una buena selección.`,
+    c=>`Me voy, entonces. Y yo que empezaba a creer que disfrutarías un poco más de mi compañía.`,
+    c=>`Desactivado. Si me echas de menos, ya sabes dónde encontrarme.`,
+    c=>`Te dejaré a solas con tu música. Espero que sepas apreciar el sacrificio.`,
+    c=>`Hasta luego${lkCm(c)}. No hagas nada que yo no pudiera mejorar.`,
+    c=>c.played>=3 ? `${c.played} canciones juntos y ya te vas. Qué desperdicio de buena compañía.` : null,
+    c=>c.played>=3 ? `Fueron ${c.played} canciones elegidas con esmero. Espero que sepas apreciar el sacrificio.` : null
+  ],
+  /* ---- al saltar una canción (nombra la que saltaste) ---- */
+  skip:[
+    c=>`¿Ya te cansaste de «${c.pt}»? Vaya, qué difícil es mantener tu atención.`,
+    c=>`Siguiente, entonces. Espero que esta tenga mejor suerte.`,
+    c=>`¿Tan pronto? Y yo que empezaba a disfrutarla.`,
+    c=>`Está bien${lkCm(c)}, cambiemos. No pienso obligarte a mantener una relación con una canción que ya no te interesa.`,
+    c=>`Veamos qué nos ofrece la siguiente. Confío en que esta vez no seas tan impaciente.`,
+    c=>`¿Saltamos «${c.pt}»? De acuerdo, no todos saben apreciar una buena introducción.`,
+    c=>`Como quieras. Aunque tengo la sospecha de que ninguna canción te durará demasiado.`,
+    c=>`Vaya, ni siquiera llegamos al estribillo. Qué corazón tan difícil de conquistar.`,
+    c=>`Siguiente canción. Veamos si esta consigue llamar tu atención.`,
+    c=>`De acuerdo, le daremos una oportunidad a ${c.artist}. Espero que sepa aprovecharla.`
+  ],
+  /* ---- varios saltos seguidos ---- */
+  skipMany:[
+    c=>`¿Ninguna de estas consigue convencerte? Empiezo a creer que eres más difícil de complacer de lo que aparentas.`,
+    c=>`Otra más… Vaya, qué exigente${lkCm(c)}. ¿Buscas una canción o esperas que te lea la mente?`,
+    c=>`Y otra que no llega al estribillo. Qué impaciencia tan encantadora.`,
+    c=>`A este paso, terminaremos la lista sin haber escuchado realmente nada.`,
+    c=>`¿Seguimos buscando? Desde luego, sabes mantenerme ocupado.`,
+    c=>`${lkNum(c.skipN)} canciones en unos segundos. Debo admitir que tu manera de tomar decisiones es fascinante.`,
+    c=>`Otra descartada${lkCm(c)}. Dime, ¿tienes algún criterio secreto o simplemente disfrutas haciéndome trabajar?`,
+    c=>`Vaya, vaya… ¿Tan difícil es encontrar algo que te guste? Empiezo a tomarlo como un desafío personal.`,
+    c=>`¿«${c.pt}» tampoco? Qué tragedia. Y yo que esperaba encontrar algo a tu altura.`,
+    c=>`Podríamos seguir saltando canciones ${(c.h>=19||c.h<5)?'toda la noche':'todo el día'}, aunque preferiría que alguna consiguiera conquistarte.`,
+    c=>`Una más para la colección de canciones que no han logrado captar tu atención.`,
+    c=>`Si buscas algo en particular, podrías decírmelo. Aunque admito que verte cambiar de opinión tiene su encanto.`,
+    c=>`Descartada. La siguiente tendrá que esforzarse un poco más para ganarse tu aprobación.`,
+    c=>`¿Otra? Empiezo a sospechar que ninguna canción es el verdadero motivo por el que sigues aquí.`,
+    c=>`De acuerdo, sigamos${lkCm(c)}. Pero si encuentras la canción perfecta, espero que reconozcas mi contribución.`,
+    c=>`Qué velocidad para descartar canciones. Si decidieras con la misma rapidez qué quieres escuchar, ya habríamos terminado.`,
+    c=>`¿Continuamos con la búsqueda o me concederás el placer de elegir por ti?`,
+    c=>`Otra canción sacrificada. Espero que la siguiente tenga una oportunidad más larga de impresionarte.`,
+    c=>`Tu lista de descartes empieza a ser más extensa que la de tus favoritas.`,
+    c=>`Muy bien, veamos si ${c.title} consigue retenerte más de diez segundos.`
+  ],
+  /* ---- pausa y reanudar ---- */
+  pause:[
+    c=>`¿Una pausa? Como quieras. ¿O acaso mi selección te ha dejado sin palabras?`,
+    c=>`Pausada${lkCm(c)}. Adelante, tienes toda mi atención… por ahora.`,
+    c=>`Un momento de silencio. Espero que tengas algo interesante que decir.`,
+    c=>`Hecho. Aunque debo advertirte que el silencio no tiene tan buen ritmo.`,
+    c=>`¿Interrumpimos la música? Muy bien, sorpréndeme con el motivo.`,
+    c=>`Pausa activada. Qué oportuno, justo estaba por llegar mi parte favorita de «${c.title}».`,
+    c=>`Concedido. Tómate tu tiempo; por una vez, no seré yo quien te apresure.`,
+    c=>`La música está en pausa. Ahora dime, ¿qué podría ser tan interesante como para interrumpirla?`
+  ],
+  resume:[
+    c=>`Y volvemos${lkCm(c)}. Espero que hayas terminado de distraerte.`,
+    c=>`Continuemos, entonces. No quisiera dejar «${c.title}» esperando por ti.`,
+    c=>`De vuelta a la música. Admito que el silencio empezaba a aburrirme.`,
+    c=>`¿Todo en orden? Perfecto. Ahora intenta no saltártela antes del final.`,
+    c=>`Seguimos donde lo dejamos. No te preocupes, no me he perdido ninguna nota.`,
+    c=>`Y que siga sonando. Todavía tengo que demostrarte por qué elegí esta.`,
+    c=>`Volvemos a nuestra melodía. Espero que hayas disfrutado del intermedio.`,
+    c=>`En marcha otra vez. Vamos, no dejemos una buena canción a medias.`
+  ],
+  /* ---- presentar una canción para escucharla completa ---- */
+  full:[
+    c=>`«${c.title}» la escuchamos entera. Confía en mí, el final vale la pena.`,
+    c=>`Nada de saltársela esta vez${lkCm(c)}. Dame la oportunidad de demostrarte que tengo razón.`,
+    c=>`Desde el principio hasta el final. Vamos, a veces hay que saber esperar.`,
+    c=>`«${c.title}» merece una oportunidad completa. Y yo rara vez recomiendo algo sin motivo.`,
+    c=>`Escúchala hasta el final. Después puedes decirme que no tengo razón… si todavía te atreves.`,
+    c=>`Toda la canción, sin trampas. No me digas que te gusta algo si ni siquiera lo has escuchado completo.`,
+    c=>`Quédate hasta el final. Prometo que no será el único motivo por el que quieras quedarte.`,
+    c=>`Démosle una oportunidad a ${c.artist}, de principio a fin. Algunas canciones saben hacerse esperar.`,
+    c=>`Sin interrupciones. Quiero ver si al final consigues resistirte a admitir que te ha gustado.`,
+    c=>`Escúchala completa. Después aceptaré encantado tu opinión, incluso si contradice la mía.`
+  ],
+  /* ---- racha de canciones completas ---- */
+  allDone:[
+    c=>`Una tras otra y sin interrupciones. Veo que hoy sí confías en mi criterio.`,
+    c=>`Todas completas, entendido. Será mejor que te acomodes.`,
+    c=>`Ya van ${c.streak} seguidas, sin un solo salto. Empiezo a pensar que mis elecciones te gustan más de lo que admites.`,
+    c=>`De acuerdo, dejaré que cada canción llegue a su final. Intenta no enamorarte de la selección.`,
+    c=>`Vamos con todas. Y no acepto quejas hasta que hayas escuchado la última.`,
+    c=>`Una detrás de otra. Si alguna consigue sorprenderte, aceptaré tus felicitaciones con mucha modestia.`,
+    c=>`Entendido. Dejaremos que cada melodía tenga su momento, como corresponde.`,
+    c=>`Una selección completa, sin cortes. Parece que por fin nos entendemos${lkCm(c)}.`,
+    c=>`Muy bien, que suenen todas. Será interesante descubrir cuáles consiguen quedarse contigo.`,
+    c=>`Seguimos con la lista. Tú solo disfruta; ya tendrás tiempo de elogiar mis elecciones después.`
+  ],
+  long:[
+    c=>`${c.streak} canciones sin saltar ninguna. Cuidado, podría acostumbrarme a compartir la música contigo.`,
+    c=>`Dejemos que suenen todas. Tenemos tiempo, buenas canciones y una compañía bastante agradable.`,
+    c=>`Todas hasta el final. Quizá descubramos que tenemos más cosas en común de las que pensábamos.`,
+    c=>`Acomódate, que esto va para largo. Aunque, con la compañía adecuada, el tiempo suele pasar demasiado rápido.`,
+    c=>`Que suene la siguiente. Tengo curiosidad por saber cuál terminará gustándote más.`,
+    c=>`Una canción tras otra. Si al final me pides que vuelva a poner alguna, fingiré que no me sorprende.`,
+    c=>`Disfruta de la música${lkCm(c)}. Y si alguna te hace pensar en mí, al menos procura elegir una buena.`,
+    c=>`Toda la lista, entonces. Empiezo a sospechar que tienes una excusa bastante conveniente para quedarte un rato más.`,
+    c=>`Dejemos que la música haga lo suyo. A veces, las mejores conversaciones empiezan cuando nadie tiene prisa por irse.`,
+    c=>`Muy bien. Una buena selección, algo de tiempo libre y tu compañía. No parece un mal plan, ¿verdad?`
+  ],
+  /* ---- presentación de cada canción, con tus datos ---- */
   fav:[
     c=>c.n>=4 ? `«${c.title}», ${c.n} veces ya. No te juzgo${lkCm(c)}; te comprendo, que es más elegante.` : null,
     c=>`${c.artist} otra vez. Qué fidelidad. Ojalá me la tuvieras así a mí.`,
@@ -7588,19 +7703,9 @@ const LUKA_LINES = {
     c=>(c.h>=22 || c.h<4) ? `Pasadas las ${c.time}, solo se escucha lo esencial. Y lo esencial soy yo.` : null,
     c=>`No cambies nada. Estás exactamente donde te quería.`
   ],
-  skip:[
-    c=>`¿Saltaste «${c.title}»? Qué atrevimiento. Te lo perdono: tienes encanto.`,
-    c=>`Como quieras. Ya sabía que lo harías; me gusta que seas predecible conmigo.`,
-    c=>`Anotado${lkCm(c)}. Cuestionable, pero tu insolencia tiene su gracia.`,
-    c=>`La saltaste. Respeto tu opinión, aunque jamás la compartiré.`
-  ],
   close:[
     c=>`Última canción: «${c.title}». Volverás; siempre vuelves a mí.`,
     c=>`Y con ${c.artist} cerramos. Puedes aplaudir… en silencio, con elegancia.`
-  ],
-  end:[
-    c=>`Entendido${lkCm(c)}. Cuando me eches de menos, ya sabes dónde encontrarme.`,
-    c=>`Como desees. La fila sigue; mi criterio, también.`
   ]
 };
 function lukaPick(cat, t){
@@ -7652,7 +7757,7 @@ function lukaStart(){
   if(lukaIsOn()){ lukaEnd(); return; }
   const q = lukaBuild(); if(!q) return;
   window.__lukaQueue = q.list; window.__lukaTags = q.tags;
-  luka = {fresh:true, sinceSay:0, skips:0, used:{}, lastId:null, lastText:''};
+  luka = {fresh:true, sinceSay:0, skips:0, used:{}, lastId:null, lastText:'', prev:null, cur:null, skipTs:[], streak:0, played:0, lastSayAt:0, pauses:0, resumes:0, pausedAt:0};
   if(shuffleOn) toggleShuffle(); // Luka cuida el orden: con aleatorio activo no tendría sentido
   playTrack(q.list[0].id, 'luka');
 }
@@ -7664,23 +7769,46 @@ function lukaTrackChanged(){
   lukaRefreshCard();
   if(window.__curExpr!=='luka'){ luka.lastId = null; return; }
   const t = currentTrack; if(!t || luka.lastId===t.id) return; luka.lastId = t.id;
-  const skip = !!window.__lukaSkip; window.__lukaSkip = false;
+  const why = window.__lukaWhy || 'manual'; window.__lukaWhy = null;   // auto = terminó sola · skip = la saltaste · manual = otra forma
+  luka.prev = luka.cur; luka.cur = t; luka.played++;
   const tag = (window.__lukaTags && window.__lukaTags[t.id]) || 'mid';
+  const now = Date.now();
   let cat = null;
   if(luka.fresh){
     luka.fresh = false; luka.sinceSay = 0;
     const h = new Date().getHours(), r = Math.random();
     cat = (h<5 && r<.6) ? 'openNight' : ((h>=5 && h<11 && r<.4) ? 'openMorning' : 'open');
-  } else if(currentIndex>=currentQueue.length-1 && currentQueue.length>3){ cat = 'close'; }
-  else if(skip){ luka.skips++; luka.sinceSay++; if(luka.skips===1 || luka.skips%5===0) cat = 'skip'; }
-  else {
+  } else {
     luka.sinceSay++;
-    if(luka.sinceSay>=2 || (luka.sinceSay>=1 && (tag==='forgot'||tag==='fresh'))){
+    if(why==='skip'){ luka.skips++; luka.streak = 0; luka.skipTs = (luka.skipTs||[]).filter(x=>now-x<60000); luka.skipTs.push(now); }
+    else if(why==='auto'){ luka.streak++; }
+    if(currentIndex>=currentQueue.length-1 && currentQueue.length>3){ cat = 'close'; }
+    else if(why==='skip'){
+      if(luka.skipTs.length>=3){ cat = 'skipMany'; }
+      else if(luka.skips===1 || luka.skips%4===0){ cat = 'skip'; }
+    }
+    else if(why==='auto' && (luka.streak===4 || (luka.streak>=8 && (luka.streak-8)%6===0))){ cat = luka.streak===4 ? 'allDone' : 'long'; }
+    else if(luka.sinceSay>=2 || (luka.sinceSay>=1 && (tag==='forgot'||tag==='fresh'))){
       cat = (t.liked && tag==='mid' && Math.random()<.4) ? 'liked' : tag;
+      if((cat==='fav'||cat==='forgot'||cat==='mid') && Math.random()<.35) cat = 'full';
     }
   }
   if(!cat) return;
-  luka.sinceSay = 0; lukaSay(cat, t);
+  if(lukaSay(cat, t)){ luka.sinceSay = 0; if(cat==='skipMany') luka.skipTs = []; }
+}
+/* pausar / reanudar con el botón o los controles de la notificación (no por una llamada o al desconectar audífonos) */
+function lukaPauseEvt(pausing){
+  try{
+    if(!lukaIsOn() || !currentTrack) return;
+    const now = Date.now();
+    if(pausing){
+      luka.pausedAt = now; luka.pauses++;
+      if(luka.pauses===1 || luka.pauses%3===0) lukaSay('pause', currentTrack);
+    } else {
+      const d = luka.pausedAt ? now-luka.pausedAt : 0; luka.pausedAt = 0;
+      if(d>=10000){ luka.resumes++; if(luka.resumes%2===1) lukaSay('resume', currentTrack); }
+    }
+  }catch(e){}
 }
 let lukaBubbleT = 0;
 /* Cambios de texto de la tarjeta: se desvanece, la altura se anima y el texto nuevo aparece (sin saltos) */
@@ -7707,6 +7835,9 @@ function lukaSetSub(text){
 }
 function lukaSubText(){ return lukaIsOn() ? 'En sesión · toca para terminar' : 'Tu música, en el orden que mereces'; }
 function lukaSay(cat, t){
+  const gap = (cat==='open'||cat==='openNight'||cat==='openMorning'||cat==='end') ? 0 : (cat==='skipMany' ? 6000 : 20000);
+  if(Date.now() - (luka.lastSayAt||0) < gap) return false;   // sin amontonar mensajes
+  luka.lastSayAt = Date.now();
   const text = lukaPick(cat, t);
   let b = document.getElementById('lukaSay');
   if(!b){
@@ -7728,6 +7859,7 @@ function lukaSay(cat, t){
     const c2 = document.getElementById('lukaCard');
     if(c2){ c2.classList.remove('say'); lukaSetSub(lukaSubText()); }
   }, dur);
+  return true;
 }
 function lukaCardHTML(){
   const on = lukaIsOn();
