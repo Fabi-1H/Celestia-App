@@ -5439,6 +5439,7 @@ function renderAppSettings(main){
       ${row(ic('<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>'),'Cuenta','Nombre de usuario y foto de perfil',"openProfileEdit()")}
       ${row(ic('<path d="M4 21V14M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/>'),'Reproducción','Ecualizador y crossfade entre canciones',"openEQ()")}
       ${row(ic('<path d="M3 10v4M7 7v10M11 4v16M15 8v8M19 10v4"/>'),'Volumen parejo',normOn()?'Activado · baja las canciones más fuertes para que suenen parecido':'Desactivado',"toggleNorm()",`<span class="set-state ${normOn()?'on':''}">${normOn()?'Sí':'No'}</span>`)}
+      ${NATIVE ? row(ic('<path d="M12 2v10M5.6 6.6a8 8 0 1012.8 0"/>'),'Música en segundo plano',nativeBgOk===false?'Android puede cortarla con la pantalla apagada · toca para permitir':'Sin restricciones de batería',"nativeBgAction()",`<span class="set-state ${nativeBgOk?'on':''}">${nativeBgOk===null?'…':(nativeBgOk?'Sí':'Permitir')}</span>`) : ''}
       ${row(ic('<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/>'),'Imágenes desde internet','Busca carátulas de álbumes y fotos de artistas al importar. Solo se envían los nombres del artista y del álbum.',"toggleArtOnline()",`<div class="switch ${artOnlineEnabled()?'on':''}"><div class="knob"></div></div>`)}
       ${row(ic('<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>'),'Buscar imágenes ahora','Reintenta con toda tu biblioteca, incluso lo que no se encontró antes',"manualArtSearch()")}
       ${row(ic('<path d="M9 18V5l12-2v13M9 9l12-2"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>'),'Letras sincronizadas','Busca la letra de tus canciones al importar. Solo se envían el título y el artista.',"toggleLyricsOnline()",`<div class="switch ${lyricsOnlineEnabled()?'on':''}"><div class="knob"></div></div>`)}
@@ -5449,7 +5450,7 @@ function renderAppSettings(main){
       ${row(ic('<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>'),'Almacenamiento y datos','Borrar estadísticas de reproducción guardadas en este dispositivo',"confirmClearHistory()")}
       <div class="app-settings-row tone-row" data-txt="${escapeHtml(artNorm('Apariencia tono de grises fondo'))}" style="cursor:default;">${ic('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>')}<div style="flex:1;min-width:0;"><div class="t">Apariencia</div><div class="s">Tono de grises de toda la app</div></div>
         <div class="tone-pick">${TONES.map(t=>`<button class="tone-sw ${toneNow()===t.id?'on':''}" onclick="setTone('${t.id}')"><i style="background:${t.sw}"></i><span>${t.name}</span></button>`).join('')}</div></div>
-      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.10.19-g) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
+      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.10.24-a) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
     </div>
   `;
 }
@@ -5710,8 +5711,8 @@ function startCrossfade(){
   xf = {to:setTimeout(complete, dur*1000+120), incoming, outgoing, complete, endAt: performance.now()+dur*1000+120};
 }
 
-function onAudioPlay(e){ if(e.target!==audio) return; isPlaying=true; consecutivePlayErrors=0; updatePlayIcons(); if('mediaSession' in navigator) navigator.mediaSession.playbackState='playing'; }
-function onAudioPause(e){ if(e.target!==audio) return; saveSession(); isPlaying=false; updatePlayIcons(); if('mediaSession' in navigator) navigator.mediaSession.playbackState='paused'; clearTimeout(listenSaveTimer); saveHistory(); }
+function onAudioPlay(e){ if(e.target!==audio) return; isPlaying=true; consecutivePlayErrors=0; updatePlayIcons(); if('mediaSession' in navigator) navigator.mediaSession.playbackState='playing'; try{ nMS.state('playing'); nativeFirstPlay(); }catch(err){} }
+function onAudioPause(e){ if(e.target!==audio) return; saveSession(); isPlaying=false; updatePlayIcons(); if('mediaSession' in navigator) navigator.mediaSession.playbackState='paused'; try{ nMS.state('paused'); }catch(err){} clearTimeout(listenSaveTimer); saveHistory(); }
 function onAudioEnded(e){
   if(e.target!==audio) return;
   if(xf){ finishCrossfade(); return; } // la canción que sale terminó justo al acabar el fundido: la siguiente ya está sonando, no se vuelve a cargar
@@ -5761,6 +5762,7 @@ function onAudioTimeUpdate(e){
     logPlayEvent(currentTrack);
     if(!document.hidden && (activeTab==='history'||activeTab==='recent')) render();
   }
+  try{ nMS.pos(); }catch(e){}
   if('mediaSession' in navigator && isFinite(audio.duration)){
     try{ navigator.mediaSession.setPositionState({duration:audio.duration, playbackRate:playbackSpeed, position:audio.currentTime}); }catch(e){}
   }
@@ -5861,6 +5863,7 @@ function onAudioError(e){
 
 /* ============ CONTROL EN NOTIFICACIONES (MediaSession) ============ */
 function setupMediaSession(){
+  try{ nMS.setup(); }catch(e){}
   if(!('mediaSession' in navigator)) return;
   navigator.mediaSession.setActionHandler('play', ()=>{ resumeAudioCtx(); safePlay(audio); lukaPauseEvt(false); });
   navigator.mediaSession.setActionHandler('pause', ()=>{ audio.pause(); lukaPauseEvt(true); });
@@ -5871,6 +5874,7 @@ function setupMediaSession(){
   }catch(e){}
 }
 function updateMediaSessionMetadata(){
+  try{ nMS.meta(); }catch(e){}
   if(!('mediaSession' in navigator) || !currentTrack) return;
   navigator.mediaSession.metadata = new MediaMetadata({
     title: currentTrack.title,
@@ -7043,7 +7047,7 @@ async function fetchLyricsFor(artist, title){
 }
 function searchLyricsWeb(){
   const q = encodeURIComponent(currentTrack.artist+' '+currentTrack.title+' letra');
-  window.open('https://www.google.com/search?q='+q, '_blank');
+  openExternal('https://www.google.com/search?q='+q);
 }
 
 /* ============ LETRA SINCRONIZADA: BÚSQUEDA AUTOMÁTICA (igual que carátulas y fotos de artista) ============ */
@@ -7941,6 +7945,10 @@ const BACKUP_LS = ['miku:eq','celestia:crossfade','celestia:following','celestia
 function backupLsAllowed(k){ return BACKUP_LS.includes(k) || k.startsWith('celestia:lib-'); }
 function safeFileName(x){ return String(x||'').replace(/[\\/:*?"<>|]+/g,' ').replace(/\s+/g,' ').trim().slice(0,60) || 'Celestia'; }
 function downloadBlob(blob, name){
+  if(NATIVE && capPlug('Share') && capPlug('Filesystem')){
+    nativeShareBlob(blob, name).catch(e=>{ if(!/cancel/i.test(String((e&&e.message)||e))) showToast('No se pudo guardar el archivo'); });
+    return;
+  }
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
   document.body.appendChild(a); a.click();
   setTimeout(()=>{ try{ URL.revokeObjectURL(a.href); }catch(e){} a.remove(); }, 4000);
@@ -7969,7 +7977,7 @@ async function exportBackup(){
     const d = new Date(); const stamp = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
     const fname = 'Celestia copia '+stamp+'.json';
     downloadBlob(new Blob([JSON.stringify(data)],{type:'application/json'}), fname);
-    showToast('Copia guardada en Descargas: '+fname);
+    showToast(NATIVE ? 'Elige dónde guardar la copia' : 'Copia guardada en Descargas: '+fname);
   }catch(e){ showToast('No se pudo crear la copia de seguridad'); }
 }
 async function sharePlaylistFile(id){
@@ -7986,7 +7994,7 @@ async function sharePlaylistFile(id){
       return;
     }
   }catch(e){ if(e && e.name==='AbortError') return; }
-  downloadBlob(file, fname); showToast('Playlist guardada en Descargas: '+fname);
+  downloadBlob(file, fname); if(!NATIVE) showToast('Playlist guardada en Descargas: '+fname);
 }
 function openDataFile(){ const i = document.getElementById('dataFileInput'); i.value=''; i.click(); }
 document.getElementById('dataFileInput').addEventListener('change', async (e)=>{
@@ -8169,9 +8177,130 @@ function restoreSession(){
 document.addEventListener('visibilitychange', ()=>{ if(document.hidden) saveSession(); });
 window.addEventListener('pagehide', saveSession);
 
+/* ============ ANDROID (APK con Capacitor) ============
+   Todo esto se activa SOLO dentro del APK: notificación de reproducción con controles, permisos,
+   batería, guardar/compartir archivos. En el navegador o la PWA no hace absolutamente nada. */
+const NATIVE = (()=>{ try{ const c = window.Capacitor; return !!(c && ((c.isNativePlatform && c.isNativePlatform()) || (c.getPlatform && c.getPlatform()==='android'))); }catch(e){ return false; } })();
+function capPlug(n){ try{ return (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins[n]) || null; }catch(e){ return null; } }
+function nCall(p, fn){ try{ const r = fn(); if(r && r.catch) r.catch(()=>{}); return r; }catch(e){ return null; } }
+const nMS = {
+  artCache: {}, lastPos: 0,
+  setup(){
+    const m = capPlug('MediaSession'); if(!NATIVE || !m) return;
+    const acts = {
+      play: ()=>{ resumeAudioCtx(); safePlay(audio); lukaPauseEvt(false); },
+      pause: ()=>{ audio.pause(); lukaPauseEvt(true); },
+      previoustrack: ()=>prevTrack(),
+      nexttrack: ()=>nextTrack(),
+      seekto: (d)=>{ if(d && d.seekTime!=null) audio.currentTime = d.seekTime; },
+      stop: ()=>{ audio.pause(); }
+    };
+    Object.keys(acts).forEach(a=>nCall(m, ()=>m.setActionHandler({action:a}, acts[a])));
+  },
+  art(src){   // la notificación necesita una imagen que el sistema pueda leer: se reduce a 256 px
+    if(!src) return Promise.resolve(null);
+    if(this.artCache[src]) return Promise.resolve(this.artCache[src]);
+    return new Promise(res=>{
+      try{
+        const im = new Image();
+        im.onload = ()=>{
+          try{
+            const s = 256, c = document.createElement('canvas'); c.width = c.height = s;
+            const k = Math.max(s/im.width, s/im.height), w = im.width*k, h = im.height*k;
+            c.getContext('2d').drawImage(im, (s-w)/2, (s-h)/2, w, h);
+            const d = c.toDataURL('image/jpeg', .82);
+            const keys = Object.keys(this.artCache); if(keys.length>20) delete this.artCache[keys[0]];
+            this.artCache[src] = d; res(d);
+          }catch(e){ res(null); }
+        };
+        im.onerror = ()=>res(null);
+        im.src = src;
+      }catch(e){ res(null); }
+    });
+  },
+  meta(){
+    const m = capPlug('MediaSession'); if(!NATIVE || !m || !currentTrack) return;
+    const t = currentTrack, id = t.id;
+    const base = {title:t.title||'', artist:t.artist||'', album:t.album||''};
+    nCall(m, ()=>m.setMetadata(base));
+    const src = t.cover || artistImages[akey(t.artist)];
+    if(src) this.art(src).then(d=>{
+      if(d && currentTrack && currentTrack.id===id) nCall(m, ()=>m.setMetadata(Object.assign({}, base, {artwork:[{src:d, sizes:'256x256', type:'image/jpeg'}]})));
+    });
+  },
+  /* 'pausado' se envía con un pequeño retraso: al terminar una canción el navegador avisa "pausa" un instante antes de que empiece
+     la siguiente, y si Android recibiera eso con la pantalla apagada podría detener el servicio de música y no poder reiniciarlo. */
+  stT: null, stLast: '',
+  state(s){
+    const m = capPlug('MediaSession'); if(!NATIVE || !m) return;
+    clearTimeout(this.stT);
+    const send = (v)=>{ if(this.stLast===v) return; this.stLast = v; nCall(m, ()=>m.setPlaybackState({playbackState:v})); };
+    if(s==='playing') send('playing');
+    else this.stT = setTimeout(()=>{ if(audio.paused) send(s); }, 1200);
+  },
+  pos(){
+    const m = capPlug('MediaSession'); if(!NATIVE || !m) return;
+    const n = Date.now(); if(n-this.lastPos<1000) return; this.lastPos = n;
+    if(isFinite(audio.duration) && audio.duration>0) nCall(m, ()=>m.setPositionState({duration:audio.duration, playbackRate:playbackSpeed||1, position:Math.min(audio.currentTime, audio.duration)}));
+  }
+};
+/* permisos y batería: se piden una sola vez, la primera vez que suena música */
+let nativeBgOk = null;
+async function nativeBgRefresh(){
+  const pw = capPlug('CelestiaPower'); if(!NATIVE || !pw) return;
+  try{ const r = await pw.status(); nativeBgOk = !!(r && r.ignoring); if(activeTab==='appSettings') render(); }catch(e){}
+}
+async function nativeAskNotif(){
+  const ln = capPlug('LocalNotifications'); if(!ln || !ln.requestPermissions) return;
+  try{
+    if(ln.checkPermissions){ const st = await ln.checkPermissions(); if(st && st.display==='granted') return; }
+    await ln.requestPermissions();
+  }catch(e){}
+}
+async function nativeSetupFlow(){
+  await nativeAskNotif();
+  await nativeBgRefresh();
+  const pw = capPlug('CelestiaPower');
+  if(pw && nativeBgOk===false){ await new Promise(r=>setTimeout(r, 700)); try{ await pw.request(); }catch(e){} setTimeout(nativeBgRefresh, 1500); }
+}
+function nativeFirstPlay(){
+  if(!NATIVE) return;
+  if(lsGet('celestia:native-setup', false)) return;
+  lsSet('celestia:native-setup', true);
+  setTimeout(nativeSetupFlow, 900);
+}
+function nativeBgAction(){
+  const pw = capPlug('CelestiaPower'); if(!pw) return;
+  if(nativeBgOk){ showToast('Ya está permitido: la música sigue con la pantalla apagada'); return; }
+  nativeAskNotif().then(async()=>{ try{ await pw.request(); }catch(e){} setTimeout(nativeBgRefresh, 1500); });
+}
+/* guardar o enviar archivos (las descargas por enlace no funcionan dentro de un APK) */
+async function nativeShareBlob(blob, name){
+  const fs = capPlug('Filesystem'), sh = capPlug('Share'); if(!fs || !sh) return false;
+  const b64 = await new Promise((res,rej)=>{ const r = new FileReader(); r.onload = ()=>res(String(r.result).split(',')[1]||''); r.onerror = rej; r.readAsDataURL(blob); });
+  const w = await fs.writeFile({path:name, data:b64, directory:'CACHE'});
+  await sh.share({title:name, files:[w.uri], dialogTitle:'Guardar o enviar'});
+  return true;
+}
+function openExternal(url){
+  const b = capPlug('Browser');
+  if(NATIVE && b && b.open){ nCall(b, ()=>b.open({url})); return; }
+  window.open(url, '_blank');
+}
+(function nativeInit(){
+  if(!NATIVE) return;
+  const sh = capPlug('Share');
+  if(sh && !navigator.share){   // el WebView no trae "compartir": se usa el panel de Android
+    try{ Object.defineProperty(navigator, 'share', {configurable:true, value:(d)=>sh.share({title:d&&d.title, text:d&&d.text, url:d&&d.url, dialogTitle:'Compartir'})}); }catch(e){}
+  }
+  const app = capPlug('App');
+  if(app && app.addListener) nCall(app, ()=>app.addListener('appStateChange', (s)=>{ if(s && s.isActive) nativeBgRefresh(); }));
+  setTimeout(nativeBgRefresh, 1200);
+})();
+
 /* ============ INIT ============ */
 (async function init(){
-  if('serviceWorker' in navigator){
+  if('serviceWorker' in navigator && !NATIVE){
     window.addEventListener('load', ()=>{
       navigator.serviceWorker.register('sw.js').catch(()=>{});
     });
