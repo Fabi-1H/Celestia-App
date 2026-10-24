@@ -83,10 +83,6 @@ jobs:
           package __PACKAGE__;
 
           import android.os.Bundle;
-          import android.view.View;
-          import androidx.core.graphics.Insets;
-          import androidx.core.view.ViewCompat;
-          import androidx.core.view.WindowInsetsCompat;
           import com.getcapacitor.BridgeActivity;
 
           public class MainActivity extends BridgeActivity {
@@ -94,15 +90,6 @@ jobs:
               public void onCreate(Bundle savedInstanceState) {
                   registerPlugin(PowerPlugin.class);
                   super.onCreate(savedInstanceState);
-                  // Deja la app entre la barra de estado y la barra de gestos (sin quedar tapada)
-                  View content = findViewById(android.R.id.content);
-                  ViewCompat.setOnApplyWindowInsetsListener(content, (v, insets) -> {
-                      Insets i = insets.getInsets(WindowInsetsCompat.Type.systemBars()
-                              | WindowInsetsCompat.Type.displayCutout() | WindowInsetsCompat.Type.ime());
-                      v.setPadding(i.left, i.top, i.right, i.bottom);
-                      return WindowInsetsCompat.CONSUMED;
-                  });
-                  ViewCompat.requestApplyInsets(content);
               }
           }
           EOF_MAIN
@@ -115,6 +102,10 @@ jobs:
           import android.os.Build;
           import android.os.PowerManager;
           import android.provider.Settings;
+          import android.view.View;
+          import androidx.core.graphics.Insets;
+          import androidx.core.view.ViewCompat;
+          import androidx.core.view.WindowInsetsCompat;
 
           import com.getcapacitor.JSObject;
           import com.getcapacitor.Plugin;
@@ -136,6 +127,34 @@ jobs:
                   JSObject r = new JSObject();
                   r.put("ignoring", ignoring);
                   call.resolve(r);
+              }
+
+              /* Alto de la barra de estado y de la barra de gestos, en píxeles CSS, para que la app no quede tapada. */
+              @PluginMethod
+              public void insets(final PluginCall call) {
+                  getActivity().runOnUiThread(new Runnable() {
+                      @Override
+                      public void run() {
+                          try {
+                              View v = getActivity().getWindow().getDecorView();
+                              WindowInsetsCompat w = ViewCompat.getRootWindowInsets(v);
+                              float d = getContext().getResources().getDisplayMetrics().density;
+                              JSObject r = new JSObject();
+                              int top = 0, bottom = 0, left = 0, right = 0;
+                              if (w != null) {
+                                  Insets i = w.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
+                                  top = i.top; bottom = i.bottom; left = i.left; right = i.right;
+                              }
+                              r.put("top", Math.round(top / d));
+                              r.put("bottom", Math.round(bottom / d));
+                              r.put("left", Math.round(left / d));
+                              r.put("right", Math.round(right / d));
+                              call.resolve(r);
+                          } catch (Exception e) {
+                              call.reject("insets");
+                          }
+                      }
+                  });
               }
 
               @PluginMethod
