@@ -1,0 +1,311 @@
+# Compila el APK de Celestia (Android) en GitHub. Resultado: un enlace fijo de descarga.
+# Se ejecuta solo al subir cambios a index.html, o a mano desde Actions > "APK de Android" > Run workflow.
+name: APK de Android
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'index.html'
+      - 'manifest.json'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apk-android
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      RUN_NUMBER: ${{ github.run_number }}
+      KS_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Descargar el repositorio
+        uses: actions/checkout@v4
+
+      - name: Comprobar la llave de firma
+        run: |
+          if [ -z "$KS_B64" ]; then
+            echo "::error::Falta el secreto ANDROID_KEYSTORE_BASE64 (Settings > Secrets and variables > Actions > New repository secret)."
+            exit 1
+          fi
+
+      - name: Instalar Node y Java
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Preparar la app web
+        run: |
+          mkdir -p cap/www
+          cp index.html manifest.json launchericon-192x192.png launchericon-512x512.png cap/www/
+          cat > cap/package.json <<'EOF_PKG'
+          {"name":"celestia-android","version":"1.0.0","private":true}
+          EOF_PKG
+          cat > cap/capacitor.config.json <<'EOF_CFG'
+          {
+            "appId": "app.celestia.player",
+            "appName": "Celestia",
+            "webDir": "www",
+            "backgroundColor": "#0A0909",
+            "android": { "adjustMarginsForEdgeToEdge": "auto" },
+            "plugins": { "SystemBars": { "insetsHandling": "css" } }
+          }
+          EOF_CFG
+
+      - name: Instalar Capacitor y los plugins
+        working-directory: cap
+        run: |
+          npm install --no-audit --no-fund --legacy-peer-deps \
+            @capacitor/core@8 @capacitor/android@8 @capacitor/app@8 @capacitor/browser@8 \
+            @capacitor/filesystem@8 @capacitor/share@8 @capacitor/local-notifications@8 \
+            @capgo/capacitor-media-session@8
+          npm install --no-audit --no-fund --legacy-peer-deps --save-dev @capacitor/cli@8
+          npx cap --version
+
+      - name: Crear el proyecto Android
+        working-directory: cap
+        run: npx cap add android
+
+      - name: Escribir los archivos propios (batería, actividad)
+        run: |
+          mkdir -p cap/extra
+          cat > cap/extra/MainActivity.java <<'EOF_MAIN'
+          package __PACKAGE__;
+
+          import android.os.Bundle;
+          import com.getcapacitor.BridgeActivity;
+
+          public class MainActivity extends BridgeActivity {
+              @Override
+              public void onCreate(Bundle savedInstanceState) {
+                  registerPlugin(PowerPlugin.class);
+                  super.onCreate(savedInstanceState);
+              }
+          }
+          EOF_MAIN
+          cat > cap/extra/PowerPlugin.java <<'EOF_POWER'
+          package __PACKAGE__;
+
+          import android.content.Context;
+          import android.content.Intent;
+          import android.net.Uri;
+          import android.os.Build;
+          import android.os.PowerManager;
+          import android.provider.Settings;
+
+          import com.getcapacitor.JSObject;
+          import com.getcapacitor.Plugin;
+          import com.getcapacitor.PluginCall;
+          import com.getcapacitor.PluginMethod;
+          import com.getcapacitor.annotation.CapacitorPlugin;
+
+          /* Ahorro de batería: dice si Android deja a Celestia sin restricciones y abre el permiso para activarlo. */
+          @CapacitorPlugin(name = "CelestiaPower")
+          public class PowerPlugin extends Plugin {
+
+              @PluginMethod
+              public void status(PluginCall call) {
+                  boolean ignoring = true;
+                  if (Build.VERSION.SDK_INT >= 23) {
+                      PowerManager pm = (PowerManager) getContext().getSystemService(Context.POWER_SERVICE);
+                      ignoring = pm != null && pm.isIgnoringBatteryOptimizations(getContext().getPackageName());
+                  }
+                  JSObject r = new JSObject();
+                  r.put("ignoring", ignoring);
+                  call.resolve(r);
+              }
+
+              @PluginMethod
+              public void request(PluginCall call) {
+                  try {
+                      Intent i = new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
+                      i.setData(Uri.parse("package:" + getContext().getPackageName()));
+                      i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                      getContext().startActivity(i);
+                      call.resolve();
+                  } catch (Exception e) {
+                      try {
+                          Intent i2 = new Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS);
+                          i2.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                          getContext().startActivity(i2);
+                          call.resolve();
+                      } catch (Exception e2) {
+                          call.reject("No disponible en este teléfono");
+                      }
+                  }
+              }
+          }
+          EOF_POWER
+          cat > cap/extra/customize.py <<'EOF_PY'
+          # Personaliza el proyecto Android que genera Capacitor: permisos, iconos, colores, versión y el plugin de batería.
+          import os, re, sys, glob
+          from PIL import Image, ImageDraw
+
+          ROOT = sys.argv[1] if len(sys.argv) > 1 else 'cap'
+          APP_ID = 'app.celestia.player'
+          VERSION_CODE = os.environ.get('RUN_NUMBER', '1')
+          VERSION_NAME = '1.0.' + VERSION_CODE
+          SRC_ICON = os.path.join(ROOT, 'www', 'launchericon-512x512.png')
+          ANDROID = os.path.join(ROOT, 'android')
+          MAIN = os.path.join(ANDROID, 'app', 'src', 'main')
+          RES = os.path.join(MAIN, 'res')
+          BG = '#2C2C2C'
+          APPBG = '#0A0909'
+          warns = []
+
+          def warn(m):
+              warns.append(m); print('AVISO:', m)
+
+          def read(p):
+              with open(p, encoding='utf-8') as f: return f.read()
+
+          def write(p, t):
+              os.makedirs(os.path.dirname(p), exist_ok=True)
+              with open(p, 'w', encoding='utf-8') as f: f.write(t)
+
+          # 1) Permisos en el manifiesto (obligatorio)
+          man = os.path.join(MAIN, 'AndroidManifest.xml')
+          t = read(man)
+          perms = ['android.permission.INTERNET', 'android.permission.FOREGROUND_SERVICE', 'android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK',
+                   'android.permission.WAKE_LOCK', 'android.permission.POST_NOTIFICATIONS', 'android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS']
+          add = ''.join('    <uses-permission android:name="%s" />\n' % p for p in perms if p not in t)
+          if '<application' not in t: sys.exit('ERROR: el manifiesto no tiene <application>')
+          t = t.replace('<application', add + '    <application', 1) if add else t
+          write(man, t)
+          print('Permisos añadidos:', add.count('uses-permission'))
+
+          # 2) Actividad principal y plugin de batería (obligatorio)
+          pkg_dir = None
+          for p in glob.glob(os.path.join(MAIN, 'java', '**', 'MainActivity.*'), recursive=True):
+              pkg_dir = os.path.dirname(p); os.remove(p)
+          if not pkg_dir:
+              pkg_dir = os.path.join(MAIN, 'java', *APP_ID.split('.'))
+          here = os.path.dirname(os.path.abspath(__file__))
+          for name in ('MainActivity.java', 'PowerPlugin.java'):
+              write(os.path.join(pkg_dir, name), read(os.path.join(here, name)).replace('__PACKAGE__', APP_ID))
+          print('Java escrito en', pkg_dir)
+
+          # 3) Versión (para poder actualizar encima de la anterior)
+          for g in glob.glob(os.path.join(ANDROID, 'app', 'build.gradle*')):
+              s = read(g)
+              s2 = re.sub(r'versionCode\s*=?\s*\d+', 'versionCode ' + VERSION_CODE, s)
+              s2 = re.sub(r'versionName\s*=?\s*"[^"]*"', 'versionName "%s"' % VERSION_NAME, s2)
+              if s2 == s: warn('no se pudo cambiar la versión en ' + g)
+              write(g, s2)
+
+          # 4) Iconos
+          def ico_bg():
+              return Image.open(SRC_ICON).convert('RGB')
+          try:
+              base = ico_bg()
+              for old in glob.glob(os.path.join(RES, 'mipmap-*', 'ic_launcher*')):   # evita recursos duplicados (png/webp/xml de la plantilla)
+                  os.remove(old)
+              dens = {'mdpi': 48, 'hdpi': 72, 'xhdpi': 96, 'xxhdpi': 144, 'xxxhdpi': 192}
+              for d, px in dens.items():
+                  folder = os.path.join(RES, 'mipmap-' + d)
+                  os.makedirs(folder, exist_ok=True)
+                  sq = base.resize((px, px), Image.LANCZOS); sq.save(os.path.join(folder, 'ic_launcher.png'))
+                  m = Image.new('L', (px * 4, px * 4), 0); ImageDraw.Draw(m).ellipse((0, 0, px * 4 - 1, px * 4 - 1), fill=255)
+                  m = m.resize((px, px), Image.LANCZOS); rd = sq.convert('RGBA'); rd.putalpha(m); rd.save(os.path.join(folder, 'ic_launcher_round.png'))
+                  fg_px = int(round(px * 108 / 48)); inner = int(fg_px * 0.66)
+                  fg = Image.new('RGBA', (fg_px, fg_px), (0, 0, 0, 0))
+                  fg.paste(base.resize((inner, inner), Image.LANCZOS).convert('RGBA'), ((fg_px - inner) // 2, (fg_px - inner) // 2))
+                  fg.save(os.path.join(folder, 'ic_launcher_fg.png'))
+              adaptive = '<?xml version="1.0" encoding="utf-8"?>\n<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">\n    <background android:drawable="@color/celestia_icon_bg"/>\n    <foreground android:drawable="@mipmap/ic_launcher_fg"/>\n</adaptive-icon>\n'
+              write(os.path.join(RES, 'mipmap-anydpi-v26', 'ic_launcher.xml'), adaptive)
+              write(os.path.join(RES, 'mipmap-anydpi-v26', 'ic_launcher_round.xml'), adaptive)
+              write(os.path.join(RES, 'values', 'celestia_colors.xml'), '<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <color name="celestia_icon_bg">%s</color>\n</resources>\n' % BG)
+              print('Iconos generados')
+          except Exception as e:
+              warn('iconos: %s' % e)
+
+          # 5) Colores de la barra del sistema
+          try:
+              cp = os.path.join(RES, 'values', 'colors.xml')
+              if os.path.exists(cp):
+                  s = read(cp)
+                  for n in ('colorPrimary', 'colorPrimaryDark'):
+                      s = re.sub(r'(<color name="%s">)[^<]*(</color>)' % n, r'\g<1>%s\g<2>' % APPBG, s)
+                  write(cp, s)
+              else: warn('no hay colors.xml')
+          except Exception as e:
+              warn('colores: %s' % e)
+
+          # 6) Pantalla de inicio oscura con el icono (reemplaza la imagen de ejemplo de Capacitor)
+          try:
+              n = 0
+              for p in glob.glob(os.path.join(RES, 'drawable*', 'splash*.png')):
+                  w, h = Image.open(p).size
+                  im = Image.new('RGB', (w, h), APPBG)
+                  s = int(min(w, h) * 0.30)
+                  ic = base.resize((s, s), Image.LANCZOS)
+                  im.paste(ic, ((w - s) // 2, (h - s) // 2)); im.save(p); n += 1
+              print('Pantallas de inicio reemplazadas:', n)
+              if n == 0: warn('no se encontró la imagen de inicio (se verá la de Capacitor)')
+          except Exception as e:
+              warn('splash: %s' % e)
+
+          # 7) Nombre visible
+          try:
+              sp = os.path.join(RES, 'values', 'strings.xml')
+              s = read(sp)
+              s = re.sub(r'(<string name="app_name">)[^<]*(</string>)', r'\g<1>Celestia\g<2>', s)
+              s = re.sub(r'(<string name="title_activity_main">)[^<]*(</string>)', r'\g<1>Celestia\g<2>', s)
+              write(sp, s)
+          except Exception as e:
+              warn('nombre: %s' % e)
+          print('Listo.', len(warns), 'avisos')
+          EOF_PY
+
+      - name: Personalizar el proyecto (permisos, iconos, versión)
+        run: |
+          python3 -m pip install --quiet pillow
+          python3 cap/extra/customize.py cap
+
+      - name: Sincronizar
+        working-directory: cap
+        run: npx cap sync android
+
+      - name: Compilar
+        working-directory: cap/android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon --stacktrace
+
+      - name: Firmar el APK
+        run: |
+          BT="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)"
+          UNSIGNED=$(ls cap/android/app/build/outputs/apk/release/*.apk | head -1)
+          echo "Archivo sin firmar: $UNSIGNED"
+          echo "$KS_B64" | base64 -d > cap/celestia.keystore
+          "$BT/zipalign" -p -f 4 "$UNSIGNED" cap/aligned.apk
+          "$BT/apksigner" sign --ks cap/celestia.keystore --ks-pass pass:celestia-android --key-pass pass:celestia-android --ks-key-alias celestia --out cap/Celestia.apk cap/aligned.apk
+          "$BT/apksigner" verify --print-certs cap/Celestia.apk | head -3
+          rm -f cap/celestia.keystore
+          ls -la cap/Celestia.apk
+
+      - name: Guardar copia del APK en Actions
+        uses: actions/upload-artifact@v4
+        with:
+          name: Celestia-APK
+          path: cap/Celestia.apk
+          retention-days: 30
+
+      - name: Publicar el enlace de descarga
+        run: |
+          gh release delete android-latest --yes --cleanup-tag || true
+          gh release create android-latest cap/Celestia.apk \
+            --title "Celestia para Android" \
+            --notes "APK listo para instalar. Versión 1.0.${RUN_NUMBER}." \
+            --latest=false
+          echo "Descarga: https://github.com/${{ github.repository }}/releases/download/android-latest/Celestia.apk"
