@@ -57,8 +57,8 @@ jobs:
             "appName": "Celestia",
             "webDir": "www",
             "backgroundColor": "#0A0909",
-            "android": { "adjustMarginsForEdgeToEdge": "auto" },
-            "plugins": { "SystemBars": { "insetsHandling": "css" } }
+            "android": { "adjustMarginsForEdgeToEdge": "disable" },
+            "plugins": { "SystemBars": { "insetsHandling": "disable" } }
           }
           EOF_CFG
 
@@ -83,6 +83,10 @@ jobs:
           package __PACKAGE__;
 
           import android.os.Bundle;
+          import android.view.View;
+          import androidx.core.graphics.Insets;
+          import androidx.core.view.ViewCompat;
+          import androidx.core.view.WindowInsetsCompat;
           import com.getcapacitor.BridgeActivity;
 
           public class MainActivity extends BridgeActivity {
@@ -90,6 +94,15 @@ jobs:
               public void onCreate(Bundle savedInstanceState) {
                   registerPlugin(PowerPlugin.class);
                   super.onCreate(savedInstanceState);
+                  // Deja la app entre la barra de estado y la barra de gestos (sin quedar tapada)
+                  View content = findViewById(android.R.id.content);
+                  ViewCompat.setOnApplyWindowInsetsListener(content, (v, insets) -> {
+                      Insets i = insets.getInsets(WindowInsetsCompat.Type.systemBars()
+                              | WindowInsetsCompat.Type.displayCutout() | WindowInsetsCompat.Type.ime());
+                      v.setPadding(i.left, i.top, i.right, i.bottom);
+                      return WindowInsetsCompat.CONSUMED;
+                  });
+                  ViewCompat.requestApplyInsets(content);
               }
           }
           EOF_MAIN
