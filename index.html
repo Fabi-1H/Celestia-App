@@ -1319,6 +1319,12 @@ nav.bottom button.active .jpn{color:rgba(255,255,255,.55);}
 .st2-sec{font-size:15px;}
 .st2-tabs button{font-size:11.5px;white-space:nowrap;padding:9px 2px;}
 
+/* cuando "Siguiendo" aparece, las cuatro píldoras se compactan para que quepan en el ancho del teléfono */
+.tabs{scrollbar-width:none;}.tabs::-webkit-scrollbar{display:none;}
+.tabs:has(.tab-seg.open){gap:5px;padding-left:12px;padding-right:12px;}
+.tabs:has(.tab-seg.open) .tab{padding-left:10px;padding-right:10px;font-size:12.5px;}
+.tabs:has(.tab-seg.open) .tab-seg-btn{padding-left:10px;padding-right:10px;font-size:12.5px;}
+#tabsBar .tab-seg.open .tab-follow{padding-left:10px;padding-right:10px;max-width:110px;}
 /* ===== píldoras con indicador deslizante ===== */
 .pill-seg{position:relative;display:flex;gap:4px;}
 .pill-seg .pill-thumb{position:absolute;top:4px;bottom:4px;left:0;width:0;opacity:0;border-radius:14px;background:linear-gradient(180deg,#fff,#d9d4d5);z-index:0;
@@ -5450,7 +5456,7 @@ function renderAppSettings(main){
       ${row(ic('<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>'),'Almacenamiento y datos','Borrar estadísticas de reproducción guardadas en este dispositivo',"confirmClearHistory()")}
       <div class="app-settings-row tone-row" data-txt="${escapeHtml(artNorm('Apariencia tono de grises fondo'))}" style="cursor:default;">${ic('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>')}<div style="flex:1;min-width:0;"><div class="t">Apariencia</div><div class="s">Tono de grises de toda la app</div></div>
         <div class="tone-pick">${TONES.map(t=>`<button class="tone-sw ${toneNow()===t.id?'on':''}" onclick="setTone('${t.id}')"><i style="background:${t.sw}"></i><span>${t.name}</span></button>`).join('')}</div></div>
-      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.10.24-a) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
+      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.10.24-c) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
     </div>
   `;
 }
@@ -7027,9 +7033,18 @@ function lyricStrSim(a,b){
 async function fetchLyricsFor(artist, title){
   try{
     const url = `https://lrclib.net/api/search?track_name=${encodeURIComponent(title)}&artist_name=${encodeURIComponent(artist)}`;
-    const res = await fetch(url);
-    if(!res.ok) throw new Error('respuesta no válida');
-    const results = await res.json();
+    let results;
+    const http = NATIVE ? capPlug('CapacitorHttp') : null;
+    if(http){
+      // En la app de Android la petición sale por el sistema (sin las limitaciones del navegador interno)
+      const r = await http.get({url, headers:{'Accept':'application/json','Lrclib-Client':'Celestia'}, connectTimeout:15000, readTimeout:15000});
+      if(!r || r.status!==200) throw new Error('respuesta no válida');
+      results = (typeof r.data==='string') ? JSON.parse(r.data) : r.data;
+    }else{
+      const res = await fetch(url);
+      if(!res.ok) throw new Error('respuesta no válida');
+      results = await res.json();
+    }
     if(!results || !results.length) return {};
     // En vez de quedarnos con el primer resultado que tenga letra, elegimos el que más se
     // parece de verdad al artista y título buscados (así evitamos covers, versiones en vivo
