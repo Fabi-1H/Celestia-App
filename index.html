@@ -1338,6 +1338,21 @@ nav.bottom button.active .jpn{color:rgba(255,255,255,.55);}
 #dlgOk.danger{background:#d8cfcf;}
 /* listas largas: lo que está fuera de pantalla no se calcula ni se pinta hasta que se acerca */
 #main .row{content-visibility:auto;contain-intrinsic-size:auto 66px;}
+
+/* ===== identificar canciones ===== */
+.id-info{font-size:13.5px;line-height:1.45;color:rgba(255,255,255,.58);margin:2px 0 12px;}
+.id-list{display:flex;flex-direction:column;gap:8px;max-height:46vh;overflow-y:auto;margin-bottom:14px;}
+.id-row{display:flex;gap:12px;align-items:flex-start;background:var(--box,rgba(255,255,255,.06));border:1px solid var(--box-line,rgba(255,255,255,.07));border-radius:18px;padding:12px 14px;cursor:pointer;}
+.id-row .ck{flex-shrink:0;width:22px;height:22px;border-radius:8px;border:1.5px solid rgba(255,255,255,.28);display:flex;align-items:center;justify-content:center;margin-top:2px;transition:background .2s ease,border-color .2s ease;}
+.id-row.on .ck{background:#ece8e7;border-color:#ece8e7;}
+.id-row .ck svg{opacity:0;transition:opacity .2s ease;}
+.id-row.on .ck svg{opacity:1;}
+.id-row .tx{min-width:0;flex:1;font-size:13px;line-height:1.35;}
+.id-row .bf{color:rgba(255,255,255,.4);text-decoration:line-through;text-decoration-color:rgba(255,255,255,.22);overflow-wrap:anywhere;}
+.id-row .af{color:#f2eeef;font-weight:600;font-size:14.5px;margin-top:3px;overflow-wrap:anywhere;}
+.id-row .af small{display:block;font-weight:500;color:rgba(255,255,255,.55);font-size:12.5px;margin-top:1px;}
+.id-apply{width:100%;border:none;border-radius:16px;padding:15px;background:#ece8e7;color:#141112;font-family:inherit;font-size:15.5px;font-weight:700;cursor:pointer;}
+.id-apply:disabled{opacity:.4;}
 /* ===== píldoras con indicador deslizante ===== */
 .pill-seg{position:relative;display:flex;gap:4px;}
 .pill-seg .pill-thumb{position:absolute;top:4px;bottom:4px;left:0;width:0;opacity:0;border-radius:14px;background:linear-gradient(180deg,#fff,#d9d4d5);z-index:0;
@@ -2243,6 +2258,12 @@ html[data-tone="grafito"] .pf-banner::after,html[data-tone="ceniza"] .pf-banner:
     <h3>Canciones duplicadas <button onclick="closeOverlay('overlayDupes')">✕</button></h3>
     <div id="dupList" class="fus-list"></div>
   </div></div>
+  <div class="overlay" id="overlayIdent"><div class="sheet">
+    <h3>Identificar canciones <button onclick="closeOverlay('overlayIdent')">✕</button></h3>
+    <div id="identInfo" class="id-info"></div>
+    <div id="identList" class="id-list"></div>
+    <button class="id-apply" id="identApply" onclick="identApply()">Aplicar cambios</button>
+  </div></div>
   <input type="file" id="dataFileInput" class="hidden-input">
 
   <div class="overlay" id="overlayImportChoice"><div class="sheet">
@@ -2782,6 +2803,7 @@ async function handleImportedFiles(fileList){
   }
   await new Promise(r=>setTimeout(r,700));
   await fetchMissingLyrics(true); // luego busca la letra sincronizada de lo recién importado
+  try{ const n = idCandidates().length; if(n) setTimeout(()=>showToast(n+' canción(es) con datos dudosos: Ajustes → Identificar canciones'), 2400); }catch(e){}
 }
 document.getElementById('fileInput').addEventListener('change', (e)=>{ handleImportedFiles(e.target.files); e.target.value=''; });
 document.getElementById('folderInput').addEventListener('change', (e)=>{ handleImportedFiles(e.target.files); e.target.value=''; });
@@ -5592,10 +5614,11 @@ function renderAppSettings(main){
       ${row(ic('<path d="M12 3v12M7 10l5 5 5-5M4 21h16"/>'),'Copia de seguridad','Guarda tus playlists, me gusta, estadísticas y ajustes en un archivo',"exportBackup()")}
       ${row(ic('<path d="M12 21V9M7 14l5-5 5 5M4 3h16"/>'),'Restaurar copia o importar playlist','Elige un archivo de Celestia. Importa primero tus canciones',"openDataFile()")}
       ${row(ic('<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2h2"/>'),'Canciones duplicadas','Busca copias repetidas de una misma canción',"openDupes()")}
+      ${row(ic('<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3M8.5 11.5l2 2 3.5-4"/>'),'Identificar canciones','Completa título, artista y álbum de las canciones con datos dudosos ('+idCandidates().length+')',"identifySongs()")}
       ${row(ic('<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>'),'Almacenamiento y datos','Borrar estadísticas de reproducción guardadas en este dispositivo',"confirmClearHistory()")}
       <div class="app-settings-row tone-row" data-txt="${escapeHtml(artNorm('Apariencia tono de grises fondo'))}" style="cursor:default;">${ic('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>')}<div style="flex:1;min-width:0;"><div class="t">Apariencia</div><div class="s">Tono de grises de toda la app</div></div>
         <div class="tone-pick">${TONES.map(t=>`<button class="tone-sw ${toneNow()===t.id?'on':''}" onclick="setTone('${t.id}')"><i style="background:${t.sw}"></i><span>${t.name}</span></button>`).join('')}</div></div>
-      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.10.24-g) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
+      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.10.24-i) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
     </div>
   `;
 }
@@ -5697,16 +5720,25 @@ function loadCurrent(autoplay){
   currentTrack = currentQueue[currentIndex];
   if(!currentTrack) return;
   cancelCrossfade();
-  audio.src = currentTrack.url;
+  // Paso automático al terminar una canción: si la siguiente ya quedó cargada de antemano, entra sin hueco ni silencio
+  let pre = null;
+  if(autoplay && window.__lukaWhy==='auto' && nextPrep && nextPrep.track===currentTrack && nextPrep.el!==audio) pre = nextPrep.el;
+  nextPrep = null;
+  if(pre){
+    const old = audio; audio = pre;
+    try{ old.pause(); }catch(e){}
+  } else {
+    audio.src = currentTrack.url;
+    audio.currentTime = 0;
+  }
   applySpeed(audio);
-  audio.currentTime = 0;
   lastListenTick = null;
   fetchLyricsNowPlaying(currentTrack);
   playCounted = false;
   if(eqState.enabled || crossfadeState.enabled) ensureEQGraph(); // el audio normal no pasa por Web Audio, así sigue sonando en segundo plano
   const chain = chainFor(audio);
   if(chain) chain.gain.gain.value = 1;
-  if(autoplay){ resumeAudioCtx(); safePlay(audio); fadeInAudio(audio); } else { clearInterval(fadeInIv); if(!sleepFadeIv) audio.volume = normVol(currentTrack); }
+  if(autoplay){ resumeAudioCtx(); safePlay(audio); if(pre && !sleepFadeIv){ clearInterval(fadeInIv); audio.volume = normVol(currentTrack); } else fadeInAudio(audio); } else { clearInterval(fadeInIv); if(!sleepFadeIv) audio.volume = normVol(currentTrack); }
   normSchedule();
   try{ lukaTrackChanged(); }catch(e){}
   updatePlayerUI();
@@ -5716,6 +5748,7 @@ function loadCurrent(autoplay){
   saveSession();
   if(activeTab==='history') render();
   if(document.getElementById('overlayQueue').classList.contains('show')) renderQueueList();
+  lyricsOverlayTrackChanged();
 }
 function togglePlay(){
   finishCrossfade(); // si se pausa a mitad de un fundido, este termina al instante
@@ -5774,6 +5807,31 @@ function prevTrack(){
     window.__trkDir = -1;
     loadCurrent(true);
   });
+}
+
+/* ---- Paso sin hueco: la siguiente canción se carga en el segundo reproductor unos segundos antes de que acabe la actual ---- */
+let nextPrep = null;
+function prepareNextTrack(){
+  const nt = peekNextTrack();
+  if(!nt || repeatMode===1 || crossfading || xf) return;
+  if(nextPrep && nextPrep.track===nt) return;
+  const el = otherAudio();
+  try{
+    el.pause(); el.src = nt.url; el.preload = 'auto'; el.currentTime = 0; applySpeed(el); el.load();
+    nextPrep = {track:nt, el};
+  }catch(e){ nextPrep = null; }
+}
+/* si la pantalla de letras está abierta y cambia la canción, se pone la letra de la nueva */
+function lyricsOverlayTrackChanged(){
+  try{
+    const ov = document.getElementById('overlayLyrics');
+    if(!ov || !ov.classList.contains('show') || !currentTrack) return;
+    const wrap = document.getElementById('lyricsEditWrap');
+    if(wrap && wrap.style.display!=='none') return; // si está escribiendo una letra, no se le pisa
+    lastCardLrcIdx = -999; lastOverlayLrcIdx = -999;
+    openLyrics();
+    const sc = ov.querySelector('.lyrics-scroll'); if(sc) sc.scrollTop = 0;
+  }catch(e){}
 }
 /* animación de cambio de canción: portada y textos entran deslizando desde el lado de la dirección */
 let lastShownTrackId = null;
@@ -5846,7 +5904,7 @@ function startCrossfade(){
     currentTrack = nextT;
     lastListenTick = null; playCounted = false;
     fetchLyricsNowPlaying(currentTrack);
-    updatePlayerUI(); renderMini(); animateTrackChange(1); updateMediaSessionMetadata(); saveSession();
+    updatePlayerUI(); renderMini(); animateTrackChange(1); updateMediaSessionMetadata(); saveSession(); lyricsOverlayTrackChanged();
     if(activeTab==='history') render();
     if(document.getElementById('overlayQueue').classList.contains('show')) renderQueueList();
     crossfading = false;
@@ -5915,6 +5973,7 @@ function onAudioTimeUpdate(e){
     startCrossfade();
   }
   if(xf && performance.now()>=xf.endAt) finishCrossfade();
+  if(!crossfadeState.enabled && !xf && !audio.paused && isFinite(audio.duration) && audio.duration>12 && (audio.duration-audio.currentTime)<=10) prepareNextTrack();
   if(!document.hidden) updateLRCNow();
 }
 
@@ -8311,6 +8370,127 @@ async function dupRemove(id){ await excludeTrack(id); renderDupes(); }
 
 function openCreateSheet(){ document.getElementById('overlayCreate').classList.add('show'); }
 function comingSoon(name){ closeOverlay('overlayCreate'); showToast(name+' — próximamente'); }
+
+
+/* ============ IDENTIFICAR CANCIONES: completa título, artista y álbum buscando la canción en internet ============ */
+const ID_JUNK = /\s*[\(\[]\s*(?:official|oficial|lyrics?|letra|video|v[ií]deo|audio|visuali[sz]er|hd|4k|hq|mv|music video|clip|explicit|full album|con letra|lyric video)[^\)\]]*[\)\]]/gi;
+const ID_SITE = /(\.(com|net|org|co|io|me|cc|ru|info|biz|app|tv)\b|www\.|https?:|youtube|youtu\.be|spotify|download|y2mate|mp3|soundcloud|tubidy|zippy|vevo|\btopic\b|desconocid)/i;
+const ID_JUNK_T = new RegExp(ID_JUNK.source,'i');
+function idClean(s){ return String(s||'').replace(ID_JUNK,' ').replace(/\s*[-|–]\s*topic$/i,'').replace(/\s+/g,' ').trim(); }
+function idSuspicious(t){
+  if(!t || t.isPodcast) return false;
+  const ti = String(t.title||''), ar = String(t.artist||''), al = String(t.album||'');
+  return isUnknownName(ar) || ID_SITE.test(ar) || ID_SITE.test(al) || /\s[-–—]\s/.test(ti) || ID_JUNK_T.test(ti) || isUnknownName(al);
+}
+function idCandidates(){ return musicTracks().filter(idSuspicious); }
+async function idDeezer(a, t){
+  const q = a ? `artist:"${a.replace(/"/g,'')}" track:"${t.replace(/"/g,'')}"` : t;
+  let d = await jsonp('https://api.deezer.com/search?output=jsonp&limit=10&q='+encodeURIComponent(q));
+  let list = (d && Array.isArray(d.data)) ? d.data : [];
+  if(!list.length && a){ d = await jsonp('https://api.deezer.com/search?output=jsonp&limit=10&q='+encodeURIComponent(a+' '+t)); list = (d && Array.isArray(d.data)) ? d.data : []; }
+  return list;
+}
+function idPick(list, a, t, dur){
+  let best = null;
+  list.forEach(r=>{
+    if(!r || !r.title || !r.artist) return;
+    const ts = lyricStrSim(r.title, t);
+    let as = 0; if(a){ [a].concat(splitArtists(a)).forEach(x=>{ as = Math.max(as, lyricStrSim(r.artist.name, x)); }); }
+    let d = null; if(dur>0 && r.duration>0) d = Math.abs(r.duration - dur);
+    if(ts < 0.8) return;
+    if(a){ if(as < 0.6) return; if(d!==null && d>7) return; }
+    else { if(d===null ? ts<0.95 : d>4) return; }
+    const score = ts*1.2 + as - (d||0)*0.03;
+    if(!best || score>best.score) best = {r, score};
+  });
+  return best && best.r;
+}
+async function identifyOne(t){
+  const T0 = idClean(t.title);
+  const A0 = (isUnknownName(t.artist) || ID_SITE.test(t.artist)) ? '' : idClean(t.artist);
+  const base = idClean(String(t.name||'').replace(/\.[^/.]+$/,''));
+  const tries = [];
+  const add = (a,tt)=>{ a = (a||'').trim(); tt = (tt||'').trim(); if(!tt) return; if(!tries.some(x=>x.a===a && x.t===tt)) tries.push({a, t:tt}); };
+  if(A0 && T0) add(A0, T0);
+  [T0, base].forEach(src=>{ const m = src.split(/\s+[-–—]\s+/); if(m.length>=2){ add(m[0], m.slice(1).join(' - ')); add(m.slice(1).join(' - '), m[0]); } });
+  if(!tries.length) add(A0, T0);
+  for(const tr of tries.slice(0,4)){
+    const hit = idPick(await idDeezer(tr.a, tr.t), tr.a, tr.t, t.duration||0);
+    if(hit){
+      const before = {title:t.title||'', artist:t.artist||'', album:t.album||''};
+      const titleOk = !(/\s[-–—]\s/.test(before.title)) && before.title===idClean(before.title) && !ID_SITE.test(before.title);
+      const artistOk = before.artist && !isUnknownName(before.artist) && !ID_SITE.test(before.artist) && tr.a && lyricStrSim(before.artist, hit.artist.name)>=0.6;
+      const albumOk = before.album && !isUnknownName(before.album) && !ID_SITE.test(before.album);
+      const after = {
+        title: (titleOk && lyricStrSim(before.title, hit.title)>=0.8) ? before.title : hit.title,
+        artist: artistOk ? before.artist : hit.artist.name,
+        album: albumOk ? before.album : ((hit.album && hit.album.title) || before.album)
+      };
+      if(after.title===before.title && after.artist===before.artist && after.album===before.album) return null;
+      return {id:t.id, before, after};
+    }
+  }
+  return null;
+}
+let __identResults = [];
+async function identifySongs(){
+  if(window.__identRunning) return;
+  if(!netAllowed()){ showToast(isOfflineMode()?'Modo offline activado':'Sin conexión a internet'); return; }
+  const cands = idCandidates();
+  if(!cands.length){ showToast('Tus canciones ya tienen sus datos completos'); return; }
+  window.__identRunning = true;
+  closeOverlay('overlaySettings');
+  const progressEl = document.getElementById('importProgress'), titleEl = document.getElementById('importProgressTitle'), countEl = document.getElementById('importProgressCount'), fileEl = document.getElementById('importProgressFile'), barEl = document.getElementById('importProgressBar');
+  clearTimeout(window.__ipHideTimer); progressEl.classList.remove('done');
+  titleEl.textContent = 'Identificando canciones'; countEl.textContent = '0 / '+cands.length; fileEl.textContent = 'Solo se envían título y artista…'; barEl.style.width = '0%';
+  progressEl.classList.add('show');
+  const found = []; let done = 0, next = 0;
+  async function worker(){
+    while(next < cands.length){
+      const t = cands[next++];
+      fileEl.textContent = t.title || t.name;
+      try{ const r = await identifyOne(t); if(r) found.push(r); }catch(e){}
+      done++; countEl.textContent = done+' / '+cands.length; barEl.style.width = Math.round(done/cands.length*100)+'%';
+      await new Promise(r=>setTimeout(r,120));
+    }
+  }
+  await Promise.all([worker(), worker(), worker()]);
+  window.__identRunning = false;
+  progressEl.classList.add('done');
+  titleEl.textContent = found.length ? 'Listo para revisar' : 'Sin cambios';
+  fileEl.textContent = found.length ? found.length+' canción(es) con datos mejorados' : 'No encontré nada seguro para corregir';
+  window.__ipHideTimer = setTimeout(()=>progressEl.classList.remove('show'), 1600);
+  if(!found.length) return;
+  __identResults = found.map(r=>({...r, on:true}));
+  renderIdentList();
+  document.getElementById('overlayIdent').classList.add('show');
+}
+function renderIdentList(){
+  const info = document.getElementById('identInfo'), box = document.getElementById('identList');
+  const n = __identResults.filter(r=>r.on).length;
+  info.textContent = 'Encontré datos más completos para '+__identResults.length+' canción(es). Revisa y desmarca las que no quieras cambiar. Solo cambia cómo se ven en Celestia, no tus archivos.';
+  box.innerHTML = __identResults.map((r,i)=>`<div class="id-row ${r.on?'on':''}" onclick="identToggle(${i})"><div class="ck"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#141112" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div><div class="tx"><div class="bf">${escapeHtml(r.before.title)}${r.before.artist?' · '+escapeHtml(r.before.artist):''}${r.before.album?' · '+escapeHtml(r.before.album):''}</div><div class="af">${escapeHtml(r.after.title)}<small>${escapeHtml(r.after.artist)}${r.after.album?' · '+escapeHtml(r.after.album):''}</small></div></div></div>`).join('');
+  const b = document.getElementById('identApply'); b.disabled = !n; b.textContent = n ? 'Aplicar a '+n+' canción(es)' : 'Nada seleccionado';
+}
+function identToggle(i){ const r = __identResults[i]; if(!r) return; r.on = !r.on; renderIdentList(); }
+async function identApply(){
+  const list = __identResults.filter(r=>r.on); if(!list.length) return;
+  for(const r of list){
+    const t = tracks.find(x=>x.id===r.id); if(!t) continue;
+    t.title = r.after.title; t.artist = r.after.artist; t.album = r.after.album;
+    metaOverrides[t.name] = {...(metaOverrides[t.name]||{}), title:t.title, artist:t.artist, album:t.album};
+    idbUpdateTrackFields(t.id, {title:t.title, artist:t.artist, album:t.album});
+  }
+  await saveOverrides();
+  closeOverlay('overlayIdent');
+  __aCache = null; renderAll(); try{ updatePlayerUI(); }catch(e){}
+  showToast(list.length+' canción(es) actualizadas');
+  lsSet('celestia:lyrics-miss', {});
+  await new Promise(r=>setTimeout(r,900));
+  await fetchMissingArt(true);   // con los datos ya correctos, busca portadas
+  await new Promise(r=>setTimeout(r,500));
+  await fetchMissingLyrics(true); // y letras
+}
 
 /* ============ UTILIDADES ============ */
 function closeOverlay(id){ document.getElementById(id).classList.remove('show'); }
