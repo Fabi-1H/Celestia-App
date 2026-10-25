@@ -1351,6 +1351,10 @@ nav.bottom button.active .jpn{color:rgba(255,255,255,.55);}
 .id-row .bf{color:rgba(255,255,255,.4);text-decoration:line-through;text-decoration-color:rgba(255,255,255,.22);overflow-wrap:anywhere;}
 .id-row .af{color:#f2eeef;font-weight:600;font-size:14.5px;margin-top:3px;overflow-wrap:anywhere;}
 .id-row .af small{display:block;font-weight:500;color:rgba(255,255,255,.55);font-size:12.5px;margin-top:1px;}
+.id-miss{margin:6px 2px 0;padding:12px 14px;border-radius:16px;border:1px dashed rgba(255,255,255,.14);font-size:12.5px;line-height:1.4;color:rgba(255,255,255,.5);}
+.id-miss b{display:block;color:rgba(255,255,255,.72);margin-bottom:4px;font-size:13px;}
+.id-miss div{overflow-wrap:anywhere;}
+.id-miss .id-miss-n{margin-top:8px;color:rgba(255,255,255,.4);}
 .id-apply{width:100%;border:none;border-radius:16px;padding:15px;background:#ece8e7;color:#141112;font-family:inherit;font-size:15.5px;font-weight:700;cursor:pointer;}
 .id-apply:disabled{opacity:.4;}
 /* ===== píldoras con indicador deslizante ===== */
@@ -5618,7 +5622,7 @@ function renderAppSettings(main){
       ${row(ic('<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>'),'Almacenamiento y datos','Borrar estadísticas de reproducción guardadas en este dispositivo',"confirmClearHistory()")}
       <div class="app-settings-row tone-row" data-txt="${escapeHtml(artNorm('Apariencia tono de grises fondo'))}" style="cursor:default;">${ic('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>')}<div style="flex:1;min-width:0;"><div class="t">Apariencia</div><div class="s">Tono de grises de toda la app</div></div>
         <div class="tone-pick">${TONES.map(t=>`<button class="tone-sw ${toneNow()===t.id?'on':''}" onclick="setTone('${t.id}')"><i style="background:${t.sw}"></i><span>${t.name}</span></button>`).join('')}</div></div>
-      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.10.24-i) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
+      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.10.24-j) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
     </div>
   `;
 }
@@ -8387,8 +8391,13 @@ async function idDeezer(a, t){
   const q = a ? `artist:"${a.replace(/"/g,'')}" track:"${t.replace(/"/g,'')}"` : t;
   let d = await jsonp('https://api.deezer.com/search?output=jsonp&limit=10&q='+encodeURIComponent(q));
   let list = (d && Array.isArray(d.data)) ? d.data : [];
-  if(!list.length && a){ d = await jsonp('https://api.deezer.com/search?output=jsonp&limit=10&q='+encodeURIComponent(a+' '+t)); list = (d && Array.isArray(d.data)) ? d.data : []; }
+  if(!list.length){ d = await jsonp('https://api.deezer.com/search?output=jsonp&limit=10&q='+encodeURIComponent((a?a+' ':'')+t)); list = (d && Array.isArray(d.data)) ? d.data : []; }
   return list;
+}
+async function idItunes(a, t){
+  const d = await jsonp('https://itunes.apple.com/search?media=music&entity=song&limit=10&term='+encodeURIComponent((a?a+' ':'')+t));
+  const list = (d && Array.isArray(d.results)) ? d.results : [];
+  return list.map(r=>({title:r.trackName, artist:{name:r.artistName}, album:{title:r.collectionName}, duration:(r.trackTimeMillis||0)/1000}));
 }
 function idPick(list, a, t, dur){
   let best = null;
@@ -8398,41 +8407,61 @@ function idPick(list, a, t, dur){
     let as = 0; if(a){ [a].concat(splitArtists(a)).forEach(x=>{ as = Math.max(as, lyricStrSim(r.artist.name, x)); }); }
     let d = null; if(dur>0 && r.duration>0) d = Math.abs(r.duration - dur);
     if(ts < 0.8) return;
-    if(a){ if(as < 0.6) return; if(d!==null && d>7) return; }
+    if(a){ if(as < 0.6) return; if(d!==null){ const lim = (as>=0.85 && ts>=0.9) ? 30 : 7; if(d>lim) return; } }
     else { if(d===null ? ts<0.95 : d>4) return; }
-    const score = ts*1.2 + as - (d||0)*0.03;
+    const score = ts*1.2 + as - (d||0)*0.02;
     if(!best || score>best.score) best = {r, score};
   });
   return best && best.r;
 }
+function idStripParens(x){ return String(x||'').replace(/\s*[\(\[].*?[\)\]]/g,' ').replace(/\s+/g,' ').trim(); }
 async function identifyOne(t){
   const T0 = idClean(t.title);
   const A0 = (isUnknownName(t.artist) || ID_SITE.test(t.artist)) ? '' : idClean(t.artist);
   const base = idClean(String(t.name||'').replace(/\.[^/.]+$/,''));
   const tries = [];
   const add = (a,tt)=>{ a = (a||'').trim(); tt = (tt||'').trim(); if(!tt) return; if(!tries.some(x=>x.a===a && x.t===tt)) tries.push({a, t:tt}); };
-  if(A0 && T0) add(A0, T0);
-  [T0, base].forEach(src=>{ const m = src.split(/\s+[-–—]\s+/); if(m.length>=2){ add(m[0], m.slice(1).join(' - ')); add(m.slice(1).join(' - '), m[0]); } });
-  if(!tries.length) add(A0, T0);
-  for(const tr of tries.slice(0,4)){
-    const hit = idPick(await idDeezer(tr.a, tr.t), tr.a, tr.t, t.duration||0);
-    if(hit){
-      const before = {title:t.title||'', artist:t.artist||'', album:t.album||''};
-      const titleOk = !(/\s[-–—]\s/.test(before.title)) && before.title===idClean(before.title) && !ID_SITE.test(before.title);
-      const artistOk = before.artist && !isUnknownName(before.artist) && !ID_SITE.test(before.artist) && tr.a && lyricStrSim(before.artist, hit.artist.name)>=0.6;
-      const albumOk = before.album && !isUnknownName(before.album) && !ID_SITE.test(before.album);
-      const after = {
-        title: (titleOk && lyricStrSim(before.title, hit.title)>=0.8) ? before.title : hit.title,
-        artist: artistOk ? before.artist : hit.artist.name,
-        album: albumOk ? before.album : ((hit.album && hit.album.title) || before.album)
-      };
-      if(after.title===before.title && after.artist===before.artist && after.album===before.album) return null;
-      return {id:t.id, before, after};
+  const splits = [];
+  [T0, base].forEach(src=>{ const m = src.split(/\s+[-–—]\s+/); if(m.length>=2){ splits.push([m[0], m.slice(1).join(' - ')]); splits.push([m.slice(1).join(' - '), m[0]]); } });
+  const hasSplit = splits.length>0;
+  // si el título trae "Artista - Título", eso manda sobre el "artista" guardado (suele ser el canal o la página de descarga)
+  if(hasSplit){ splits.forEach(p=>add(p[0], p[1])); if(A0 && T0) add(A0, T0); }
+  else { if(A0 && T0) add(A0, T0); add('', T0); }
+  const dur = t.duration||0;
+  const used = tries.slice(0,3);
+  for(const tr of used){
+    const variants = [tr.t]; const sp = idStripParens(tr.t); if(sp && sp!==tr.t) variants.push(sp);
+    for(const tv of variants){
+      let hit = idPick(await idDeezer(tr.a, tv), tr.a, tv, dur);
+      if(!hit) hit = idPick(await idItunes(tr.a, tv), tr.a, tv, dur);
+      if(hit) return idBuild(t, tr, hit);
     }
   }
-  return null;
+  // sin coincidencia en internet: si el nombre es claramente "Artista - Título" y el artista guardado es dudoso, se separa por el nombre
+  const m = T0.split(/\s+[-–—]\s+/);
+  const al = String(t.album||'').trim(), ar = String(t.artist||'').trim();
+  if(m.length>=2 && (isUnknownName(ar) || ID_SITE.test(ar) || (ar && al && ar.toLowerCase()===al.toLowerCase()))){
+    const after = {title:m.slice(1).join(' - ').trim(), artist:m[0].trim(), album:(isUnknownName(al)||ID_SITE.test(al)||al.toLowerCase()===ar.toLowerCase())? 'Álbum desconocido' : al};
+    const before = {title:t.title||'', artist:ar, album:al};
+    if(after.title && after.artist && (after.title!==before.title || after.artist!==before.artist || after.album!==before.album)) return {id:t.id, before, after, local:true};
+  }
+  return {miss:true, id:t.id, title:t.title||t.name||'', artist:t.artist||''};
 }
-let __identResults = [];
+function idBuild(t, tr, hit){
+  const before = {title:t.title||'', artist:t.artist||'', album:t.album||''};
+  const titleOk = !(/\s[-–—]\s/.test(before.title)) && before.title===idClean(before.title) && !ID_SITE.test(before.title);
+  const artistOk = before.artist && !isUnknownName(before.artist) && !ID_SITE.test(before.artist) && tr.a && lyricStrSim(before.artist, hit.artist.name)>=0.6;
+  const albumOk = before.album && !isUnknownName(before.album) && !ID_SITE.test(before.album) && before.album.toLowerCase()!==before.artist.toLowerCase();
+  const hitTitle = (/[\(\[]/.test(tr.t) && !/[\(\[]/.test(hit.title)) ? tr.t : hit.title; // conserva "(Remix)" si el servicio no lo trae
+  const after = {
+    title: (titleOk && lyricStrSim(before.title, hit.title)>=0.8) ? before.title : hitTitle,
+    artist: artistOk ? before.artist : hit.artist.name,
+    album: albumOk ? before.album : ((hit.album && hit.album.title) || before.album)
+  };
+  if(after.title===before.title && after.artist===before.artist && after.album===before.album) return null;
+  return {id:t.id, before, after};
+}
+let __identResults = [], __identMiss = [];
 async function identifySongs(){
   if(window.__identRunning) return;
   if(!netAllowed()){ showToast(isOfflineMode()?'Modo offline activado':'Sin conexión a internet'); return; }
@@ -8444,12 +8473,12 @@ async function identifySongs(){
   clearTimeout(window.__ipHideTimer); progressEl.classList.remove('done');
   titleEl.textContent = 'Identificando canciones'; countEl.textContent = '0 / '+cands.length; fileEl.textContent = 'Solo se envían título y artista…'; barEl.style.width = '0%';
   progressEl.classList.add('show');
-  const found = []; let done = 0, next = 0;
+  const found = [], misses = []; let done = 0, next = 0;
   async function worker(){
     while(next < cands.length){
       const t = cands[next++];
       fileEl.textContent = t.title || t.name;
-      try{ const r = await identifyOne(t); if(r) found.push(r); }catch(e){}
+      try{ const r = await identifyOne(t); if(r && r.miss) misses.push(r); else if(r) found.push(r); }catch(e){ misses.push({id:t.id,title:t.title||t.name||'',artist:t.artist||''}); }
       done++; countEl.textContent = done+' / '+cands.length; barEl.style.width = Math.round(done/cands.length*100)+'%';
       await new Promise(r=>setTimeout(r,120));
     }
@@ -8457,10 +8486,11 @@ async function identifySongs(){
   await Promise.all([worker(), worker(), worker()]);
   window.__identRunning = false;
   progressEl.classList.add('done');
-  titleEl.textContent = found.length ? 'Listo para revisar' : 'Sin cambios';
+  titleEl.textContent = (found.length||misses.length) ? 'Listo para revisar' : 'Sin cambios';
   fileEl.textContent = found.length ? found.length+' canción(es) con datos mejorados' : 'No encontré nada seguro para corregir';
   window.__ipHideTimer = setTimeout(()=>progressEl.classList.remove('show'), 1600);
-  if(!found.length) return;
+  if(!found.length && !misses.length) return;
+  __identMiss = misses;
   __identResults = found.map(r=>({...r, on:true}));
   renderIdentList();
   document.getElementById('overlayIdent').classList.add('show');
@@ -8468,8 +8498,8 @@ async function identifySongs(){
 function renderIdentList(){
   const info = document.getElementById('identInfo'), box = document.getElementById('identList');
   const n = __identResults.filter(r=>r.on).length;
-  info.textContent = 'Encontré datos más completos para '+__identResults.length+' canción(es). Revisa y desmarca las que no quieras cambiar. Solo cambia cómo se ven en Celestia, no tus archivos.';
-  box.innerHTML = __identResults.map((r,i)=>`<div class="id-row ${r.on?'on':''}" onclick="identToggle(${i})"><div class="ck"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#141112" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div><div class="tx"><div class="bf">${escapeHtml(r.before.title)}${r.before.artist?' · '+escapeHtml(r.before.artist):''}${r.before.album?' · '+escapeHtml(r.before.album):''}</div><div class="af">${escapeHtml(r.after.title)}<small>${escapeHtml(r.after.artist)}${r.after.album?' · '+escapeHtml(r.after.album):''}</small></div></div></div>`).join('');
+  info.textContent = __identResults.length ? 'Encontré datos más completos para '+__identResults.length+' canción(es). Revisa y desmarca las que no quieras cambiar. Solo cambia cómo se ven en Celestia, no tus archivos.' : 'No encontré datos seguros para corregir.';
+  box.innerHTML = __identResults.map((r,i)=>`<div class="id-row ${r.on?'on':''}" onclick="identToggle(${i})"><div class="ck"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#141112" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div><div class="tx"><div class="bf">${escapeHtml(r.before.title)}${r.before.artist?' · '+escapeHtml(r.before.artist):''}${r.before.album?' · '+escapeHtml(r.before.album):''}</div><div class="af">${escapeHtml(r.after.title)}<small>${escapeHtml(r.after.artist)}${r.after.album?' · '+escapeHtml(r.after.album):''}${r.local?' · por el nombre del archivo':''}</small></div></div></div>`).join('') + (__identMiss.length ? `<div class="id-miss"><b>Sin identificar (${__identMiss.length})</b>${__identMiss.slice(0,14).map(m=>'<div>'+escapeHtml(m.title)+(m.artist?' · '+escapeHtml(m.artist):'')+'</div>').join('')}${__identMiss.length>14?'<div>…</div>':''}<div class="id-miss-n">No hubo una coincidencia segura en internet. Puedes corregirlas a mano desde el menú ⋮ de la canción → Editar información.</div></div>` : '');
   const b = document.getElementById('identApply'); b.disabled = !n; b.textContent = n ? 'Aplicar a '+n+' canción(es)' : 'Nada seleccionado';
 }
 function identToggle(i){ const r = __identResults[i]; if(!r) return; r.on = !r.on; renderIdentList(); }
