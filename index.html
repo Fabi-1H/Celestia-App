@@ -2819,6 +2819,27 @@ function artNorm(x){
   return (x||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')
     .replace(/\(.*?\)|\[.*?\]/g,' ').replace(/&/g,' and ').replace(/[^a-z0-9]+/g,' ').trim();
 }
+function isGenericAlbum(n, artist){
+  n = String(n||'').trim();
+  if(!n || isUnknownName(n)) return true;
+  if(artist && akey(n)===akey(artist)) return true; // álbum = nombre del canal/artista: no dice nada
+  if(typeof ID_SITE!=='undefined' && ID_SITE.test(n)) return true;
+  return /(grandes?\s+[eé]xitos|greatest\s+hits|best\s+of|the\s+best|lo\s+mejor|[eé]xitos|\bhits\b|essentials?|collection|colecci[oó]n|recopilaci[oó]n|compilation|singles?|sencillos?|\bmix\b|playlist|top\s*\d+|various|varios|ultimate|anthology|antolog[ií]a|\d+\s+a[nñ]os|\bvol\.?\s*\d*\b)/i.test(n);
+}
+async function songCoverLookup(t){
+  const artist = artistDisplayName(t.artist);
+  let title = String(t.title||'').replace(/\s*[\(\[]\s*(?:official|oficial|lyrics?|letra|video|v[ií]deo|audio|visuali[sz]er|hd|4k|hq|mv|explicit)[^\)\]]*[\)\]]/gi,' ').replace(/\s+/g,' ').trim();
+  const variants = [title]; const sp = title.replace(/\s*[\(\[].*?[\)\]]/g,' ').replace(/\s+/g,' ').trim(); if(sp && sp!==title) variants.push(sp);
+  let anyOk = false;
+  for(const tv of variants){
+    for(const src of [deezerCover, itunesCover]){
+      const r = await src(artist, '', tv);
+      if(!r.ok) continue; anyOk = true;
+      if(r.url) return {ok:true, url:r.url};
+    }
+  }
+  return {ok:anyOk, url:null};
+}
 function artLike(a,b){
   a = artNorm(a); b = artNorm(b);
   if(!a || !b) return false;
@@ -3052,6 +3073,7 @@ function artistGroups(){
 let artRunning = false;
 async function fetchMissingArt(showCard){
   if(artRunning || !artOnlineEnabled()) return null;
+  if(lsGet('celestia:art-miss-v', 0) < 2){ lsSet('celestia:art-miss', {}); lsSet('celestia:art-miss-v', 2); } // una vez: reintenta lo que antes no se encontró (ahora también se busca por canción)
   if(!netAllowed()) return {offline:true, total:0};
   const miss = lsGet('celestia:art-miss', {});
   const now = Date.now(), COOL = 7*24*3600*1000;
@@ -3059,16 +3081,16 @@ async function fetchMissingArt(showCard){
   const groups = {};
   // canciones sueltas sin álbum conocido: solo se buscan mientras no tengan ya alguna miniatura
   musicTracks().forEach(t=>{
-    if(t.cover || isUnknownName(t.artist) || !isUnknownName(t.album)) return;
+    if(t.cover || isUnknownName(t.artist) || !isGenericAlbum(t.album, t.artist)) return;
     const key = 'so|'+artNorm(t.artist)+'|'+artNorm(t.title);
-    if(!groups[key]) groups[key] = {key, unknownAlbum:true, artist:t.artist, album:t.album, title:t.title, tracks:[]};
+    if(!groups[key]) groups[key] = {key, unknownAlbum:true, artist:artistDisplayName(t.artist), album:'', title:t.title, tracks:[]};
     groups[key].tracks.push(t);
   });
   // álbumes con nombre conocido: se buscan siempre, aunque los archivos ya traigan una miniatura
   // propia (a menudo de una sola canción, o de un video), porque lo que queremos es la portada
   // oficial del álbum — igual que con la foto de los artistas. Una vez encontrada, no se repite.
   getAlbums().forEach(al=>{
-    if(isUnknownName(al.artist) || isUnknownName(al.album)) return;
+    if(isUnknownName(al.artist) || isGenericAlbum(al.album, al.artist)) return; // álbumes genéricos ("Grandes éxitos"…) se buscan por canción
     const key = 'al|'+artNorm(al.artist)+'|'+artNorm(al.album);
     if(isAlbumManual(al.artist, al.album) || isAlbumAutoDone(key)) return;
     groups[key] = {key, unknownAlbum:false, artist:al.artist, album:al.album, title:null, tracks: al.tracks};
@@ -3115,7 +3137,19 @@ async function fetchMissingArt(showCard){
         if(g.unknownAlbum) await applyCover(g.tracks, url);
         else { await applyAlbumCover(g.tracks, url); markAlbumAutoDone(g.key); }
         stats.covers++; dirty = true;
-      } else if(anyOk && allOk) miss[g.key] = Date.now();
+      } else if(anyOk && allOk){
+        // el álbum no apareció (nombre raro o equivocado): se busca la portada de cada canción por su título y artista
+        let got = 0;
+        if(!g.unknownAlbum){
+          for(const t of g.tracks){
+            if(t.cover) continue;
+            let sr = null; try{ sr = await songCoverLookup(t); }catch(e){}
+            if(sr && sr.url){ await applyCover([t], sr.url); got++; }
+          }
+        }
+        if(got){ stats.covers += got; dirty = true; markAlbumAutoDone(g.key); }
+        else miss[g.key] = Date.now();
+      }
       return anyOk;
     }
     const r = await deezerArtistImage(j.a);
@@ -3891,11 +3925,25 @@ function renderLikedDetail(main){
     ${liked.length? liked.map((t,i)=>trackRow(t,{showAlbum:true, queueExpr:"'liked'", animStyle: anim?`animation:rowEditIn .38s ease both;animation-delay:${Math.min(i*0.04,0.4)}s;`:''})).join('') : `<div class="lk-empty"><span class="jp0">愛</span><p>Toca el corazón dentro del reproductor para guardar canciones aquí.</p></div>`}`;
 }
 
+const __esCollator = new Intl.Collator('es',{sensitivity:'base'});
 function renderSongs(main){
-  const list = musicTracks().slice().sort((a,b)=>a.title.localeCompare(b.title,'es',{sensitivity:'base'}));
+  const list = musicTracks().slice().sort((a,b)=>__esCollator.compare(a.title||'',b.title||''));
   if(list.length===0){ main.innerHTML = emptyState(noteIcon,'Sin canciones','Importa archivos de audio desde tu celular.','Importar música'); return; }
+  // Las primeras filas salen al instante (la animación de la pestaña no se traba) y el resto se agrega en tandas
+  const FIRST = 24, STEP = 60;
   main.innerHTML = `<div class="section-title"><span>Todas las canciones<span class="jp">曲</span></span><span class="see-all" onclick="openImport()">+ Agregar</span></div>
-    ${list.map(t=>trackRow(t,{showAlbum:true})).join('')}`;
+    ${list.slice(0,FIRST).map(t=>trackRow(t,{showAlbum:true})).join('')}`;
+  if(list.length<=FIRST) return;
+  const token = main.__songsTok = (main.__songsTok||0)+1;
+  let i = FIRST;
+  const later = (fn)=>{ if(window.requestIdleCallback) requestIdleCallback(fn,{timeout:250}); else setTimeout(fn,40); };
+  const step = ()=>{
+    if(main.__songsTok!==token || activeTab!=='songs') return;
+    main.insertAdjacentHTML('beforeend', list.slice(i,i+STEP).map(t=>trackRow(t,{showAlbum:true})).join(''));
+    i += STEP;
+    if(i<list.length) later(step);
+  };
+  later(step);
 }
 const podcastIcon = `<svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#5C5254" stroke-width="1.6"><path d="M12 14a3 3 0 003-3V6a3 3 0 00-6 0v5a3 3 0 003 3z"/><path d="M19 11a7 7 0 01-14 0M12 18v3"/></svg>`;
 function renderPodcasts(main){
@@ -3984,7 +4032,7 @@ function renderArtists(main){
 const A_STRONG = /\s*;\s*|\s+(?:feat\.?|ft\.?|featuring)\s+|\s+x\s+/i;
 const A_WEAK = /\s*,\s*|\s+&\s+|\s+y\s+|\s*\/\s*|\s+\+\s+/i;
 function aKeyOf(raw){
-  let t = String(raw==null?'':raw).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim();
+  let t = String(raw==null?'':raw).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
   t = t.replace(/\s*-\s*topic$/,'');
   let c = t.replace(/[^a-z0-9]+/g,'');
   c = c.replace(/(?:vevo|official|oficial)$/,(m)=> c.length>m.length+2 ? '' : m);
@@ -4605,7 +4653,7 @@ function libArtFluid(item){
   if(item.type==='album'){ const al = item.al || getAlbums()[item.idx]; return trackArt(bestCoverTrack(al.tracks),160,true); }
   return artistArt(item.name,160,true);
 }
-function libLetter(name){ const c = (name||'#').normalize('NFD').replace(/[̀-ͯ]/g,'').charAt(0).toUpperCase(); return /[A-Z]/.test(c)? c : '#'; }
+function libLetter(name){ const c = (name||'#').normalize('NFD').replace(/[\u0300-\u036f]/g,'').charAt(0).toUpperCase(); return /[A-Z]/.test(c)? c : '#'; }
 function libItemHTML(item, view, i, anim){
   const st = anim? ` style="animation:rowEditIn .38s ease both;animation-delay:${Math.min(i*0.035,0.4)}s;"` : '';
   const click = libItemClick(item);
@@ -4616,7 +4664,7 @@ function libItemHTML(item, view, i, anim){
   return `<div class="lb-row ${item.type}" onclick="${click}"${st}><div class="lb-rart">${libArtFluid(item)}</div>
     <div class="lb-meta"><div class="lb-t">${escapeHtml(item.name)}</div><div class="lb-s">${escapeHtml(item.type==='album'? item.sub+' · '+item.extra : item.sub)}</div></div><span class="lb-chev">›</span></div>`;
 }
-function libNorm(x){ return String(x||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase(); }
+function libNorm(x){ return String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase(); }
 function libContentHTML(anim){
   const f = window.__libFilter, view = libGet('view'), sort = libGet('sort');
   const q = libNorm((window.__libQuery||'').trim());
@@ -5622,7 +5670,7 @@ function renderAppSettings(main){
       ${row(ic('<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>'),'Almacenamiento y datos','Borrar estadísticas de reproducción guardadas en este dispositivo',"confirmClearHistory()")}
       <div class="app-settings-row tone-row" data-txt="${escapeHtml(artNorm('Apariencia tono de grises fondo'))}" style="cursor:default;">${ic('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>')}<div style="flex:1;min-width:0;"><div class="t">Apariencia</div><div class="s">Tono de grises de toda la app</div></div>
         <div class="tone-pick">${TONES.map(t=>`<button class="tone-sw ${toneNow()===t.id?'on':''}" onclick="setTone('${t.id}')"><i style="background:${t.sw}"></i><span>${t.name}</span></button>`).join('')}</div></div>
-      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.10.24-j) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
+      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.10.25-k) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
     </div>
   `;
 }
@@ -6046,6 +6094,11 @@ function onAudioError(e){
   if(e.target!==audio) return;
   if(crossfading) return;
   if(!currentTrack) return; // se vació el audio a propósito (excluir/clasificar): no es un error real
+  const er = audio.error;
+  if(er && er.code===1) return; // carga abortada a propósito (cambio de canción): no es un fallo
+  // Algunos archivos MP3 traen el final dañado: el reproductor da error en los últimos segundos en vez de "terminar".
+  // Si ya casi llegó al final, se trata como un final normal, sin avisos de error.
+  if(isFinite(audio.duration) && audio.duration>3 && audio.currentTime >= audio.duration-2.5){ consecutivePlayErrors = 0; onAudioEnded({target:audio}); return; }
   showToast('No se pudo reproducir "'+(currentTrack? currentTrack.title:'este archivo')+'" — formato no compatible');
   if(!currentQueue.length || currentQueue.length<2){ updatePlayIcons(); return; }
   consecutivePlayErrors++;
@@ -7204,6 +7257,7 @@ async function fetchSyncedLyricsAuto(){
 function fetchLyricsNowPlaying(t){
   // Prioriza la canción que se acaba de poner a sonar, en vez de esperarle su turno en el lote general.
   if(!t || t.isPodcast || isUnknownName(t.artist) || isUnknownName(t.title)) return;
+  if(lyricsProtected(t)) return;
   if(isLRC(t.lyrics) && lyricsMatchRecheckDone()) return;
   if(!lyricsOnlineEnabled() || !netAllowedForLyrics()) return;
   const key = 'ly|'+artNorm(t.artist)+'|'+artNorm(t.title);
@@ -7312,12 +7366,14 @@ function refreshLyricsIfCurrent(trackId){
   }
 }
 let lyricsRunning = false;
+// Letra guardada a mano por el usuario: esa nunca se reemplaza sola. Las que vienen dentro del archivo (a veces mal hechas) sí pueden mejorarse.
+function lyricsProtected(t){ const o = metaOverrides[t.name]; return !!(o && o.lyrics); }
 // Subimos este número cada vez que mejoramos qué tan bien elige fetchLyricsFor entre varios
 // resultados. La primera vez que corre la búsqueda automática después de eso, revisa TAMBIÉN
 // las canciones que ya tenían letra sincronizada (por si esa letra vieja quedó mal elegida) —
 // después vuelve a saltarse las que ya están sincronizadas, como siempre, para no golpear el
 // servicio gratuito en cada apertura de la app.
-const LYRICS_MATCH_VERSION = 3;
+const LYRICS_MATCH_VERSION = 4;
 function lyricsMatchRecheckDone(){ return lsGet('celestia:lyrics-match-v', 0) >= LYRICS_MATCH_VERSION; }
 async function fetchMissingLyrics(showCard){
   if(lyricsRunning || !lyricsOnlineEnabled()) return null;
@@ -7327,6 +7383,7 @@ async function fetchMissingLyrics(showCard){
   const now = Date.now(), COOL = 7*24*3600*1000;
   const jobs = musicTracks().filter(t=>{
     if(isUnknownName(t.artist) || isUnknownName(t.title)) return false;
+    if(lyricsProtected(t)) return false;
     if(isLRC(t.lyrics) && !recheckAll) return false;
     const key = 'ly|'+artNorm(t.artist)+'|'+artNorm(t.title);
     return !(miss[key] && now-miss[key]<COOL);
