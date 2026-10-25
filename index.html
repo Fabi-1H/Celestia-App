@@ -2849,7 +2849,31 @@ function artLike(a,b){
   return a.includes(b) || b.includes(a);
 }
 function isUnknownName(x){ return !x || /desconocid/i.test(x); }
-function jsonp(url, timeout){
+let __dzNext = 0;
+async function __dzSlot(){ const now = Date.now(); const at = Math.max(now, __dzNext); __dzNext = at + 260; if(at>now) await new Promise(r=>setTimeout(r, at-now)); } // Deezer limita ~50 consultas / 5 s
+async function jsonp(url, timeout){
+  const isDz = /api\.deezer\.com/.test(url);
+  for(let n=0; n<2; n++){
+    if(isDz) await __dzSlot();
+    let d = await jsonp1(url, timeout);
+    if(d && d.error && isDz && n===0){ await new Promise(r=>setTimeout(r, 1200)); continue; } // límite de consultas: espera y reintenta
+    return d;
+  }
+  return null;
+}
+async function jsonp1(url, timeout){
+  // en la app se usa la conexión nativa (sin CORS, más estable que el truco de <script>)
+  try{
+    const http = (typeof NATIVE!=='undefined' && NATIVE) ? capPlug('CapacitorHttp') : null;
+    if(http){
+      const u = url.replace(/([?&])output=jsonp&?/,'$1').replace(/[?&]$/,'');
+      const r = await http.get({url:u, headers:{'Accept':'application/json'}, connectTimeout:12000, readTimeout:12000});
+      if(r && r.status===200 && r.data!=null){ try{ return (typeof r.data==='string') ? JSON.parse(r.data) : r.data; }catch(e){} }
+    }
+  }catch(e){}
+  return jsonpScript(url, timeout);
+}
+function jsonpScript(url, timeout){
   return new Promise((resolve)=>{
     const cb = '__jp'+Math.random().toString(36).slice(2);
     const sc = document.createElement('script');
@@ -3318,7 +3342,7 @@ function syncTabsBar(){
     cancelAnimationFrame(window.__tabScrollRaf);
     const step = (now)=>{
       if(!bar) return;
-      bar.scrollLeft = isOpen ? bar.scrollWidth : 0;
+      if(!isOpen) bar.scrollLeft = 0; /* al abrir, Inicio se queda fijo y Podcast se corre a la derecha */
       if(now - t0 < 750) window.__tabScrollRaf = requestAnimationFrame(step);
     };
     window.__tabScrollRaf = requestAnimationFrame(step);
@@ -5670,7 +5694,7 @@ function renderAppSettings(main){
       ${row(ic('<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>'),'Almacenamiento y datos','Borrar estadísticas de reproducción guardadas en este dispositivo',"confirmClearHistory()")}
       <div class="app-settings-row tone-row" data-txt="${escapeHtml(artNorm('Apariencia tono de grises fondo'))}" style="cursor:default;">${ic('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>')}<div style="flex:1;min-width:0;"><div class="t">Apariencia</div><div class="s">Tono de grises de toda la app</div></div>
         <div class="tone-pick">${TONES.map(t=>`<button class="tone-sw ${toneNow()===t.id?'on':''}" onclick="setTone('${t.id}')"><i style="background:${t.sw}"></i><span>${t.name}</span></button>`).join('')}</div></div>
-      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.10.25-k) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
+      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.10.25-m) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
     </div>
   `;
 }
@@ -8441,7 +8465,7 @@ function idClean(s){ return String(s||'').replace(ID_JUNK,' ').replace(/\s*[-|�
 function idSuspicious(t){
   if(!t || t.isPodcast) return false;
   const ti = String(t.title||''), ar = String(t.artist||''), al = String(t.album||'');
-  return isUnknownName(ar) || ID_SITE.test(ar) || ID_SITE.test(al) || /\s[-–—]\s/.test(ti) || ID_JUNK_T.test(ti) || isUnknownName(al);
+  return isUnknownName(ar) || ID_SITE.test(ar) || ID_SITE.test(al) || /\s[-–—]\s/.test(ti) || ID_JUNK_T.test(ti) || isUnknownName(al) || /\b(lyrics?|letra|official|oficial|video|audio|visuali[sz]er)\b/i.test(ti) || /\s[-–—]\s|\w-\w/.test(ar) || isGenericAlbum(al, ar);
 }
 function idCandidates(){ return musicTracks().filter(idSuspicious); }
 async function idDeezer(a, t){
@@ -8472,7 +8496,46 @@ function idPick(list, a, t, dur){
   return best && best.r;
 }
 function idStripParens(x){ return String(x||'').replace(/\s*[\(\[].*?[\)\]]/g,' ').replace(/\s+/g,' ').trim(); }
+const ID_JUNK_W = /\b(official|oficial|lyrics?|letras?|video|videoclip|audio|visuali[sz]er|hd|hq|4k|mv|music|clip|explicit|full album|con letra|lyric|remastered|remasterizado|ft|feat|featuring|prod|topic|vevo)\b/g;
+function idNorm(x){ return ' '+String(x||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\.[a-z0-9]{2,4}$/,'').replace(/[\(\[][^\)\]]*[\)\]]/g,' ').replace(/[^a-z0-9ñ]+/g,' ').replace(ID_JUNK_W,' ').replace(/\s+/g,' ').trim()+' '; }
+async function idLrclib(q){
+  try{ const d = await lrcGetJSON('https://lrclib.net/api/search?q='+encodeURIComponent(q)); return (Array.isArray(d)?d:[]).slice(0,10).map(r=>({title:r.trackName, artist:{name:r.artistName}, album:{title:r.albumName}, duration:r.duration||0})); }catch(e){ return []; }
+}
+// El nombre del archivo es una sola frase ("Sanitarios - Caramelos de Cianuro lyrics"): se busca esa frase y se acepta el resultado
+// cuyo título Y artista aparecen dentro de ella, sin importar el orden ni la basura alrededor.
+function idPickText(list, query, dur){
+  const nq = idNorm(query); const qLen = nq.trim().length; if(qLen<4) return null;
+  let best = null;
+  list.forEach(r=>{
+    if(!r || !r.title || !r.artist || !r.artist.name) return;
+    const nt = idNorm(String(r.title).replace(/\s+[-–—]\s+.*$/,'')); const tl = nt.trim().length;
+    if(tl<2 || !nq.includes(nt)) return;
+    const names = [r.artist.name].concat(splitArtists(r.artist.name)).map(idNorm).filter(x=>x.trim().length>=2);
+    let al = 0; names.forEach(na=>{ if(nq.includes(na)) al = Math.max(al, na.trim().length); });
+    if(!al) return;
+    const cov = (tl+al+1)/qLen; if(cov < 0.7) return;
+    let d = null; if(dur>0 && r.duration>0) d = Math.abs(r.duration-dur);
+    if(d!==null && d>(cov>=0.9?30:12)) return;
+    const score = cov*2 - (d||0)*0.03 + tl*0.002;
+    if(!best || score>best.score) best = {r, score};
+  });
+  return best && best.r;
+}
 async function identifyOne(t){
+  const dur0 = t.duration||0;
+  const nameBase = String(t.name||'').replace(/\.[^/.]+$/,'');
+  const texts = [];
+  [nameBase, [t.title, (isUnknownName(t.artist)||ID_SITE.test(t.artist))?'':t.artist].join(' '), t.title].forEach(x=>{ const n = idNorm(x).trim(); if(n.length>=4 && !texts.includes(n)) texts.push(n); });
+  for(const q of texts.slice(0,3)){
+    for(const src of [()=>idDeezer('', q), ()=>idLrclib(q), ()=>idItunes('', q)]){
+      let list = []; try{ list = await src(); }catch(e){}
+      const hit = idPickText(list, q, dur0);
+      if(hit) return idBuild(t, {a:'', t:q}, hit) || {skip:true};
+    }
+  }
+  return identifyOneOld(t);
+}
+async function identifyOneOld(t){
   const T0 = idClean(t.title);
   const A0 = (isUnknownName(t.artist) || ID_SITE.test(t.artist)) ? '' : idClean(t.artist);
   const base = idClean(String(t.name||'').replace(/\.[^/.]+$/,''));
@@ -8507,8 +8570,8 @@ async function identifyOne(t){
 function idBuild(t, tr, hit){
   const before = {title:t.title||'', artist:t.artist||'', album:t.album||''};
   const titleOk = !(/\s[-–—]\s/.test(before.title)) && before.title===idClean(before.title) && !ID_SITE.test(before.title);
-  const artistOk = before.artist && !isUnknownName(before.artist) && !ID_SITE.test(before.artist) && tr.a && lyricStrSim(before.artist, hit.artist.name)>=0.6;
-  const albumOk = before.album && !isUnknownName(before.album) && !ID_SITE.test(before.album) && before.album.toLowerCase()!==before.artist.toLowerCase();
+  const artistOk = before.artist && !isUnknownName(before.artist) && !ID_SITE.test(before.artist) && (idNorm(before.artist).includes(idNorm(hit.artist.name)) || lyricStrSim(before.artist, hit.artist.name)>=0.6) && !/\s[-–—]\s|\w-\w/.test(before.artist);
+  const albumOk = before.album && !isUnknownName(before.album) && !ID_SITE.test(before.album) && before.album.toLowerCase()!==before.artist.toLowerCase() && !isGenericAlbum(before.album, before.artist);
   const hitTitle = (/[\(\[]/.test(tr.t) && !/[\(\[]/.test(hit.title)) ? tr.t : hit.title; // conserva "(Remix)" si el servicio no lo trae
   const after = {
     title: (titleOk && lyricStrSim(before.title, hit.title)>=0.8) ? before.title : hitTitle,
@@ -8535,12 +8598,12 @@ async function identifySongs(){
     while(next < cands.length){
       const t = cands[next++];
       fileEl.textContent = t.title || t.name;
-      try{ const r = await identifyOne(t); if(r && r.miss) misses.push(r); else if(r) found.push(r); }catch(e){ misses.push({id:t.id,title:t.title||t.name||'',artist:t.artist||''}); }
+      try{ const r = await identifyOne(t); if(r && r.miss) misses.push(r); else if(r && !r.skip) found.push(r); }catch(e){ misses.push({id:t.id,title:t.title||t.name||'',artist:t.artist||''}); }
       done++; countEl.textContent = done+' / '+cands.length; barEl.style.width = Math.round(done/cands.length*100)+'%';
       await new Promise(r=>setTimeout(r,120));
     }
   }
-  await Promise.all([worker(), worker(), worker()]);
+  await Promise.all([worker(), worker()]);
   window.__identRunning = false;
   progressEl.classList.add('done');
   titleEl.textContent = (found.length||misses.length) ? 'Listo para revisar' : 'Sin cambios';
@@ -8548,14 +8611,14 @@ async function identifySongs(){
   window.__ipHideTimer = setTimeout(()=>progressEl.classList.remove('show'), 1600);
   if(!found.length && !misses.length) return;
   __identMiss = misses;
-  __identResults = found.map(r=>({...r, on:true}));
+  __identResults = found.map(r=>({...r, on:!r.local})); // las separadas solo por el nombre (sin confirmar en internet) salen desmarcadas
   renderIdentList();
   document.getElementById('overlayIdent').classList.add('show');
 }
 function renderIdentList(){
   const info = document.getElementById('identInfo'), box = document.getElementById('identList');
   const n = __identResults.filter(r=>r.on).length;
-  info.textContent = __identResults.length ? 'Encontré datos más completos para '+__identResults.length+' canción(es). Revisa y desmarca las que no quieras cambiar. Solo cambia cómo se ven en Celestia, no tus archivos.' : 'No encontré datos seguros para corregir.';
+  info.textContent = __identResults.length ? 'Encontré datos más completos para '+__identResults.length+' canción(es). Revisa y desmarca las que no quieras cambiar (las que no pude confirmar en internet salen desmarcadas). Solo cambia cómo se ven en Celestia, no tus archivos.' : 'No encontré datos seguros para corregir.';
   box.innerHTML = __identResults.map((r,i)=>`<div class="id-row ${r.on?'on':''}" onclick="identToggle(${i})"><div class="ck"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#141112" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div><div class="tx"><div class="bf">${escapeHtml(r.before.title)}${r.before.artist?' · '+escapeHtml(r.before.artist):''}${r.before.album?' · '+escapeHtml(r.before.album):''}</div><div class="af">${escapeHtml(r.after.title)}<small>${escapeHtml(r.after.artist)}${r.after.album?' · '+escapeHtml(r.after.album):''}${r.local?' · por el nombre del archivo':''}</small></div></div></div>`).join('') + (__identMiss.length ? `<div class="id-miss"><b>Sin identificar (${__identMiss.length})</b>${__identMiss.slice(0,14).map(m=>'<div>'+escapeHtml(m.title)+(m.artist?' · '+escapeHtml(m.artist):'')+'</div>').join('')}${__identMiss.length>14?'<div>…</div>':''}<div class="id-miss-n">No hubo una coincidencia segura en internet. Puedes corregirlas a mano desde el menú ⋮ de la canción → Editar información.</div></div>` : '');
   const b = document.getElementById('identApply'); b.disabled = !n; b.textContent = n ? 'Aplicar a '+n+' canción(es)' : 'Nada seleccionado';
 }
