@@ -1776,6 +1776,27 @@ html[data-tone="grafito"] .pf-banner::after,html[data-tone="ceniza"] .pf-banner:
 #lukaSay .ls-t b .jp{margin-left:7px;letter-spacing:.1em;}
 #lukaSay #lukaSayTxt{font-size:14.5px;line-height:1.35;color:var(--text);font-weight:500;}
 @media (prefers-reduced-motion:reduce){.lu-card.on .lu-orb,.lu-card.on .lu-ol.s,.lu-card.on .lu-art,.lu-card.on .lu-rose.shine,.lu-card.on .lu-gl,.lu-eq i,#lukaSay .ls-em{animation:none !important;}}
+
+/* ===== Buscar: tarjetas de "Explorar todo" como cajones ===== */
+.xgrid{gap:10px;}
+.xcard{height:auto;min-height:84px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 13px 13px 15px;border-radius:20px;background:var(--box) !important;border:1px solid var(--box-line);color:var(--text);font-weight:600;}
+.xcard .xt{min-width:0;display:flex;flex-direction:column;gap:2px;}
+.xcard .xt b{font-size:15px;font-weight:700;line-height:1.15;}
+.xcard .xt small{font-size:11.5px;font-weight:500;color:var(--text-dim);}
+.xcard .xk{font-family:var(--font-jp);font-size:11px;letter-spacing:.18em;color:var(--text-faint);}
+.xcard .xa{position:static;right:auto;bottom:auto;transform:none;width:54px;height:54px;flex-shrink:0;border-radius:15px;box-shadow:none;border:1px solid var(--box-line);background:var(--surface);}
+.xcard .xa-jp{display:flex;align-items:center;justify-content:center;font-family:var(--font-jp);font-size:26px;font-weight:700;color:rgba(255,255,255,.2);}
+/* ===== Cuadros de información del reproductor ===== */
+#player .artist-note-card{background:none;border-radius:0;overflow:visible;margin-bottom:10px;}
+#player .artist-banner{aspect-ratio:16/10;border-radius:18px;margin:2px 0 14px;border:1px solid var(--pboxl);}
+#player .artist-note-card .artist-note,#player .artist-note{background:none;border-radius:0;padding:0;font-size:14px;line-height:1.62;color:rgba(255,255,255,.74);margin-bottom:10px;}
+#player .artist-note.clamp{display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden;}
+#player .artist-note-card .wiki-source{display:flex;align-items:center;justify-content:space-between;padding:0 0 8px;font-size:12px;}
+#player .wiki-source a{color:var(--text-dim);text-decoration:none;padding:6px 12px;border-radius:12px;background:var(--pbox);border:1px solid var(--pboxl);}
+#player .note-more{background:var(--pbox);border:1px solid var(--pboxl);color:var(--text);font-family:inherit;font-size:12px;font-weight:600;padding:6px 12px;border-radius:12px;}
+#player .song-facts{margin-bottom:10px;}
+#player .sf-note{font-size:12.5px;line-height:1.45;color:var(--text-faint);margin-bottom:6px;}
+#player .song-facts .credits-row span:last-child{text-align:right;}
 </style>
 </head>
 <body>
@@ -5210,19 +5231,21 @@ function searchLandingHTML(){
   const mt = musicTracks();
   const art = (t)=> t ? `<div class="xa">${trackArt(t,66)}</div>` : '';
   const artists = getArtists(), albums = getAlbums();
+  const nLiked = mt.filter(t=>t.liked).length, nPod = podcastTracks().length;
+  const pl_ = (n,one,many)=> n+' '+(n===1?one:many);
   const cats = [
-    ['Tus me gusta','openLiked()', art(mt.find(t=>t.liked))],
-    ['Canciones',"showTab('songs')", art(bestCoverTrack(mt)||mt[0])],
-    ['Artistas',"showTab('artists')", artists.length? `<div class="xa">${artistArt(artists[0],66)}</div>` : ''],
-    ['Álbumes',"showTab('albums')", albums.length? art(bestCoverTrack(albums[0].tracks)) : ''],
-    ['Playlists',"showTab('playlists')", pls.length? `<div class="xa">${playlistArtHTML(pls[0],66,{fluid:true,radius:'0'})}</div>` : ''],
-    ['Podcasts',"showTab('podcasts')", ''],
-    ['Estadísticas',"showTab('history')", '']
+    ['Tus me gusta','愛','openLiked()', art(mt.find(t=>t.liked)), pl_(nLiked,'canción','canciones')],
+    ['Canciones','曲',"showTab('songs')", art(bestCoverTrack(mt)||mt[0]), pl_(mt.length,'canción','canciones')],
+    ['Artistas','人',"showTab('artists')", artists.length? `<div class="xa">${artistArt(artists[0],66)}</div>` : '', pl_(artists.length,'artista','artistas')],
+    ['Álbumes','盤',"showTab('albums')", albums.length? art(bestCoverTrack(albums[0].tracks)) : '', pl_(albums.length,'álbum','álbumes')],
+    ['Playlists','集',"showTab('playlists')", pls.length? `<div class="xa">${playlistArtHTML(pls[0],66,{fluid:true,radius:'0'})}</div>` : '', pl_(playlists.length,'playlist','playlists')],
+    ['Podcasts','声',"showTab('podcasts')", '', pl_(nPod,'episodio','episodios')],
+    ['Estadísticas','数',"showTab('history')", '', 'Tu historial']
   ];
   return `
     ${pls.length ? `<div class="section-title">Tus playlists</div><div class="hgrid">${pls.map(p=>`<div class="pl-tall" onclick="openPlaylist('${jsq(p.id)}')"><div class="a">${playlistArtHTML(p,122,{fluid:true,radius:'0'})}</div><div class="g"></div><div class="n">${escapeHtml(p.name)}</div></div>`).join('')}</div>` : ''}
     <div class="section-title">Explorar todo<span class="jp">探索</span></div>
-    <div class="xgrid">${cats.map((c,i)=>`<div class="xcard" style="background:${SRCH_COLORS[i%SRCH_COLORS.length]}" onclick="${c[1]}">${c[0]}${c[2]}</div>`).join('')}</div>`;
+    <div class="xgrid">${cats.map(c=>`<div class="xcard" onclick="${c[2]}"><div class="xt"><span class="xk">${c[1]}</span><b>${c[0]}</b><small>${c[4]}</small></div>${c[3] || `<div class="xa xa-jp">${c[1]}</div>`}</div>`).join('')}</div>`;
 }
 function srchNorm(x){ return String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase(); }
 let searchFilter = 'all';
@@ -5694,7 +5717,7 @@ function renderAppSettings(main){
       ${row(ic('<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>'),'Almacenamiento y datos','Borrar estadísticas de reproducción guardadas en este dispositivo',"confirmClearHistory()")}
       <div class="app-settings-row tone-row" data-txt="${escapeHtml(artNorm('Apariencia tono de grises fondo'))}" style="cursor:default;">${ic('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>')}<div style="flex:1;min-width:0;"><div class="t">Apariencia</div><div class="s">Tono de grises de toda la app</div></div>
         <div class="tone-pick">${TONES.map(t=>`<button class="tone-sw ${toneNow()===t.id?'on':''}" onclick="setTone('${t.id}')"><i style="background:${t.sw}"></i><span>${t.name}</span></button>`).join('')}</div></div>
-      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.10.25-m) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
+      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.10.25-n) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
     </div>
   `;
 }
@@ -6908,6 +6931,17 @@ function renderPlayerArtistSection(){
     });
   }
 }
+function noteMore(btn){ const n = btn.parentElement.previousElementSibling; if(!n) return; const c = n.classList.toggle('clamp'); btn.textContent = c ? 'Leer más' : 'Leer menos'; }
+function songFactsHTML(t){
+  if(!t) return '';
+  const rows = [];
+  const al = String(t.album||'').trim();
+  if(al && !isGenericAlbum(al, t.artist)) rows.push(['Álbum', al]);
+  if(t.duration>0) rows.push(['Duración', fmtTime(t.duration)]);
+  const n = trackPlayCount(t.id); rows.push(['Reproducciones', n ? n+(n===1?' vez':' veces') : 'Aún no la escuchas']);
+  if(t.addedAt){ try{ rows.push(['Agregada', new Date(t.addedAt).toLocaleDateString('es',{day:'numeric',month:'short',year:'numeric'})]); }catch(e){} }
+  return `<div class="song-facts"><div class="sf-note">No hay una reseña de esta canción en Wikipedia. Esto es lo que sé de ella:</div>`+rows.map(r=>`<div class="credits-row"><span class="role">${r[0]}</span><span>${escapeHtml(String(r[1]))}</span></div>`).join('')+`</div>`;
+}
 function renderArtistSectionBody(el, artist, wikiResult, loading, songResult, songLoading){
   const artistKey = akey(artist);
   const more = musicTracks().filter(t=>akey(t.artist)===artistKey && (!currentTrack || t.id!==currentTrack.id)).slice(0,10);
@@ -6920,11 +6954,11 @@ function renderArtistSectionBody(el, artist, wikiResult, loading, songResult, so
   } else if(songResult && songResult.extract){
     songHtml = `<div class="artist-note-card">
         ${songResult.thumbnail? `<div class="artist-banner"><img src="${songResult.thumbnail}" loading="lazy"></div>` : ''}
-        <div class="artist-note">${escapeHtml(songResult.extract)}</div>
-        <div class="wiki-source">Fuente: <a href="${songResult.pageUrl}" target="_blank" style="color:var(--text-faint);text-decoration:underline;">Wikipedia</a></div>
+        <div class="artist-note${songResult.extract.length>230?' clamp':''}">${escapeHtml(songResult.extract)}</div>
+        <div class="wiki-source"><a href="${songResult.pageUrl}" target="_blank">Wikipedia ↗</a>${songResult.extract.length>230?'<button class="note-more" onclick="noteMore(this)">Leer más</button>':''}</div>
       </div>`;
   } else {
-    songHtml = `<div style="font-size:12.5px;color:var(--text-faint);margin-bottom:18px;">No encontramos información sobre esta canción en particular.</div>`;
+    songHtml = songFactsHTML(currentTrack);
   }
 
   let aboutHtml;
@@ -6933,8 +6967,8 @@ function renderArtistSectionBody(el, artist, wikiResult, loading, songResult, so
   } else if(wikiResult && wikiResult.extract){
     aboutHtml = `<div class="artist-note-card">
         ${(artImg||wikiResult.thumbnail)? `<div class="artist-banner"><img src="${artImg||wikiResult.thumbnail}" loading="lazy"></div>` : ''}
-        <div class="artist-note">${escapeHtml(wikiResult.extract)}</div>
-        <div class="wiki-source">Fuente: <a href="${wikiResult.pageUrl}" target="_blank" style="color:var(--text-faint);text-decoration:underline;">Wikipedia</a></div>
+        <div class="artist-note${wikiResult.extract.length>230?' clamp':''}">${escapeHtml(wikiResult.extract)}</div>
+        <div class="wiki-source"><a href="${wikiResult.pageUrl}" target="_blank">Wikipedia ↗</a>${wikiResult.extract.length>230?'<button class="note-more" onclick="noteMore(this)">Leer más</button>':''}</div>
       </div>`;
   } else {
     const offlineMsg = (typeof navigator!=='undefined' && navigator.onLine===false)
