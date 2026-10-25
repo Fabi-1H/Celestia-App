@@ -261,6 +261,19 @@ jobs:
           except Exception as e:
               warn('iconos: %s' % e)
 
+          # 4b) Icono pequeño de las notificaciones (silueta de luna, de un solo color: así lo exige Android)
+          try:
+              moon = '<?xml version="1.0" encoding="utf-8"?>\n<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">\n    <path android:fillColor="#FFFFFFFF" android:pathData="M12.6,3.1a9,9 0 1,0 8.3,12.2 7.2,7.2 0 0,1 -8.3,-12.2z"/>\n</vector>\n'
+              for nm in ('ic_stat_celestia', 'media3_notification_small_icon', 'ic_notification', 'ic_stat_notification'):
+                  write(os.path.join(RES, 'drawable', nm + '.xml'), moon)
+              print('Icono de notificacion generado')
+              for p in glob.glob(os.path.join(ROOT, 'node_modules', '@capgo', 'capacitor-media-session', 'android', '**', '*.*'), recursive=True):
+                  if p.endswith(('.java', '.kt')):
+                      for i, ln in enumerate(read(p).split('\n')):
+                          if 'SmallIcon' in ln or 'small_icon' in ln: print('DIAG icono:', os.path.basename(p), i + 1, ln.strip())
+          except Exception as e:
+              warn('icono notificacion: %s' % e)
+
           # 5) Colores de la barra del sistema
           try:
               cp = os.path.join(RES, 'values', 'colors.xml')
