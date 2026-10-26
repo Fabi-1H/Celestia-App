@@ -83,6 +83,9 @@ jobs:
           package __PACKAGE__;
 
           import android.os.Bundle;
+          import android.view.Window;
+          import androidx.core.view.WindowCompat;
+          import androidx.core.view.WindowInsetsControllerCompat;
           import com.getcapacitor.BridgeActivity;
 
           public class MainActivity extends BridgeActivity {
@@ -90,6 +93,14 @@ jobs:
               public void onCreate(Bundle savedInstanceState) {
                   registerPlugin(PowerPlugin.class);
                   super.onCreate(savedInstanceState);
+                  // En Android sin pantalla completa (muchos Samsung) las barras del sistema salían grises con iconos oscuros: se pintan como la app.
+                  try {
+                      Window w = getWindow();
+                      w.setStatusBarColor(0xFF0A0909);
+                      w.setNavigationBarColor(0xFF0A0909);
+                      WindowInsetsControllerCompat c = WindowCompat.getInsetsController(w, w.getDecorView());
+                      if (c != null) { c.setAppearanceLightStatusBars(false); c.setAppearanceLightNavigationBars(false); }
+                  } catch (Exception ignored) { }
               }
           }
           EOF_MAIN
@@ -145,6 +156,24 @@ jobs:
                                   Insets i = w.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
                                   top = i.top; bottom = i.bottom; left = i.left; right = i.right;
                               }
+                              // Si el sistema ya deja la app debajo de la barra de estado / de navegación (Android sin pantalla completa,
+                              // como muchos Samsung), esos márgenes ya están "gastados": solo se cuenta lo que la app realmente tapa.
+                              try {
+                                  View wv = getBridge().getWebView();
+                                  if (wv == null) wv = getActivity().findViewById(android.R.id.content);
+                                  if (wv != null && v.getWidth() > 0 && v.getHeight() > 0) {
+                                      int[] loc = new int[2];
+                                      wv.getLocationInWindow(loc);
+                                      int topGap = Math.max(0, loc[1]);
+                                      int bottomGap = Math.max(0, v.getHeight() - (loc[1] + wv.getHeight()));
+                                      int leftGap = Math.max(0, loc[0]);
+                                      int rightGap = Math.max(0, v.getWidth() - (loc[0] + wv.getWidth()));
+                                      top = Math.max(0, top - topGap);
+                                      bottom = Math.max(0, bottom - bottomGap);
+                                      left = Math.max(0, left - leftGap);
+                                      right = Math.max(0, right - rightGap);
+                                  }
+                              } catch (Exception ignored) { }
                               r.put("top", Math.round(top / d));
                               r.put("bottom", Math.round(bottom / d));
                               r.put("left", Math.round(left / d));
