@@ -113,6 +113,7 @@ jobs:
           import android.os.Build;
           import android.os.PowerManager;
           import android.provider.Settings;
+          import android.util.DisplayMetrics;
           import android.view.View;
           import androidx.core.graphics.Insets;
           import androidx.core.view.ViewCompat;
@@ -161,13 +162,16 @@ jobs:
                               try {
                                   View wv = getBridge().getWebView();
                                   if (wv == null) wv = getActivity().findViewById(android.R.id.content);
-                                  if (wv != null && v.getWidth() > 0 && v.getHeight() > 0) {
+                                  if (wv != null && wv.getWidth() > 0 && wv.getHeight() > 0) {
+                                      // Todo se mide desde los bordes reales de la pantalla (igual que los márgenes del sistema)
                                       int[] loc = new int[2];
-                                      wv.getLocationInWindow(loc);
+                                      wv.getLocationOnScreen(loc);
+                                      DisplayMetrics real = new DisplayMetrics();
+                                      getActivity().getWindowManager().getDefaultDisplay().getRealMetrics(real);
                                       int topGap = Math.max(0, loc[1]);
-                                      int bottomGap = Math.max(0, v.getHeight() - (loc[1] + wv.getHeight()));
+                                      int bottomGap = Math.max(0, real.heightPixels - (loc[1] + wv.getHeight()));
                                       int leftGap = Math.max(0, loc[0]);
-                                      int rightGap = Math.max(0, v.getWidth() - (loc[0] + wv.getWidth()));
+                                      int rightGap = Math.max(0, real.widthPixels - (loc[0] + wv.getWidth()));
                                       top = Math.max(0, top - topGap);
                                       bottom = Math.max(0, bottom - bottomGap);
                                       left = Math.max(0, left - leftGap);
