@@ -1823,7 +1823,7 @@ html[data-tone="grafito"] .pf-banner::after,html[data-tone="ceniza"] .pf-banner:
 body.luka-on .q-add{display:none !important;}
 body.luka-on #player .player-icons-row button[title="Fila"]{background:var(--pbox) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='19' height='19' viewBox='0 0 24 24' fill='none' stroke='%23ece8e7' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='5' y='11' width='14' height='10' rx='2.5'/%3E%3Cpath d='M8 11V8a4 4 0 018 0v3'/%3E%3C/svg%3E") center/19px no-repeat;}
 body.luka-on #player .player-icons-row button[title="Fila"] svg{opacity:0;}
-.pl-topbar{height:calc(60px + var(--sai-t,env(safe-area-inset-top)));padding-top:calc(8px + var(--sai-t,env(safe-area-inset-top)));display:flex;align-items:flex-start;}
+.pl-topbar{padding:calc(22px + var(--sai-t,env(safe-area-inset-top))) 0 12px;display:flex;align-items:center;}
 </style>
 </head>
 <body>
@@ -4849,7 +4849,7 @@ function renderPlaylistDetail(main){
   const canSearch = pt.length && !plEditMode && !plSelectMode;
   if(!canSearch){ plSearchOn = false; }
   main.innerHTML = `
-    <div class="pl-header-bg" id="plHeaderBg" style="margin-top:0;">
+    <div class="pl-header-bg" id="plHeaderBg" style="margin-top:calc(-6px - var(--sai-t,env(safe-area-inset-top)));">
     <div class="pl-topbar"><button class="stats-back" aria-label="Atrás" onclick="showTab('playlists')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button></div>
     <div class="pl-hero"><div class="sp-cover">${playlistArtHTML(p, 270, {clickable:true, fluid:true, radius:'0'})}</div>
     <div class="pl-hero-info"><div class="pl-kick">PLAYLIST<span class="jp">プレイリスト</span></div>
@@ -5756,7 +5756,7 @@ function renderAppSettings(main){
       ${row(ic('<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>'),'Almacenamiento y datos','Borrar estadísticas de reproducción guardadas en este dispositivo',"confirmClearHistory()")}
       <div class="app-settings-row tone-row" data-txt="${escapeHtml(artNorm('Apariencia tono de grises fondo'))}" style="cursor:default;">${ic('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>')}<div style="flex:1;min-width:0;"><div class="t">Apariencia</div><div class="s">Tono de grises de toda la app</div></div>
         <div class="tone-pick">${TONES.map(t=>`<button class="tone-sw ${toneNow()===t.id?'on':''}" onclick="setTone('${t.id}')"><i style="background:${t.sw}"></i><span>${t.name}</span></button>`).join('')}</div></div>
-      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.11.02-v) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
+      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.11.02-w) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
     </div>
   `;
 }
@@ -8771,6 +8771,68 @@ if(NATIVE){
   };
   document.addEventListener('touchend', end, {passive:true});
   document.addEventListener('touchcancel', end, {passive:true});
+})();
+
+/* gestos del reproductor: en la portada, abajo = cerrar · izquierda = siguiente · derecha = anterior (reinicia primero, como el botón) */
+(function(){
+  const pl = document.getElementById('player'); if(!pl) return;
+  let g = null;
+  pl.addEventListener('touchstart', e=>{
+    g = null; if(e.touches.length!==1) return;
+    const cover = e.target.closest('.p-cover'), head = e.target.closest('.phead');
+    if(!cover && !head) return;
+    if(e.target.closest('button, input')) return;
+    g = {x0:e.touches[0].clientX, y0:e.touches[0].clientY, t0:Date.now(), axis:null, dx:0, dy:0, cover:!!cover};
+  }, {passive:true});
+  pl.addEventListener('touchmove', e=>{
+    if(!g) return; const t = e.touches[0]; g.dx = t.clientX-g.x0; g.dy = t.clientY-g.y0;
+    const cv = document.getElementById('playerArt');
+    if(!g.axis){
+      if(Math.max(Math.abs(g.dx),Math.abs(g.dy))<9) return;
+      if(Math.abs(g.dx)>Math.abs(g.dy)) g.axis = g.cover? 'x' : 'no'; else g.axis = g.dy>0? 'y' : 'no';
+      if(g.axis==='no'){ g=null; return; }
+      if(g.axis==='x' && cv) cv.style.transition='none';
+      if(g.axis==='y'){ pl.style.transition='none'; }
+    }
+    if(e.cancelable) e.preventDefault();
+    if(g.axis==='x' && cv){ cv.style.transform='translateX('+(g.dx*.7)+'px) rotate('+(g.dx/60)+'deg)'; cv.style.opacity=String(1-Math.min(Math.abs(g.dx)/320,.55)); }
+    if(g.axis==='y'){ pl.style.transform='translateY('+Math.max(0,g.dy)+'px)'; }
+  }, {passive:false});
+  const end = ()=>{
+    if(!g) return; const s = g; g = null; if(!s.axis) return;
+    const cv = document.getElementById('playerArt');
+    const v = Math.abs(s.axis==='x'? s.dx : s.dy)/Math.max(1,Date.now()-s.t0);
+    if(s.axis==='x'){
+      if(cv){ cv.style.transition='transform .28s cubic-bezier(.22,1,.36,1), opacity .28s ease'; cv.style.transform=''; cv.style.opacity=''; setTimeout(()=>{ cv.style.transition=''; },300); }
+      if(Math.abs(s.dx)>80 || (v>.5 && Math.abs(s.dx)>35)){ buzz(10); if(s.dx<0) nextTrack(); else prevTrack(); }
+    } else {
+      pl.style.transition='';
+      if(s.dy>130 || (v>.6 && s.dy>50)){ pl.style.transform=''; closePlayer(); }
+      else pl.style.transform='';
+    }
+  };
+  pl.addEventListener('touchend', end, {passive:true});
+  pl.addEventListener('touchcancel', end, {passive:true});
+})();
+/* letra: arrastrar hacia abajo desde la barra de arriba la cierra */
+(function(){
+  const ov = document.getElementById('overlayLyrics'); if(!ov) return;
+  const sh = ov.querySelector('.sheet'); let g = null;
+  ov.addEventListener('touchstart', e=>{
+    g = null; if(e.touches.length!==1 || !e.target.closest('.ly-top') || e.target.closest('button')) return;
+    g = {y0:e.touches[0].clientY, x0:e.touches[0].clientX, on:false, dy:0};
+  }, {passive:true});
+  ov.addEventListener('touchmove', e=>{
+    if(!g) return; const t = e.touches[0]; const dy = t.clientY-g.y0, dx = t.clientX-g.x0;
+    if(!g.on){ if(Math.abs(dx)>Math.abs(dy)||dy<-6){ g=null; return; } if(dy<9) return; g.on=true; sh.style.transition='none'; }
+    if(e.cancelable) e.preventDefault(); g.dy=Math.max(0,dy); sh.style.transform='translateY('+g.dy+'px)';
+  }, {passive:false});
+  const end = ()=>{
+    if(!g) return; const s=g; g=null; if(!s.on) return;
+    if(s.dy>120){ sh.style.transition='transform .22s ease-out'; sh.style.transform='translateY(100%)'; setTimeout(()=>{ closeOverlay('overlayLyrics'); setTimeout(()=>{ sh.style.transition=''; sh.style.transform=''; },480); },200); }
+    else { sh.style.transition='transform .25s cubic-bezier(.22,1,.36,1)'; sh.style.transform=''; setTimeout(()=>{ sh.style.transition=''; },260); }
+  };
+  ov.addEventListener('touchend', end, {passive:true}); ov.addEventListener('touchcancel', end, {passive:true});
 })();
 </script>
 </body>
