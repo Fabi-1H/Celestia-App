@@ -5756,7 +5756,8 @@ function renderAppSettings(main){
       ${row(ic('<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>'),'Almacenamiento y datos','Borrar estadísticas de reproducción guardadas en este dispositivo',"confirmClearHistory()")}
       <div class="app-settings-row tone-row" data-txt="${escapeHtml(artNorm('Apariencia tono de grises fondo'))}" style="cursor:default;">${ic('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>')}<div style="flex:1;min-width:0;"><div class="t">Apariencia</div><div class="s">Tono de grises de toda la app</div></div>
         <div class="tone-pick">${TONES.map(t=>`<button class="tone-sw ${toneNow()===t.id?'on':''}" onclick="setTone('${t.id}')"><i style="background:${t.sw}"></i><span>${t.name}</span></button>`).join('')}</div></div>
-      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.11.02-w) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
+      ${NATIVE? row(ic('<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>'),'Buscar actualizaciones','Revisa si hay una versión nueva de Celestia para instalar',"checkUpdate(true)") : ''}
+      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.11.03-x) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
     </div>
   `;
 }
@@ -8704,6 +8705,43 @@ if(NATIVE){
   window.addEventListener('resize', ()=>setTimeout(nativeInsets,120));
   window.addEventListener('orientationchange', ()=>setTimeout(nativeInsets,300));
 }
+/* ============ ACTUALIZACIONES (APK) ============ */
+const UPD_REPO = 'Fabi-1H/Celestia-App';
+async function updInstalled(){
+  try{ const A = capPlug('App'); const i = await A.getInfo(); const m = String(i.version||'').match(/(\d+)\s*$/); return m? +m[1] : (+i.build||0); }catch(e){ return 0; }
+}
+async function updLatest(){
+  const http = capPlug('CapacitorHttp'); if(!http) throw new Error('sin red nativa');
+  const r = await http.get({url:'https://api.github.com/repos/'+UPD_REPO+'/releases/tags/android-latest', headers:{Accept:'application/vnd.github+json'}, connectTimeout:9000, readTimeout:9000});
+  if(!r || r.status!==200) throw new Error('http '+(r&&r.status));
+  const j = typeof r.data==='string'? JSON.parse(r.data) : r.data;
+  const m = String((j&&j.body)||'').match(/1\.0\.(\d+)/);
+  const a = j && j.assets && j.assets.find(x=>/\.apk$/i.test(x.name));
+  return {n: m? +m[1] : 0, url: (a&&a.browser_download_url) || ('https://github.com/'+UPD_REPO+'/releases/download/android-latest/Celestia.apk')};
+}
+let __updBusy = false;
+async function checkUpdate(manual){
+  if(!NATIVE){ if(manual) showInfo('Actualizaciones','Esto solo aplica a la app de Android.'); return; }
+  if(__updBusy) return; __updBusy = true;
+  try{
+    if(!manual){ try{ const t = +localStorage.getItem('celestia:upd-t')||0; if(Date.now()-t < 6*3600e3) return; }catch(e){} }
+    const [cur, last] = await Promise.all([updInstalled(), updLatest()]);
+    try{ localStorage.setItem('celestia:upd-t', String(Date.now())); }catch(e){}
+    if(last.n > cur && cur>0){
+      let skip = 0; try{ skip = +localStorage.getItem('celestia:upd-skip')||0; }catch(e){}
+      if(!manual && skip===last.n) return;
+      const ok = await askConfirm('Hay una versión nueva', {msg:'Celestia 1.0.'+last.n+' está lista (tienes la 1.0.'+cur+'). Se descarga el archivo y Android te pide instalarlo; tu música y tus datos se conservan.', ok:'Descargar', cancel:'Ahora no'});
+      if(ok) openExternal(last.url);
+      else { try{ localStorage.setItem('celestia:upd-skip', String(last.n)); }catch(e){} }
+    } else if(manual){
+      showToast(cur>0? 'Ya tienes la última versión (1.0.'+cur+')' : 'No pude leer tu versión instalada');
+    }
+  }catch(e){
+    if(manual) showToast('No se pudo buscar: revisa tu conexión');
+  } finally { __updBusy = false; }
+}
+if(NATIVE) setTimeout(()=>checkUpdate(false), 7000);
+
 /* ============ INIT ============ */
 (async function init(){
   if('serviceWorker' in navigator && !NATIVE){
