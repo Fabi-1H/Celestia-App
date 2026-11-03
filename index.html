@@ -5757,7 +5757,7 @@ function renderAppSettings(main){
       <div class="app-settings-row tone-row" data-txt="${escapeHtml(artNorm('Apariencia tono de grises fondo'))}" style="cursor:default;">${ic('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>')}<div style="flex:1;min-width:0;"><div class="t">Apariencia</div><div class="s">Tono de grises de toda la app</div></div>
         <div class="tone-pick">${TONES.map(t=>`<button class="tone-sw ${toneNow()===t.id?'on':''}" onclick="setTone('${t.id}')"><i style="background:${t.sw}"></i><span>${t.name}</span></button>`).join('')}</div></div>
       ${NATIVE? row(ic('<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>'),'Buscar actualizaciones','Revisa si hay una versión nueva de Celestia para instalar',"checkUpdate(true)") : ''}
-      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.11.03-x) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
+      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.11.03-y) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
     </div>
   `;
 }
@@ -8742,6 +8742,17 @@ async function checkUpdate(manual){
 }
 if(NATIVE) setTimeout(()=>checkUpdate(false), 7000);
 
+/* botón del audífono con la app cerrada: Android abre Celestia y aquí se reanuda lo último que sonaba */
+function headsetStart(){
+  try{
+    if(!currentTrack || isPlaying) return;
+    togglePlay();
+  }catch(e){}
+}
+async function setupHeadsetStart(){
+  window.addEventListener('celestiaAutoplay', ()=>{ try{ const p = capPlug('CelestiaPower'); if(p && p.consumeAutoplay) p.consumeAutoplay().catch(()=>{}); }catch(e){} setTimeout(headsetStart, 250); });
+  try{ const p = capPlug('CelestiaPower'); const r = p && p.consumeAutoplay ? await p.consumeAutoplay() : null; if(r && r.autoplay) setTimeout(headsetStart, 400); }catch(e){}
+}
 /* ============ INIT ============ */
 (async function init(){
   if('serviceWorker' in navigator && !NATIVE){
@@ -8753,6 +8764,7 @@ if(NATIVE) setTimeout(()=>checkUpdate(false), 7000);
   refreshAvatarUI();
   setupMediaSession();
   restoreSession();
+  if(NATIVE) setupHeadsetStart();
   try{ if(navigator.storage && navigator.storage.persist) navigator.storage.persist(); }catch(e){} // pide que Android no borre tus canciones guardadas si falta espacio
   document.addEventListener('visibilitychange', ()=>{
     if(!document.hidden && audioCtx && audioCtx.state==='suspended' && currentTrack && !audio.paused){
