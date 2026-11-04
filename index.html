@@ -1919,6 +1919,32 @@ body.luka-on #player .player-icons-row button[title="Fila"] svg{opacity:0;}
 #stageVote .sv-b b{font-size:13.5px;line-height:1.25;max-width:100%;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
 #stageVote .sv-b:active{transform:scale(.97);background:#ece8e7;color:#141414;}
 #stageVote .sv-b:active i{color:#555;}
+
+/* Stage v3: cuadritos con la foto, barras de líquido, sin textos extra */
+.hm-stage .st-chip,.hm-stage .st-play,.hm-stage .st-names{display:none !important;}
+.hm-stage .st-kick{display:flex;align-items:center;}
+.hm-stage .st-eq{display:none;align-items:flex-end;gap:2px;height:11px;margin-left:9px;}
+.hm-stage .st-eq i{display:block;width:3px;height:100%;border-radius:2px;background:#ece8e7;transform-origin:bottom;animation:luEq 1s ease-in-out infinite;}
+.hm-stage .st-eq i:nth-child(2){animation-delay:-.4s;} .hm-stage .st-eq i:nth-child(3){animation-delay:-.75s;}
+.hm-stage.on .st-eq{display:flex;}
+.hm-stage .st-seal{top:50%;width:42px;height:42px;font-size:22px;border-radius:14px;}
+.hm-stage .st-side{position:absolute;z-index:3;top:36px;bottom:14px;width:112px;display:flex;flex-direction:column;justify-content:flex-end;gap:6px;}
+.hm-stage .st-side.a{left:14px;align-items:flex-start;}
+.hm-stage .st-side.b{right:14px;align-items:flex-end;text-align:right;}
+.hm-stage .st-sq{width:54px;height:54px;border-radius:15px;overflow:hidden;background:#161314;border:1px solid rgba(255,255,255,.16);box-shadow:0 6px 16px rgba(0,0,0,.4);flex-shrink:0;margin-bottom:auto;}
+.hm-stage .st-sq img,.hm-stage .st-sq>*{width:100%;height:100%;object-fit:cover;display:block;}
+.hm-stage .st-side b{font-size:14.5px;font-weight:700;line-height:1.15;max-width:100%;overflow:hidden;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;}
+.st-bar{position:relative;width:100%;height:15px;border-radius:999px;border:2px solid rgba(236,232,231,.92);padding:2px;box-sizing:border-box;display:flex;}
+.st-bar.r{justify-content:flex-end;}
+.st-bar .f{height:100%;min-width:0;border-radius:999px;background:#f2eeed;width:0;position:relative;transition:width 1.1s cubic-bezier(.3,1.5,.5,1);will-change:width;}
+.st-bar .f.down{transition:width .95s cubic-bezier(.5,0,.3,1);}
+.st-bar .f.up{animation:stSlosh 1.1s ease-out;}
+.st-bar .f.down{animation:stDrain .95s ease-in-out;}
+.st-bar .f::after{content:"";position:absolute;top:1px;left:12%;right:12%;height:28%;border-radius:999px;background:rgba(255,255,255,.55);opacity:.7;}
+@keyframes stSlosh{0%{transform:scaleY(1);}25%{transform:scaleY(.7);}55%{transform:scaleY(1.22);}80%{transform:scaleY(.94);}100%{transform:scaleY(1);}}
+@keyframes stDrain{0%{transform:scaleY(1);}40%{transform:scaleY(.78);}100%{transform:scaleY(1);}}
+#stageVote .sv-b.sel{background:#ece8e7;color:#141414;border-color:transparent;}
+#stageVote .sv-b.sel i{color:#555;}
 </style>
 </head>
 <body>
@@ -2223,7 +2249,6 @@ body.luka-on #player .player-icons-row button[title="Fila"] svg{opacity:0;}
     <div class="drawer-footer">Celestia — reproductor local<span class="jp">星の音楽</span></div>
   </div>
 
-  <div class="overlay" id="overlayStage"><div class="sheet" id="stageSheet"></div></div>
   <div class="overlay" id="overlayQueue"><div class="sheet">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;">
       <h3 style="margin:0;"><span class="mt-t"><span class="mt-k">列<span>COLA</span></span>Fila</span></h3>
@@ -4430,7 +4455,7 @@ function renderCollMenu(){
     h += spmOpt(SP_ICON.sparkle,'Crear portada','plMenuCover()',n++);
     if(p.cover) h += spmOpt(SP_ICON.refresh,'Restablecer portada','plMenuCoverReset()',n++);
     h += spmOpt(SP_ICON.trash,'Eliminar playlist','plMenuDelete()',n++);
-    if(list.length && !lukaIsOn()) h += spmOpt(SP_ICON.queue,'Agregar a la fila','collQueue()',n++);
+    if(list.length && !queueLocked()) h += spmOpt(SP_ICON.queue,'Agregar a la fila','collQueue()',n++);
     h += spmOpt(SP_ICON.plus,'Agregar a otra playlist','collAddPlaylist()',n++);
     h += spmOpt(SP_ICON.profileOff, feat ? 'Eliminar del perfil' : 'Agregar al perfil','plMenuProfile()',n++,{on:feat});
   } else if(c.kind==='album'){
@@ -4441,7 +4466,7 @@ function renderCollMenu(){
     if(isAlbumManual(c.artist, getAlbums()[c.idx].album)) h += spmOpt(SP_ICON.refresh,'Volver a la portada automática','collResetAlbumImage()',n++);
     h += spmOpt(SP_ICON.dl,'Descargar','collDownload()',n++);
     h += spmOpt(SP_ICON.user,'Ir al artista','collGoArtist()',n++);
-    if(!lukaIsOn()) h += spmOpt(SP_ICON.queue,'Agregar a la fila','collQueue()',n++);
+    if(!queueLocked()) h += spmOpt(SP_ICON.queue,'Agregar a la fila','collQueue()',n++);
     h += spmOpt(SP_ICON.radio,'Ir a la radio del álbum','collRadio()',n++);
     h += spmOpt(SP_ICON.plus,'Agregar a playlist','collAddPlaylist()',n++);
   } else {
@@ -4472,7 +4497,7 @@ function collLikeAll(){ closeOverlay('overlayCollMenu'); toggleLikeAll(); }
 function collDownload(){ closeOverlay('overlayCollMenu'); showToast('Ya está guardado en tu dispositivo'); }
 function collGoArtist(){ closeOverlay('overlayCollMenu'); openArtist(encA(window.__collCtx.artist)); }
 function collQueue(){
-  if(lukaIsOn()) return;
+  if(queueLocked()) return;
   const list = collTracks(); if(!list.length) return;
   closeOverlay('overlayCollMenu');
   if(!currentTrack){ playCollection(collExpr()); return; }
@@ -5852,7 +5877,7 @@ function renderAppSettings(main){
       <div class="app-settings-row tone-row" data-txt="${escapeHtml(artNorm('Apariencia tono de grises fondo'))}" style="cursor:default;">${ic('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>')}<div style="flex:1;min-width:0;"><div class="t">Apariencia</div><div class="s">Tono de grises de toda la app</div></div>
         <div class="tone-pick">${TONES.map(t=>`<button class="tone-sw ${toneNow()===t.id?'on':''}" onclick="setTone('${t.id}')"><i style="background:${t.sw}"></i><span>${t.name}</span></button>`).join('')}</div></div>
       ${NATIVE? row(ic('<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>'),'Buscar actualizaciones','Revisa si hay una versión nueva de Celestia para instalar',"checkUpdate(true)") : ''}
-      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.11.03-ac) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
+      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.11.04-ad) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
     </div>
   `;
 }
@@ -6349,7 +6374,7 @@ function seekTo(pct){ if(audio.duration) audio.currentTime = audio.duration*(pct
 
 /* ============ COLA DE REPRODUCCIÓN ============ */
 let queueEditMode = false;
-function openQueue(btn){ if(lukaIsOn()){ lukaLockHit(btn); return; } queueEditMode = false; renderQueueList(); document.getElementById('overlayQueue').classList.add('show'); }
+function openQueue(btn){ if(queueLocked()){ lukaLockHit(btn); return; } queueEditMode = false; renderQueueList(); document.getElementById('overlayQueue').classList.add('show'); }
 let queueEditHistory = [];
 let queueEditHistoryPos = 0;
 function toggleQueueEdit(){
@@ -7171,7 +7196,7 @@ function openTrackMenu(id, playlistId){
 }
 function playFromMenu(){ playTrack(menuTrack.id,'all'); }
 function addToQueueNext(track){
-  if(lukaIsOn()) return;
+  if(queueLocked()) return;
   if(!currentTrack){ playTrack(track.id,'all'); return; }
   currentQueue.splice(currentIndex+1, 0, track);
   buzz(12);
@@ -8098,7 +8123,8 @@ function lukaTrackChanged(){
   luka.played++;
 }
 /* mientras Luka elige, la fila queda cerrada: la gracia es no saber qué viene */
-function lukaSyncLock(){ try{ document.body.classList.toggle('luka-on', lukaIsOn()); }catch(e){} }
+function queueLocked(){ return lukaIsOn() || (String(window.__curExpr||'').startsWith('stage:') && !!currentTrack); }
+function lukaSyncLock(){ try{ document.body.classList.toggle('luka-on', queueLocked()); }catch(e){} }
 function lukaLockHit(el){ if(!el||!el.animate) return; try{ el.animate([{transform:'translateX(0)'},{transform:'translateX(-5px)'},{transform:'translateX(5px)'},{transform:'translateX(-3px)'},{transform:'translateX(0)'}],{duration:280,easing:'ease-out'}); }catch(e){} buzz&&buzz(10); }
 
 /* Cambios de texto de la tarjeta: se desvanece, la altura se anima y el texto nuevo aparece (sin saltos) */
@@ -8852,7 +8878,7 @@ async function setupHeadsetStart(){
   window.addEventListener('celestiaAutoplay', ()=>{ try{ const p = capPlug('CelestiaPower'); if(p && p.consumeAutoplay) p.consumeAutoplay().catch(()=>{}); }catch(e){} setTimeout(headsetStart, 250); });
   try{ const p = capPlug('CelestiaPower'); const r = p && p.consumeAutoplay ? await p.consumeAutoplay() : null; if(r && r.autoplay) setTimeout(headsetStart, 400); }catch(e){}
 }
-/* ============ STAGE: dos artistas, sus canciones intercaladas y tu favorita de cada ronda ============ */
+/* ============ STAGE: dos artistas, sus canciones intercaladas y un voto por ronda ============ */
 const STAGE_KEY = 'celestia:stages';
 function stageStore(){ return lsGet(STAGE_KEY, {}); }
 function stageSave(st){ lsSet(STAGE_KEY, st); }
@@ -8877,114 +8903,101 @@ function stageById(id){ return stageList().find(x=>x.id===id) || null; }
 function stageQueueOf(sg){ const q = []; for(let i=0;i<sg.n;i++){ q.push(sg.sa[i]); q.push(sg.sb[i]); } return q.filter(Boolean); }
 function stageRec(sg){ const r = stageStore()[sg.id] || {}; r.picks = (r.picks||[]).slice(0,sg.n); return r; }
 function stageScore(sg, rec){
-  let a=0,b=0,c=0; for(let i=0;i<sg.n;i++){ const p=(rec.picks||[])[i]; if(p==='A'){a++;c++;} else if(p==='B'){b++;c++;} }
-  return {a,b,c,done: !!rec.done || c>=sg.n};
+  let a=0,b=0; for(let i=0;i<sg.n;i++){ const p=(rec.picks||[])[i]; if(p==='A') a++; else if(p==='B') b++; }
+  return {a,b};
 }
-function stageStatus(sg){
-  const sc = stageScore(sg, stageRec(sg));
-  if(sc.done) return {kind:'done', a:sc.a, b:sc.b, w: sc.a>sc.b?'A':(sc.b>sc.a?'B':'T')};
-  if(sc.c>0) return {kind:'play', a:sc.a, b:sc.b, c:sc.c};
-  return {kind:'new'};
-}
-function stageInitial(n){ const m = String(n||'?').trim().match(/[A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9぀-ヿ一-鿿]/); return (m? m[0] : '?').toUpperCase(); }
 function stageIsCurrent(sg){ return !!currentTrack && String(window.__curExpr||'')==='stage:'+sg.id; }
+const STAGE_SQ = (a)=>`<div class="st-sq">${artistArt(a,64)}</div>`;
+function stageBarHTML(sg, side){
+  const sc = stageScore(sg, stageRec(sg)), v = side==='A'? sc.a : sc.b;
+  return `<div class="st-bar ${side==='B'?'r':''}" aria-hidden="true"><div class="f" data-stage="${sg.id}" data-side="${side}" style="width:${Math.round(100*v/sg.n)}%"></div></div>`;
+}
 function stageCardHTML(sg){
-  const st = stageStatus(sg), no = String(sg.no).padStart(2,'0');
-  const chip = st.kind==='done' ? 'Completo · ver tabla' : st.kind==='play' ? st.c+' de '+sg.n+' rondas votadas' : sg.n+' canciones de cada uno';
+  const no = String(sg.no).padStart(2,'0');
   const on = stageIsCurrent(sg) && isPlaying;
-  return `<div class="hm-stage ${st.kind}" onclick="openStage('${sg.id}')">
+  return `<div class="hm-stage ${on?'on':''}" data-stage="${sg.id}" onclick="stageTap('${sg.id}')" ontouchstart="stageHold('${sg.id}')" ontouchend="stageHoldEnd()" ontouchmove="stageHoldEnd()" ontouchcancel="stageHoldEnd()" oncontextmenu="return false">
     <div class="st-half a"></div>
     <div class="st-half b"></div>
     <div class="st-cut"></div>
-    <div class="st-kick">STAGE ${no}<span class="jp">ステージ</span></div>
+    <div class="st-kick">STAGE ${no}<span class="jp">ステージ</span><span class="st-eq" aria-hidden="true"><i></i><i></i><i></i></span></div>
     <div class="st-seal">対</div>
-    <div class="st-names"><b>${escapeHtml(sg.a)}</b><b class="r">${escapeHtml(sg.b)}</b></div>
-    <div class="st-chip">${chip}</div>
-    <button class="st-play ${on?'on':''}" data-stage="${sg.id}" onclick="event.stopPropagation();stageToggle('${sg.id}')" aria-label="Escuchar Stage">${on?SP_ICON.pause:SP_ICON.play}</button>
+    <div class="st-side a">${STAGE_SQ(sg.a)}<b>${escapeHtml(sg.a)}</b>${stageBarHTML(sg,'A')}</div>
+    <div class="st-side b">${STAGE_SQ(sg.b)}<b>${escapeHtml(sg.b)}</b>${stageBarHTML(sg,'B')}</div>
   </div>`;
 }
 /* ---- reproducción: las canciones completas, intercaladas A1 B1 A2 B2 … ---- */
-function stagePlay(sg, startId){
+function stagePlay(sg){
   const q = stageQueueOf(sg); if(!q.length) return;
   if(shuffleOn) toggleShuffle();   // el orden intercalado es la gracia: sin aleatorio
-  window.__stageQueue = q; window.__stageQueueId = sg.id;
-  playTrack(startId || q[0].id, 'stage:'+sg.id);
+  window.__stageQueue = q; window.__stageQueueId = sg.id; window.__stageAsked = null;
+  playTrack(q[0].id, 'stage:'+sg.id);
 }
-function stageToggle(id){
-  const sg = stageById(id); if(!sg) return;
+let stageHoldT = null, stageHeld = false;
+function stageHold(id){ stageHeld = false; clearTimeout(stageHoldT); stageHoldT = setTimeout(()=>{ stageHeld = true; stageAskReset(id); }, 650); }
+function stageHoldEnd(){ clearTimeout(stageHoldT); }
+async function stageAskReset(id){
+  buzz&&buzz(14);
+  const ok = await askConfirm('¿Reiniciar este Stage?', {msg:'Se borran tus votos y las barras se vacían.', ok:'Reiniciar'});
+  if(ok){ const st = stageStore(); delete st[id]; stageSave(st); stageBarsUpdate(); }
+}
+function stageTap(id){
+  if(stageHeld){ stageHeld = false; return; }
+  const sg = stageById(id); if(!sg){ showToast('Este Stage ya cambió'); return; }
   if(stageIsCurrent(sg) && currentTrack){ togglePlay(); } else stagePlay(sg);
 }
-function stageRoundOf(sg, t){ if(!t) return -1; for(let i=0;i<sg.n;i++){ if((sg.sa[i]&&sg.sa[i].id===t.id)||(sg.sb[i]&&sg.sb[i].id===t.id)) return i; } return -1; }
-/* ---- vista del Stage ---- */
-let stageCur = null;
-function openStage(id){
-  const sg = stageById(id); if(!sg){ showToast('Este Stage ya cambió'); return; }
-  stageCur = sg; stageRender();
-  document.getElementById('overlayStage').classList.add('show');
+/* barras: se llenan / vacían como líquido */
+function stageBarsUpdate(){
+  document.querySelectorAll('.st-bar .f').forEach(f=>{
+    const sg = stageList().find(x=>x.id===f.dataset.stage); if(!sg) return;
+    const sc = stageScore(sg, stageRec(sg)), v = f.dataset.side==='A'? sc.a : sc.b;
+    const w = Math.round(100*v/sg.n)+'%';
+    if(f.style.width===w) return;
+    const up = parseFloat(w) > (parseFloat(f.style.width)||0);
+    f.classList.remove('up','down'); void f.offsetWidth; f.classList.add(up?'up':'down');
+    f.style.width = w;
+  });
 }
-function stageHead(sg){
-  return `<h3><span class="mt-t"><span class="mt-k">対<span>STAGE ${String(sg.no).padStart(2,'0')}</span></span><span class="stg-ttl">${escapeHtml(sg.a)} <i class="stg-vs">vs</i> ${escapeHtml(sg.b)}</span></span><button onclick="closeOverlay('overlayStage')">✕</button></h3>`;
+function stageRefreshHome(){
+  if(activeTab!=='home') return;
+  const rail = document.getElementById('stageRail'); if(!rail) return;
+  rail.innerHTML = stageList().map(stageCardHTML).join('');
 }
-function stageLine(sg, side, i, rec){
-  const t = (side==='A'? sg.sa : sg.sb)[i]; if(!t) return '';
-  const picked = (rec.picks||[])[i]===side;
-  return `<div class="stg-line ${picked?'picked':''}" data-tid="${t.id}" onclick="stageJump('${t.id}')">
-      <div class="stg-art">${trackArt(t,44)}</div>
-      <div class="stg-meta"><div class="stg-t">${escapeHtml(t.title)}</div><div class="stg-who">${escapeHtml(side==='A'?sg.a:sg.b)}</div></div>
-      <span class="stg-eq" aria-hidden="true"><i></i><i></i><i></i></span>
-      <button class="stg-pick ${picked?'on':''}" onclick="event.stopPropagation();stagePick(${i},'${side}')" aria-label="Mi favorita de esta ronda"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button>
-    </div>`;
+function stageSetPick(sg, i, side, toggle){
+  const st = stageStore(); const rec = st[sg.id] || {picks:[]};
+  rec.picks = rec.picks||[];
+  rec.picks[i] = (toggle && rec.picks[i]===side) ? null : side;   // tocar la misma otra vez quita el voto
+  st[sg.id] = rec; stageSave(st);
 }
-function stageRender(){
-  const sg = stageCur, box = document.getElementById('stageSheet'); if(!sg||!box) return;
-  const rec = stageRec(sg), sc = stageScore(sg, rec);
-  const top = `<div class="stg-score"><b>${escapeHtml(sg.a)}</b><span class="n">${sc.a}</span><span class="vs">対</span><span class="n">${sc.b}</span><b class="r">${escapeHtml(sg.b)}</b></div>`;
-  let rounds = '';
-  for(let i=0;i<sg.n;i++) rounds += `<div class="stg-rd"><div class="stg-rk">RONDA ${i+1}</div>${stageLine(sg,'A',i,rec)}${stageLine(sg,'B',i,rec)}</div>`;
-  const picks = (rec.picks||[]).filter(Boolean).length;
-  box.innerHTML = stageHead(sg) + top + `
-    <button class="stg-btn main" id="stgPlayBtn" onclick="stageToggle('${sg.id}')"></button>
-    <div class="stg-hint">Suena una canción de cada artista, completas. Al terminar cada ronda te preguntaré cuál te gustó más; también puedes marcarlo aquí.</div>
-    ${rounds}
-    <div class="stg-actions">
-      ${picks>0? `<button class="stg-btn" onclick="stageAgain()"><span>Empezar de nuevo</span></button>` : ''}
-    </div>`;
-  stageMarkNow();
-}
-
-/* ---- aviso de votación: aparece solo, al terminar la segunda canción de cada ronda; no hay que tener nada abierto ---- */
+/* ---- aviso de votación: aparece solo, al terminar la segunda canción de cada ronda ---- */
 let stageSeen = null, stageVoteT = null;
 function stageVoteHide(){ clearTimeout(stageVoteT); const v = document.getElementById('stageVote'); if(v) v.classList.remove('show'); }
 function stageVoteAsk(sg, r){
   const key = sg.id+':'+r; if(window.__stageAsked===key) return; window.__stageAsked = key;
-  const last = r===sg.n-1;
-  if((stageRec(sg).picks||[])[r]){ if(last) stageEnd(sg); return; }   // esa ronda ya la habías votado en la tabla
+  const ta = sg.sa[r], tb = sg.sb[r]; if(!ta||!tb) return;
   let v = document.getElementById('stageVote');
   if(!v){ v = document.createElement('div'); v.id = 'stageVote'; document.body.appendChild(v); }
-  const ta = sg.sa[r], tb = sg.sb[r]; if(!ta||!tb) return;
-  v.innerHTML = `<div class="sv-top"><span class="sv-k">対 STAGE ${String(sg.no).padStart(2,'0')} · RONDA ${r+1}</span><button class="sv-x" onclick="stageVoteSkip('${sg.id}',${r})" aria-label="Omitir">✕</button></div>
+  v.dataset.sg = sg.id; v.dataset.r = r;
+  const sel = (stageRec(sg).picks||[])[r];
+  v.innerHTML = `<div class="sv-top"><span class="sv-k">対 STAGE ${String(sg.no).padStart(2,'0')} · RONDA ${r+1}</span><button class="sv-x" onclick="stageVoteHide()" aria-label="Cerrar">✕</button></div>
     <div class="sv-q">¿Cuál te gustó más?</div>
     <div class="sv-row">
-      <button class="sv-b" onclick="stageVoteGo('${sg.id}',${r},'A')"><i>${escapeHtml(sg.a)}</i><b>${escapeHtml(ta.title)}</b></button>
-      <button class="sv-b" onclick="stageVoteGo('${sg.id}',${r},'B')"><i>${escapeHtml(sg.b)}</i><b>${escapeHtml(tb.title)}</b></button>
+      <button class="sv-b ${sel==='A'?'sel':''}" data-side="A" onclick="stageVoteGo('A')"><i>${escapeHtml(sg.a)}</i><b>${escapeHtml(ta.title)}</b></button>
+      <button class="sv-b ${sel==='B'?'sel':''}" data-side="B" onclick="stageVoteGo('B')"><i>${escapeHtml(sg.b)}</i><b>${escapeHtml(tb.title)}</b></button>
     </div>`;
   const pl = document.getElementById('player');
   v.style.bottom = (pl && pl.classList.contains('show')) ? 'calc(22px + var(--sai-b,0px))' : 'calc(146px + var(--sai-b,0px))';
   requestAnimationFrame(()=>v.classList.add('show'));
-  clearTimeout(stageVoteT); stageVoteT = setTimeout(()=>{ stageVoteHide(); if(last) stageEnd(sg); }, last? 30000 : 22000);
+  clearTimeout(stageVoteT); stageVoteT = setTimeout(stageVoteHide, 22000);
   buzz&&buzz(8);
 }
-function stageVoteGo(id, r, side){
-  const sg = stageById(id); if(!sg) return; buzz&&buzz(12);
-  stageSetPick(sg, r, side, false); stageVoteHide(); stageRefreshHome();
-  if(r===sg.n-1) stageEnd(sg);
-}
-function stageVoteSkip(id, r){ const sg = stageById(id); stageVoteHide(); if(sg && r===sg.n-1) stageEnd(sg); }
-/* al terminar el último: se muestra la tabla de rondas */
-function stageEnd(sg){
-  if(document.hidden) return;
-  stageRefreshHome();
-  setTimeout(()=>{ try{ openStage(sg.id); }catch(e){} }, 400);
+function stageVoteGo(side){
+  const v = document.getElementById('stageVote'); if(!v) return;
+  const sg = stageById(v.dataset.sg); if(!sg) return; const r = +v.dataset.r; buzz&&buzz(12);
+  stageSetPick(sg, r, side, true);
+  const sel = (stageRec(sg).picks||[])[r];
+  v.querySelectorAll('.sv-b').forEach(b=>b.classList.toggle('sel', b.dataset.side===sel));
+  stageBarsUpdate();
+  clearTimeout(stageVoteT); stageVoteT = setTimeout(stageVoteHide, 3500);   // se cierra solo; en esos segundos puedes cambiar o quitar el voto
 }
 function stageTrackTick(){
   const ex = String(window.__curExpr||'');
@@ -8999,56 +9012,14 @@ function stageTrackTick(){
   if(lastB && cur===lastB.id && !isPlaying && audio && audio.duration && (audio.ended || audio.currentTime >= audio.duration-0.6)) stageVoteAsk(sg, sg.n-1);
   stageSeen = {sg:sg.id, tid:cur};
 }
-/* marca lo que suena ahora y el texto del botón (sin reconstruir la lista) */
+/* tarjetas: marcan cuál suena; la fila se bloquea mientras dura (la gracia es no saber qué viene) */
 function stageMarkNow(){
   try{ stageTrackTick(); }catch(e){}
+  try{ lukaSyncLock(); }catch(e){}
   try{
-    document.querySelectorAll('.st-play').forEach(b=>{ const sg = stageList().find(x=>x.id===b.dataset.stage); const on = !!sg && stageIsCurrent(sg) && isPlaying; b.classList.toggle('on', on); const h = on? SP_ICON.pause : SP_ICON.play; if(b.dataset.h!==h){ b.dataset.h=h; b.innerHTML=h; } });
-    const sg = stageCur; if(!sg) return;
-    const sheet = document.getElementById('stageSheet'); if(!sheet) return;
-    const cur = stageIsCurrent(sg) ? currentTrack : null;
-    sheet.querySelectorAll('.stg-line').forEach(l=>{ l.classList.toggle('now', !!cur && l.dataset.tid===cur.id); l.classList.toggle('paused', !!cur && l.dataset.tid===cur.id && !isPlaying); });
-    const pb = document.getElementById('stgPlayBtn');
-    if(pb){ const on = stageIsCurrent(sg) && isPlaying; pb.innerHTML = (on? SP_ICON.pause : SP_ICON.play) + '<span>' + (on? 'Pausar' : (stageIsCurrent(sg)? 'Seguir escuchando' : 'Escuchar Stage')) + '</span>'; }
+    document.querySelectorAll('.hm-stage').forEach(c=>{ const sg = stageList().find(x=>x.id===c.dataset.stage); c.classList.toggle('on', !!sg && stageIsCurrent(sg) && isPlaying); });
   }catch(e){}
 }
-function stageJump(tid){
-  const sg = stageCur; if(!sg) return;
-  if(stageIsCurrent(sg)){
-    const ix = currentQueue.findIndex(t=>t.id===tid);
-    if(ix>=0 && currentTrack && currentTrack.id===tid){ togglePlay(); return; }
-    if(ix>=0){ jumpToQueueIndex(ix); return; }
-  }
-  stagePlay(sg, tid);
-}
-function stageSetPick(sg, i, side, toggle){
-  const st = stageStore(); const rec = st[sg.id] || {picks:[], done:false};
-  rec.picks = rec.picks||[];
-  rec.picks[i] = (toggle && rec.picks[i]===side) ? null : side;   // en la tabla, tocar de nuevo la misma la quita
-  const sc = stageScore(sg, rec); if(sc.c>=sg.n){ rec.done = true; rec.t = Date.now(); } else rec.done = false;
-  st[sg.id] = rec; stageSave(st);
-}
-function stagePick(i, side){
-  const sg = stageCur; if(!sg) return; buzz&&buzz(10);
-  stageSetPick(sg, i, side, true);
-  const y = document.getElementById('stageSheet').scrollTop;
-  stageRender(); document.getElementById('stageSheet').scrollTop = y;
-  stageRefreshHome();
-}
-function stageAgain(){
-  const sg = stageCur; if(!sg) return;
-  const st = stageStore(); delete st[sg.id]; stageSave(st);
-  stageRender(); stageRefreshHome();
-}
-function stageRefreshHome(){
-  if(activeTab!=='home') return;
-  const rail = document.getElementById('stageRail'); if(!rail) return;
-  rail.innerHTML = stageList().map(stageCardHTML).join('');
-}
-(function(){
-  const ov = document.getElementById('overlayStage'); if(!ov) return;
-  new MutationObserver(()=>{ if(!ov.classList.contains('show')) stageRefreshHome(); }).observe(ov,{attributes:true,attributeFilter:['class']});
-})();
 /* ============ INIT ============ */
 (async function init(){
   if('serviceWorker' in navigator && !NATIVE){
