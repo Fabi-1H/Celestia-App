@@ -1831,11 +1831,6 @@ body.luka-on #player .player-icons-row button[title="Fila"] svg{opacity:0;}
 .hm-stage .st-half{position:absolute;inset:0;transition:opacity .5s ease,filter .5s ease;overflow:hidden;}
 .hm-stage .st-half.a{background:linear-gradient(150deg,#3a3536 0%,#282425 100%);clip-path:polygon(0 0,57% 0,43% 100%,0 100%);}
 .hm-stage .st-half.b{background:linear-gradient(210deg,#2b2728 0%,#1b1819 100%);clip-path:polygon(57% 0,100% 0,100% 100%,43% 100%);}
-.hm-stage .st-ini{position:absolute;font-family:var(--font-head);font-weight:800;font-size:132px;line-height:1;color:rgba(255,255,255,.07);pointer-events:none;}
-.hm-stage .st-half.a .st-ini{left:-6px;top:6px;}
-.hm-stage .st-half.b .st-ini{right:-4px;bottom:-26px;}
-.hm-stage.done .st-half:not(.dim){filter:brightness(1.18);}
-.hm-stage .st-half.dim{filter:brightness(.62);}
 .hm-stage::after{content:"";position:absolute;inset:0;z-index:1;background:linear-gradient(to top,rgba(10,9,9,.55) 0%,rgba(10,9,9,0) 45%);pointer-events:none;}
 .hm-stage .st-cut{position:absolute;inset:0;z-index:2;pointer-events:none;clip-path:polygon(57% 0,57.7% 0,43.7% 100%,43% 100%);background:rgba(236,232,231,.34);}
 .hm-stage>*:not(.st-half):not(.st-cut){position:absolute;z-index:3;}
@@ -1845,9 +1840,7 @@ body.luka-on #player .player-icons-row button[title="Fila"] svg{opacity:0;}
 .hm-stage .st-names{left:16px;right:16px;bottom:38px;display:flex;justify-content:space-between;gap:30px;}
 .hm-stage .st-names b{max-width:42%;font-size:16.5px;letter-spacing:-.01em;font-weight:700;line-height:1.2;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
 .hm-stage .st-names b.r{text-align:right;}
-.hm-stage .st-names b.dim{opacity:.45;}
 .hm-stage .st-chip{left:14px;bottom:12px;font-size:11px;color:rgba(255,255,255,.7);letter-spacing:.02em;}
-.hm-stage.done .st-chip{color:#ece8e7;font-weight:600;}
 #overlayStage .sheet{padding-bottom:calc(24px + var(--sai-b,env(safe-area-inset-bottom)));}
 .stg-ttl{display:block;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
 .stg-vs{font-style:normal;font-size:.7em;color:var(--text-dim);letter-spacing:.08em;margin:0 3px;}
@@ -1892,6 +1885,40 @@ body.luka-on #player .player-icons-row button[title="Fila"] svg{opacity:0;}
 .stg-btn{display:flex;align-items:center;justify-content:center;gap:10px;height:50px;border-radius:17px;border:1px solid var(--box-line);background:var(--box-2);color:var(--text);font-size:15px;font-weight:700;}
 .stg-btn.main{background:#ece8e7;color:#141414;border-color:transparent;}
 .stg-btn svg{width:18px;height:18px;}
+
+.hm-stage .st-play{right:12px;bottom:10px;width:40px;height:40px;border-radius:14px;border:1px solid rgba(255,255,255,.18);background:rgba(236,232,231,.94);color:#141414;display:flex;align-items:center;justify-content:center;padding:0;}
+.hm-stage .st-play svg{width:17px;height:17px;}
+.hm-stage .st-play:active{transform:scale(.92);}
+.hm-stage .st-chip{max-width:calc(100% - 78px);line-height:1.25;}
+.stg-hint{margin:10px 6px 14px;text-align:left;}
+.stg-btn.main{width:100%;}
+.stg-rd{margin-bottom:12px;}
+.stg-rk{font-size:10.5px;letter-spacing:.22em;font-weight:700;color:var(--text-faint);margin:0 4px 6px;}
+.stg-line{display:flex;align-items:center;gap:11px;padding:8px 10px 8px 8px;margin-bottom:6px;border-radius:18px;background:var(--box);border:1px solid var(--box-line);cursor:pointer;}
+.stg-line .stg-art{width:44px;height:44px;border-radius:12px;}
+.stg-line .stg-t{font-size:14.5px;margin-top:0;-webkit-line-clamp:1;}
+.stg-line .stg-who{margin-top:2px;}
+.stg-line.now{background:var(--box-2);border-color:rgba(255,255,255,.2);}
+.stg-line.picked{border-color:rgba(236,232,231,.45);}
+.stg-line .stg-pick{width:40px;height:40px;border-radius:13px;background:var(--box-2);color:var(--text-faint);border:1px solid var(--box-line);}
+.stg-line .stg-pick.on{background:#ece8e7;color:#141414;border-color:transparent;}
+.stg-eq{display:none;align-items:flex-end;gap:2px;height:14px;width:16px;flex-shrink:0;}
+.stg-eq i{display:block;width:3px;border-radius:2px;background:#ece8e7;height:100%;transform-origin:bottom;animation:luEq 1s ease-in-out infinite;}
+.stg-eq i:nth-child(2){animation-delay:-.4s;} .stg-eq i:nth-child(3){animation-delay:-.75s;}
+.stg-line.now .stg-eq{display:flex;} .stg-line.now.paused .stg-eq i{animation-play-state:paused;}
+
+#stageVote{position:fixed;left:10px;right:10px;max-width:410px;margin:0 auto;z-index:120;padding:12px 12px 12px 14px;border-radius:22px;background:#242021;border:1px solid rgba(255,255,255,.14);box-shadow:0 16px 40px rgba(0,0,0,.6);opacity:0;transform:translateY(16px);pointer-events:none;transition:opacity .25s ease,transform .3s cubic-bezier(.22,1,.36,1);}
+#stageVote.show{opacity:1;transform:translateY(0);pointer-events:auto;}
+#stageVote .sv-top{display:flex;align-items:center;justify-content:space-between;}
+#stageVote .sv-k{font-size:10.5px;letter-spacing:.2em;font-weight:700;color:var(--text-dim);}
+#stageVote .sv-x{width:30px;height:30px;border-radius:10px;border:none;background:rgba(255,255,255,.07);color:var(--text-dim);padding:0;}
+#stageVote .sv-q{font-family:var(--font-head);font-size:17px;font-weight:700;margin:4px 0 10px;}
+#stageVote .sv-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+#stageVote .sv-b{display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left;padding:10px 12px;border-radius:16px;border:1px solid var(--box-line);background:var(--box-2);color:var(--text);min-width:0;}
+#stageVote .sv-b i{font-style:normal;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-dim);font-weight:700;max-width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+#stageVote .sv-b b{font-size:13.5px;line-height:1.25;max-width:100%;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+#stageVote .sv-b:active{transform:scale(.97);background:#ece8e7;color:#141414;}
+#stageVote .sv-b:active i{color:#555;}
 </style>
 </head>
 <body>
@@ -5825,7 +5852,7 @@ function renderAppSettings(main){
       <div class="app-settings-row tone-row" data-txt="${escapeHtml(artNorm('Apariencia tono de grises fondo'))}" style="cursor:default;">${ic('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>')}<div style="flex:1;min-width:0;"><div class="t">Apariencia</div><div class="s">Tono de grises de toda la app</div></div>
         <div class="tone-pick">${TONES.map(t=>`<button class="tone-sw ${toneNow()===t.id?'on':''}" onclick="setTone('${t.id}')"><i style="background:${t.sw}"></i><span>${t.name}</span></button>`).join('')}</div></div>
       ${NATIVE? row(ic('<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>'),'Buscar actualizaciones','Revisa si hay una versión nueva de Celestia para instalar',"checkUpdate(true)") : ''}
-      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.11.03-aa) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
+      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.11.03-ac) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
     </div>
   `;
 }
@@ -5845,7 +5872,7 @@ function labelForExpr(expr){
   if(expr.startsWith('auto:')){ const m=AUTO_META[expr.slice(5)]; return {kind:'Playlist', name:m?m.name:''}; }
   if(expr==='luka') return {kind:'Luka', name:'Selección de hoy'};
   if(expr==='lukaq') return {kind:'Selección de Luka', name:''};
-  if(expr==='stagewin') return {kind:'Stage', name:'Tus elegidas'};
+  if(expr.startsWith('stage:')){ const sg = (typeof stageById==='function') ? stageById(expr.slice(6)) : null; return {kind:'Stage', name: sg? sg.a+' vs '+sg.b : ''}; }
   if(expr==='liked') return {kind:'Playlist', name:'Tus me gusta'};
   if(expr==='week') return {kind:'Tu semana', name:''};
   if(expr==='following') return {kind:'Siguiendo', name:''};
@@ -5865,14 +5892,14 @@ function shuffledCopy(arr){
 }
 function buildQueue(expr){
   const q = buildQueueRaw(expr);
-  if(/^(artist:|artistpop:|album:|radio:)/.test(expr)) return q; // si eliges algo de ese artista a propósito, sí suena
+  if(/^(artist:|artistpop:|album:|radio:|stage:)/.test(expr)) return q; // si eliges algo de ese artista a propósito, sí suena
   const blocked = lsGet('celestia:blocked-artists', []).map(x=>akey(x));
   if(!blocked.length) return q;
   return q.filter(t=>!blocked.includes(akey(t.artist)));
 }
 function buildQueueRaw(expr){
   if(expr==='luka') return window.__lukaQueue || [];
-  if(expr==='stagewin') return window.__stageWin || [];
+  if(expr.startsWith('stage:')) return (window.__stageQueueId===expr.slice(6) ? window.__stageQueue : null) || [];
   if(expr.startsWith('auto:')) return autoList(expr.slice(5));
   if(expr==='following') return followingTracks();
   if(expr.startsWith('radio:album:')){
@@ -5949,7 +5976,7 @@ function loadCurrent(autoplay){
   if(chain) chain.gain.gain.value = 1;
   if(autoplay){ resumeAudioCtx(); safePlay(audio); if(pre && !sleepFadeIv){ clearInterval(fadeInIv); audio.volume = normVol(currentTrack); } else fadeInAudio(audio); } else { clearInterval(fadeInIv); if(!sleepFadeIv) audio.volume = normVol(currentTrack); }
   normSchedule();
-  try{ lukaTrackChanged(); }catch(e){}
+  try{ lukaTrackChanged(); }catch(e){} try{ stageMarkNow(); }catch(e){}
   updatePlayerUI();
   renderMini();
   animateTrackChange(window.__trkDir||0); window.__trkDir = 0;
@@ -6118,7 +6145,8 @@ function startCrossfade(){
     if(document.getElementById('overlayQueue').classList.contains('show')) renderQueueList();
     crossfading = false;
     window.__lukaWhy = 'auto';
-    try{ lukaTrackChanged(); }catch(e){}
+    try{ lukaTrackChanged(); }catch(e){} try{ stageMarkNow(); }catch(e){}
+    try{ stageMarkNow(); }catch(e){}
   };
   xf = {to:setTimeout(complete, dur*1000+120), incoming, outgoing, complete, endAt: performance.now()+dur*1000+120};
 }
@@ -6576,6 +6604,7 @@ function updatePlayIcons(){
   document.getElementById('likeBtn').classList.toggle('active', !!(currentTrack&&currentTrack.liked));
   const ml = document.getElementById('miniLikeBtn'); if(ml) ml.classList.toggle('active', !!(currentTrack&&currentTrack.liked));
   syncSpUI();
+  try{ stageMarkNow(); }catch(e){}
 }
 function updatePlayerUI(){
   if(!currentTrack) return;
@@ -8823,7 +8852,7 @@ async function setupHeadsetStart(){
   window.addEventListener('celestiaAutoplay', ()=>{ try{ const p = capPlug('CelestiaPower'); if(p && p.consumeAutoplay) p.consumeAutoplay().catch(()=>{}); }catch(e){} setTimeout(headsetStart, 250); });
   try{ const p = capPlug('CelestiaPower'); const r = p && p.consumeAutoplay ? await p.consumeAutoplay() : null; if(r && r.autoplay) setTimeout(headsetStart, 400); }catch(e){}
 }
-/* ============ STAGE: duelos entre dos artistas, por rondas ============ */
+/* ============ STAGE: dos artistas, sus canciones intercaladas y tu favorita de cada ronda ============ */
 const STAGE_KEY = 'celestia:stages';
 function stageStore(){ return lsGet(STAGE_KEY, {}); }
 function stageSave(st){ lsSet(STAGE_KEY, st); }
@@ -8831,7 +8860,7 @@ function stageSongs(a, n){
   const sc = t => trackPlayCount(t.id) + (t.liked?2:0);
   return getArtistTracks(a).slice().sort((x,y)=> sc(y)-sc(x) || x.title.localeCompare(y.title,'es',{sensitivity:'base'})).slice(0,n);
 }
-/* hasta 4 duelos por semana: artistas con 3+ canciones, emparejados con escuchas parecidas; cada semana cambian los pares */
+/* hasta 4 por semana: artistas con 3+ canciones, emparejados con escuchas parecidas; cada semana cambian los pares */
 function stageList(){
   const tot = artistPlayTotals();
   const arts = getArtists().filter(a=>getArtistTracks(a).length>=3).sort((a,b)=> (tot[akey(b)]||0)-(tot[akey(a)]||0) || a.localeCompare(b));
@@ -8845,136 +8874,166 @@ function stageList(){
   return out;
 }
 function stageById(id){ return stageList().find(x=>x.id===id) || null; }
-function stageStatus(sg){
-  const r = stageStore()[sg.id];
-  if(!r) return {kind:'new'};
-  if(r.done) return {kind:'done', a:r.sa, b:r.sb, w: r.sa>r.sb?'A':(r.sb>r.sa?'B':'T')};
-  return {kind:'play', r:r.r||0};
+function stageQueueOf(sg){ const q = []; for(let i=0;i<sg.n;i++){ q.push(sg.sa[i]); q.push(sg.sb[i]); } return q.filter(Boolean); }
+function stageRec(sg){ const r = stageStore()[sg.id] || {}; r.picks = (r.picks||[]).slice(0,sg.n); return r; }
+function stageScore(sg, rec){
+  let a=0,b=0,c=0; for(let i=0;i<sg.n;i++){ const p=(rec.picks||[])[i]; if(p==='A'){a++;c++;} else if(p==='B'){b++;c++;} }
+  return {a,b,c,done: !!rec.done || c>=sg.n};
 }
-function stageInitial(n){ const m = String(n||'?').trim().match(/[A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9\u3040-\u30ff\u4e00-\u9fff]/); return (m? m[0] : '?').toUpperCase(); }
+function stageStatus(sg){
+  const sc = stageScore(sg, stageRec(sg));
+  if(sc.done) return {kind:'done', a:sc.a, b:sc.b, w: sc.a>sc.b?'A':(sc.b>sc.a?'B':'T')};
+  if(sc.c>0) return {kind:'play', a:sc.a, b:sc.b, c:sc.c};
+  return {kind:'new'};
+}
+function stageInitial(n){ const m = String(n||'?').trim().match(/[A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9぀-ヿ一-鿿]/); return (m? m[0] : '?').toUpperCase(); }
+function stageIsCurrent(sg){ return !!currentTrack && String(window.__curExpr||'')==='stage:'+sg.id; }
 function stageCardHTML(sg){
   const st = stageStatus(sg), no = String(sg.no).padStart(2,'0');
-  const dimA = st.kind==='done' && st.w==='B', dimB = st.kind==='done' && st.w==='A';
-  const chip = st.kind==='done' ? (st.w==='T'? 'Empate '+st.a+'–'+st.b : 'Ganó '+escapeHtml(st.w==='A'?sg.a:sg.b)+' · '+Math.max(st.a,st.b)+'–'+Math.min(st.a,st.b))
-             : st.kind==='play' ? 'Ronda '+(st.r+1)+' de '+sg.n : sg.n+' rondas · sin jugar';
+  const chip = st.kind==='done' ? 'Completo · ver tabla' : st.kind==='play' ? st.c+' de '+sg.n+' rondas votadas' : sg.n+' canciones de cada uno';
+  const on = stageIsCurrent(sg) && isPlaying;
   return `<div class="hm-stage ${st.kind}" onclick="openStage('${sg.id}')">
-    <div class="st-half a ${dimA?'dim':''}"><span class="st-ini">${escapeHtml(stageInitial(sg.a))}</span></div>
-    <div class="st-half b ${dimB?'dim':''}"><span class="st-ini">${escapeHtml(stageInitial(sg.b))}</span></div>
+    <div class="st-half a"></div>
+    <div class="st-half b"></div>
     <div class="st-cut"></div>
     <div class="st-kick">STAGE ${no}<span class="jp">ステージ</span></div>
     <div class="st-seal">対</div>
-    <div class="st-names"><b class="${dimA?'dim':''}">${escapeHtml(sg.a)}</b><b class="r ${dimB?'dim':''}">${escapeHtml(sg.b)}</b></div>
+    <div class="st-names"><b>${escapeHtml(sg.a)}</b><b class="r">${escapeHtml(sg.b)}</b></div>
     <div class="st-chip">${chip}</div>
+    <button class="st-play ${on?'on':''}" data-stage="${sg.id}" onclick="event.stopPropagation();stageToggle('${sg.id}')" aria-label="Escuchar Stage">${on?SP_ICON.pause:SP_ICON.play}</button>
   </div>`;
 }
-/* ---- vista del duelo ---- */
-let stageCur = null, stagePrevT = null, stagePrevId = null;
-const stageAudio = new Audio(); stageAudio.preload = 'auto';
-function stagePreviewStop(){
-  try{ stageAudio.pause(); }catch(e){}
-  clearTimeout(stagePrevT); stagePrevId = null;
-  document.querySelectorAll('#stageSheet .stg-play').forEach(b=>{ b.classList.remove('on'); b.innerHTML = SP_ICON.play; });
+/* ---- reproducción: las canciones completas, intercaladas A1 B1 A2 B2 … ---- */
+function stagePlay(sg, startId){
+  const q = stageQueueOf(sg); if(!q.length) return;
+  if(shuffleOn) toggleShuffle();   // el orden intercalado es la gracia: sin aleatorio
+  window.__stageQueue = q; window.__stageQueueId = sg.id;
+  playTrack(startId || q[0].id, 'stage:'+sg.id);
 }
-function stagePreview(side){
-  const sg = stageCur; if(!sg) return;
-  const r = (stageStore()[sg.id]||{}).r||0;
-  const t = (side==='A'? sg.sa : sg.sb)[r]; if(!t) return;
-  if(stagePrevId===t.id){ stagePreviewStop(); return; }
-  stagePreviewStop();
-  try{ if(isPlaying) togglePlay(); }catch(e){}
-  stagePrevId = t.id;
-  stageAudio.src = t.url;
-  const go = ()=>{
-    try{
-      const d = stageAudio.duration||0;
-      stageAudio.currentTime = d>40 ? Math.min(d*0.28, d-26) : 0;
-      stageAudio.play().catch(()=>{});
-    }catch(e){}
-    clearTimeout(stagePrevT); stagePrevT = setTimeout(stagePreviewStop, 24000);
-  };
-  if(stageAudio.readyState>=1) go(); else stageAudio.addEventListener('loadedmetadata', go, {once:true});
-  const b = document.querySelector('#stageSheet .stg-play[data-s="'+side+'"]'); if(b){ b.classList.add('on'); b.innerHTML = SP_ICON.pause; }
+function stageToggle(id){
+  const sg = stageById(id); if(!sg) return;
+  if(stageIsCurrent(sg) && currentTrack){ togglePlay(); } else stagePlay(sg);
 }
+function stageRoundOf(sg, t){ if(!t) return -1; for(let i=0;i<sg.n;i++){ if((sg.sa[i]&&sg.sa[i].id===t.id)||(sg.sb[i]&&sg.sb[i].id===t.id)) return i; } return -1; }
+/* ---- vista del Stage ---- */
+let stageCur = null;
 function openStage(id){
   const sg = stageById(id); if(!sg){ showToast('Este Stage ya cambió'); return; }
   stageCur = sg; stageRender();
   document.getElementById('overlayStage').classList.add('show');
 }
-function stageHead(sg, sub){
+function stageHead(sg){
   return `<h3><span class="mt-t"><span class="mt-k">対<span>STAGE ${String(sg.no).padStart(2,'0')}</span></span><span class="stg-ttl">${escapeHtml(sg.a)} <i class="stg-vs">vs</i> ${escapeHtml(sg.b)}</span></span><button onclick="closeOverlay('overlayStage')">✕</button></h3>`;
+}
+function stageLine(sg, side, i, rec){
+  const t = (side==='A'? sg.sa : sg.sb)[i]; if(!t) return '';
+  const picked = (rec.picks||[])[i]===side;
+  return `<div class="stg-line ${picked?'picked':''}" data-tid="${t.id}" onclick="stageJump('${t.id}')">
+      <div class="stg-art">${trackArt(t,44)}</div>
+      <div class="stg-meta"><div class="stg-t">${escapeHtml(t.title)}</div><div class="stg-who">${escapeHtml(side==='A'?sg.a:sg.b)}</div></div>
+      <span class="stg-eq" aria-hidden="true"><i></i><i></i><i></i></span>
+      <button class="stg-pick ${picked?'on':''}" onclick="event.stopPropagation();stagePick(${i},'${side}')" aria-label="Mi favorita de esta ronda"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button>
+    </div>`;
 }
 function stageRender(){
   const sg = stageCur, box = document.getElementById('stageSheet'); if(!sg||!box) return;
-  stagePreviewStop();
-  const rec = stageStore()[sg.id] || {r:0, picks:[], sa:0, sb:0, done:false};
-  if(rec.done) return stageResultRender(sg, rec);
-  const r = rec.r||0, ta = sg.sa[r], tb = sg.sb[r];
-  const dots = Array.from({length:sg.n},(_,i)=>`<i class="${i<r?'d':(i===r?'c':'')}"></i>`).join('');
-  const card = (side,t,name)=>`<div class="stg-card ${side}">
-      <div class="stg-art">${trackArt(t,84)}</div>
-      <div class="stg-meta"><div class="stg-who">${escapeHtml(name)}</div><div class="stg-t">${escapeHtml(t.title)}</div></div>
-      <button class="stg-play" data-s="${side}" onclick="stagePreview('${side}')" aria-label="Escuchar">${SP_ICON.play}</button>
-      <button class="stg-pick" onclick="stagePick('${side}')" aria-label="Elegir esta">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
-      </button>
-    </div>`;
-  box.innerHTML = stageHead(sg) + `
-    <div class="stg-score"><b>${escapeHtml(sg.a)}</b><span class="n">${rec.sa||0}</span><span class="vs">対</span><span class="n">${rec.sb||0}</span><b class="r">${escapeHtml(sg.b)}</b></div>
-    <div class="stg-round"><span>RONDA ${r+1} / ${sg.n}</span><span class="dots">${dots}</span></div>
-    ${card('A',ta,sg.a)}
-    <div class="stg-or">o</div>
-    ${card('B',tb,sg.b)}
-    <div class="stg-hint">Escucha un fragmento de cada una y elige la que te gusta más.</div>
-    <button class="stg-skip" onclick="stagePick('N')">Ninguna de las dos</button>`;
-}
-function stagePick(side){
-  const sg = stageCur; if(!sg) return;
-  stagePreviewStop(); buzz&&buzz(12);
-  const st = stageStore();
-  const rec = st[sg.id] || {r:0, picks:[], sa:0, sb:0, done:false};
-  if(rec.done) return;
-  const r = rec.r||0;
-  rec.picks = rec.picks||[]; rec.picks[r] = side;
-  if(side==='A') rec.sa = (rec.sa||0)+1; else if(side==='B') rec.sb = (rec.sb||0)+1;
-  rec.r = r+1;
-  if(rec.r>=sg.n){ rec.done = true; rec.t = Date.now(); }
-  st[sg.id] = rec; stageSave(st);
-  stageRender();
-  if(rec.done) stageRefreshHome();
-}
-function stageWinners(sg, rec){
-  const out = [];
-  (rec.picks||[]).forEach((p,i)=>{ if(p==='A') out.push(sg.sa[i]); else if(p==='B') out.push(sg.sb[i]); });
-  return out.filter(Boolean);
-}
-function stageResultRender(sg, rec){
-  const w = rec.sa>rec.sb?'A':(rec.sb>rec.sa?'B':'T');
-  const name = w==='A'? sg.a : (w==='B'? sg.b : null);
-  const wins = stageWinners(sg, rec);
-  const rows = (rec.picks||[]).map((p,i)=>{
-    const t = p==='A'? sg.sa[i] : (p==='B'? sg.sb[i] : null);
-    return `<div class="stg-res-row"><span class="no">${i+1}</span><span class="tt">${t? escapeHtml(t.title) : '<i>Sin elegir</i>'}</span><span class="by">${t? escapeHtml(t.artist) : ''}</span></div>`;
-  }).join('');
-  document.getElementById('stageSheet').innerHTML = stageHead(sg) + `
-    <div class="stg-win">
-      <div class="stg-win-art"><span>${escapeHtml(name? stageInitial(name) : '対')}</span></div>
-      <div class="stg-win-k">${name? 'GANADOR':'EMPATE'}<span class="jp">${name? '勝者':'引分'}</span></div>
-      <div class="stg-win-n">${name? escapeHtml(name) : escapeHtml(sg.a)+' y '+escapeHtml(sg.b)}</div>
-      <div class="stg-win-s">${rec.sa} – ${rec.sb}</div>
-    </div>
-    <div class="stg-res">${rows}</div>
+  const rec = stageRec(sg), sc = stageScore(sg, rec);
+  const top = `<div class="stg-score"><b>${escapeHtml(sg.a)}</b><span class="n">${sc.a}</span><span class="vs">対</span><span class="n">${sc.b}</span><b class="r">${escapeHtml(sg.b)}</b></div>`;
+  let rounds = '';
+  for(let i=0;i<sg.n;i++) rounds += `<div class="stg-rd"><div class="stg-rk">RONDA ${i+1}</div>${stageLine(sg,'A',i,rec)}${stageLine(sg,'B',i,rec)}</div>`;
+  const picks = (rec.picks||[]).filter(Boolean).length;
+  box.innerHTML = stageHead(sg) + top + `
+    <button class="stg-btn main" id="stgPlayBtn" onclick="stageToggle('${sg.id}')"></button>
+    <div class="stg-hint">Suena una canción de cada artista, completas. Al terminar cada ronda te preguntaré cuál te gustó más; también puedes marcarlo aquí.</div>
+    ${rounds}
     <div class="stg-actions">
-      ${wins.length? `<button class="stg-btn main" onclick="stagePlayWinners()">${SP_ICON.play}<span>Escuchar tus elegidas</span></button>` : ''}
-      <button class="stg-btn" onclick="stageAgain()"><span>Jugar de nuevo</span></button>
+      ${picks>0? `<button class="stg-btn" onclick="stageAgain()"><span>Empezar de nuevo</span></button>` : ''}
     </div>`;
+  stageMarkNow();
 }
-function stagePlayWinners(){
+
+/* ---- aviso de votación: aparece solo, al terminar la segunda canción de cada ronda; no hay que tener nada abierto ---- */
+let stageSeen = null, stageVoteT = null;
+function stageVoteHide(){ clearTimeout(stageVoteT); const v = document.getElementById('stageVote'); if(v) v.classList.remove('show'); }
+function stageVoteAsk(sg, r){
+  const key = sg.id+':'+r; if(window.__stageAsked===key) return; window.__stageAsked = key;
+  const last = r===sg.n-1;
+  if((stageRec(sg).picks||[])[r]){ if(last) stageEnd(sg); return; }   // esa ronda ya la habías votado en la tabla
+  let v = document.getElementById('stageVote');
+  if(!v){ v = document.createElement('div'); v.id = 'stageVote'; document.body.appendChild(v); }
+  const ta = sg.sa[r], tb = sg.sb[r]; if(!ta||!tb) return;
+  v.innerHTML = `<div class="sv-top"><span class="sv-k">対 STAGE ${String(sg.no).padStart(2,'0')} · RONDA ${r+1}</span><button class="sv-x" onclick="stageVoteSkip('${sg.id}',${r})" aria-label="Omitir">✕</button></div>
+    <div class="sv-q">¿Cuál te gustó más?</div>
+    <div class="sv-row">
+      <button class="sv-b" onclick="stageVoteGo('${sg.id}',${r},'A')"><i>${escapeHtml(sg.a)}</i><b>${escapeHtml(ta.title)}</b></button>
+      <button class="sv-b" onclick="stageVoteGo('${sg.id}',${r},'B')"><i>${escapeHtml(sg.b)}</i><b>${escapeHtml(tb.title)}</b></button>
+    </div>`;
+  const pl = document.getElementById('player');
+  v.style.bottom = (pl && pl.classList.contains('show')) ? 'calc(22px + var(--sai-b,0px))' : 'calc(146px + var(--sai-b,0px))';
+  requestAnimationFrame(()=>v.classList.add('show'));
+  clearTimeout(stageVoteT); stageVoteT = setTimeout(()=>{ stageVoteHide(); if(last) stageEnd(sg); }, last? 30000 : 22000);
+  buzz&&buzz(8);
+}
+function stageVoteGo(id, r, side){
+  const sg = stageById(id); if(!sg) return; buzz&&buzz(12);
+  stageSetPick(sg, r, side, false); stageVoteHide(); stageRefreshHome();
+  if(r===sg.n-1) stageEnd(sg);
+}
+function stageVoteSkip(id, r){ const sg = stageById(id); stageVoteHide(); if(sg && r===sg.n-1) stageEnd(sg); }
+/* al terminar el último: se muestra la tabla de rondas */
+function stageEnd(sg){
+  if(document.hidden) return;
+  stageRefreshHome();
+  setTimeout(()=>{ try{ openStage(sg.id); }catch(e){} }, 400);
+}
+function stageTrackTick(){
+  const ex = String(window.__curExpr||'');
+  if(!ex.startsWith('stage:')){ if(stageSeen){ stageSeen = null; stageVoteHide(); } return; }
+  const sg = stageById(ex.slice(6)); if(!sg) return;
+  const cur = currentTrack ? currentTrack.id : null;
+  if(stageSeen && stageSeen.sg===sg.id && stageSeen.tid!==cur){
+    for(let i=0;i<sg.n;i++){ if(sg.sb[i] && sg.sb[i].id===stageSeen.tid){ stageVoteAsk(sg,i); break; } }
+  }
+  // fin de la cola: la última canción terminó y se detuvo
+  const lastB = sg.sb[sg.n-1];
+  if(lastB && cur===lastB.id && !isPlaying && audio && audio.duration && (audio.ended || audio.currentTime >= audio.duration-0.6)) stageVoteAsk(sg, sg.n-1);
+  stageSeen = {sg:sg.id, tid:cur};
+}
+/* marca lo que suena ahora y el texto del botón (sin reconstruir la lista) */
+function stageMarkNow(){
+  try{ stageTrackTick(); }catch(e){}
+  try{
+    document.querySelectorAll('.st-play').forEach(b=>{ const sg = stageList().find(x=>x.id===b.dataset.stage); const on = !!sg && stageIsCurrent(sg) && isPlaying; b.classList.toggle('on', on); const h = on? SP_ICON.pause : SP_ICON.play; if(b.dataset.h!==h){ b.dataset.h=h; b.innerHTML=h; } });
+    const sg = stageCur; if(!sg) return;
+    const sheet = document.getElementById('stageSheet'); if(!sheet) return;
+    const cur = stageIsCurrent(sg) ? currentTrack : null;
+    sheet.querySelectorAll('.stg-line').forEach(l=>{ l.classList.toggle('now', !!cur && l.dataset.tid===cur.id); l.classList.toggle('paused', !!cur && l.dataset.tid===cur.id && !isPlaying); });
+    const pb = document.getElementById('stgPlayBtn');
+    if(pb){ const on = stageIsCurrent(sg) && isPlaying; pb.innerHTML = (on? SP_ICON.pause : SP_ICON.play) + '<span>' + (on? 'Pausar' : (stageIsCurrent(sg)? 'Seguir escuchando' : 'Escuchar Stage')) + '</span>'; }
+  }catch(e){}
+}
+function stageJump(tid){
   const sg = stageCur; if(!sg) return;
-  const rec = stageStore()[sg.id]; if(!rec) return;
-  const list = stageWinners(sg, rec); if(!list.length) return;
-  window.__stageWin = list;
-  closeOverlay('overlayStage');
-  playTrack(list[0].id, 'stagewin');
+  if(stageIsCurrent(sg)){
+    const ix = currentQueue.findIndex(t=>t.id===tid);
+    if(ix>=0 && currentTrack && currentTrack.id===tid){ togglePlay(); return; }
+    if(ix>=0){ jumpToQueueIndex(ix); return; }
+  }
+  stagePlay(sg, tid);
+}
+function stageSetPick(sg, i, side, toggle){
+  const st = stageStore(); const rec = st[sg.id] || {picks:[], done:false};
+  rec.picks = rec.picks||[];
+  rec.picks[i] = (toggle && rec.picks[i]===side) ? null : side;   // en la tabla, tocar de nuevo la misma la quita
+  const sc = stageScore(sg, rec); if(sc.c>=sg.n){ rec.done = true; rec.t = Date.now(); } else rec.done = false;
+  st[sg.id] = rec; stageSave(st);
+}
+function stagePick(i, side){
+  const sg = stageCur; if(!sg) return; buzz&&buzz(10);
+  stageSetPick(sg, i, side, true);
+  const y = document.getElementById('stageSheet').scrollTop;
+  stageRender(); document.getElementById('stageSheet').scrollTop = y;
+  stageRefreshHome();
 }
 function stageAgain(){
   const sg = stageCur; if(!sg) return;
@@ -8988,7 +9047,7 @@ function stageRefreshHome(){
 }
 (function(){
   const ov = document.getElementById('overlayStage'); if(!ov) return;
-  new MutationObserver(()=>{ if(!ov.classList.contains('show')){ stagePreviewStop(); stageRefreshHome(); } }).observe(ov,{attributes:true,attributeFilter:['class']});
+  new MutationObserver(()=>{ if(!ov.classList.contains('show')) stageRefreshHome(); }).observe(ov,{attributes:true,attributeFilter:['class']});
 })();
 /* ============ INIT ============ */
 (async function init(){
