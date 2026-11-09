@@ -1916,8 +1916,9 @@ body.luka-on #player .player-icons-row button[title="Fila"] svg{opacity:0;}
 .hm-stage>*:not(.st-half):not(.st-cut){position:absolute;z-index:3;}
 .hm-stage .st-kick{left:16px;top:13px;display:flex;align-items:center;font-size:10.5px;letter-spacing:.2em;font-weight:700;color:rgba(255,255,255,.8);}
 .hm-stage .st-kick .jp{margin-left:7px;letter-spacing:.1em;opacity:.6;}
-.hm-stage .st-n{right:16px;top:13px;font-size:10.5px;letter-spacing:.16em;font-weight:700;color:rgba(255,255,255,.42);}
-.hm-stage .st-eq{display:none;align-items:flex-end;gap:2px;height:11px;margin-left:9px;}
+.hm-stage .st-n{right:16px;top:13px;display:flex;align-items:center;font-size:10.5px;letter-spacing:.16em;font-weight:700;color:rgba(255,255,255,.42);transition:color .4s ease;}
+.hm-stage.on .st-n{color:rgba(255,255,255,.85);}
+.hm-stage .st-eq{display:none;align-items:flex-end;gap:2px;height:11px;margin-right:8px;}
 .hm-stage .st-eq i{display:block;width:3px;height:100%;border-radius:2px;background:#ece8e7;transform-origin:bottom;animation:luEq 1s ease-in-out infinite;}
 .hm-stage .st-eq i:nth-child(2){animation-delay:-.4s;} .hm-stage .st-eq i:nth-child(3){animation-delay:-.75s;}
 .hm-stage.on .st-eq{display:flex;}
@@ -5870,7 +5871,7 @@ function renderAppSettings(main){
       <div class="app-settings-row tone-row" data-txt="${escapeHtml(artNorm('Apariencia tono de grises fondo'))}" style="cursor:default;">${ic('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>')}<div style="flex:1;min-width:0;"><div class="t">Apariencia</div><div class="s">Tono de grises de toda la app</div></div>
         <div class="tone-pick">${TONES.map(t=>`<button class="tone-sw ${toneNow()===t.id?'on':''}" onclick="setTone('${t.id}')"><i style="background:${t.sw}"></i><span>${t.name}</span></button>`).join('')}</div></div>
       ${NATIVE? row(ic('<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>'),'Buscar actualizaciones','Revisa si hay una versión nueva de Celestia para instalar',"checkUpdate(true)") : ''}
-      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.11.04-ae) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
+      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.11.04-af) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
     </div>
   `;
 }
@@ -8916,8 +8917,8 @@ function stageCardHTML(sg){
     <div class="st-half a"></div>
     <div class="st-half b"></div>
     <div class="st-cut"></div>
-    <div class="st-kick">STAGE ${no}<span class="jp">ステージ</span><span class="st-eq" aria-hidden="true"><i></i><i></i><i></i></span></div>
-    <div class="st-n">${sg.n} RONDAS</div>
+    <div class="st-kick">STAGE ${no}<span class="jp">ステージ</span></div>
+    <div class="st-n"><span class="st-eq" aria-hidden="true"><i></i><i></i><i></i></span><span class="st-nt">${sg.n} RONDAS</span></div>
     <div class="st-seal">対</div>
     <div class="st-side a">${STAGE_SQ(sg.a)}<b>${escapeHtml(sg.a)}</b>${stageBarHTML(sg,'A')}</div>
     <div class="st-side b">${STAGE_SQ(sg.b)}<b>${escapeHtml(sg.b)}</b>${stageBarHTML(sg,'B')}</div>
@@ -9015,7 +9016,15 @@ function stageMarkNow(){
   try{ stageTrackTick(); }catch(e){}
   try{ lukaSyncLock(); }catch(e){}
   try{
-    document.querySelectorAll('.hm-stage').forEach(c=>{ const sg = stageList().find(x=>x.id===c.dataset.stage); c.classList.toggle('on', !!sg && stageIsCurrent(sg) && isPlaying); });
+    const all = stageList();
+    document.querySelectorAll('.hm-stage').forEach(c=>{
+      const sg = all.find(x=>x.id===c.dataset.stage); const cur = !!sg && stageIsCurrent(sg);
+      c.classList.toggle('on', cur && isPlaying);
+      const t = c.querySelector('.st-nt'); if(!t||!sg) return;
+      let txt = sg.n+' RONDAS';
+      if(cur && currentTrack){ for(let i=0;i<sg.n;i++){ if((sg.sa[i]&&sg.sa[i].id===currentTrack.id)||(sg.sb[i]&&sg.sb[i].id===currentTrack.id)){ txt = 'RONDA '+(i+1)+' / '+sg.n; break; } } }
+      if(t.textContent!==txt) t.textContent = txt;
+    });
   }catch(e){}
 }
 /* ============ INIT ============ */
