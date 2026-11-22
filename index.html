@@ -5871,7 +5871,7 @@ function renderAppSettings(main){
       <div class="app-settings-row tone-row" data-txt="${escapeHtml(artNorm('Apariencia tono de grises fondo'))}" style="cursor:default;">${ic('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>')}<div style="flex:1;min-width:0;"><div class="t">Apariencia</div><div class="s">Tono de grises de toda la app</div></div>
         <div class="tone-pick">${TONES.map(t=>`<button class="tone-sw ${toneNow()===t.id?'on':''}" onclick="setTone('${t.id}')"><i style="background:${t.sw}"></i><span>${t.name}</span></button>`).join('')}</div></div>
       ${NATIVE? row(ic('<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>'),'Buscar actualizaciones','Revisa si hay una versión nueva de Celestia para instalar',"checkUpdate(true)") : ''}
-      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.11.04-af) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
+      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.11.21-ag) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
     </div>
   `;
 }
@@ -6330,7 +6330,7 @@ function onAudioError(e){
 function setupMediaSession(){
   try{ nMS.setup(); }catch(e){}
   if(!('mediaSession' in navigator)) return;
-  navigator.mediaSession.setActionHandler('play', ()=>{ resumeAudioCtx(); safePlay(audio); });
+  navigator.mediaSession.setActionHandler('play', ()=>remotePlay());
   navigator.mediaSession.setActionHandler('pause', ()=>{ audio.pause(); });
   navigator.mediaSession.setActionHandler('previoustrack', prevTrack);
   navigator.mediaSession.setActionHandler('nexttrack', nextTrack);
@@ -8699,7 +8699,7 @@ const nMS = {
   setup(){
     const m = capPlug('MediaSession'); if(!NATIVE || !m) return;
     const acts = {
-      play: ()=>{ resumeAudioCtx(); safePlay(audio); },
+      play: ()=>remotePlay(),
       pause: ()=>{ audio.pause(); },
       previoustrack: ()=>prevTrack(),
       nexttrack: ()=>nextTrack(),
@@ -8872,6 +8872,48 @@ async function setupHeadsetStart(){
   window.addEventListener('celestiaAutoplay', ()=>{ try{ const p = capPlug('CelestiaPower'); if(p && p.consumeAutoplay) p.consumeAutoplay().catch(()=>{}); }catch(e){} setTimeout(headsetStart, 250); });
   try{ const p = capPlug('CelestiaPower'); const r = p && p.consumeAutoplay ? await p.consumeAutoplay() : null; if(r && r.autoplay) setTimeout(headsetStart, 400); }catch(e){}
 }
+/* ============ SINCRONÍA: pantalla ↔ audio ↔ notificación ============
+   El estado de la pantalla (play/pausa) se vuelve a leer del audio real cada vez que se vuelve a la app,
+   y el botón play de la notificación recarga la canción si el audio quedó inservible tras una pausa larga. */
+function reloadCurrentAudio(play){
+  if(!currentTrack) return;
+  const t0 = audio.currentTime || 0;
+  try{
+    audio.src = currentTrack.url; applySpeed(audio);
+    audio.addEventListener('loadedmetadata', ()=>{ try{ if(t0>0.5) audio.currentTime = Math.min(t0, Math.max(0,(audio.duration||t0)-0.5)); }catch(e){} if(play) safePlay(audio); }, {once:true});
+    audio.load();
+  }catch(e){}
+}
+function remotePlay(){
+  try{ resumeAudioCtx(); }catch(e){}
+  try{
+    if(!currentTrack) return;
+    if(audio.error || audio.readyState===0 || !audio.src){ reloadCurrentAudio(true); return; }
+    const p = audio.play();
+    if(p && p.catch) p.catch(()=>{ reloadCurrentAudio(true); });
+  }catch(e){ reloadCurrentAudio(true); }
+}
+function syncPlayState(force){
+  try{
+    const real = !!(audio && !audio.paused && !audio.ended);
+    if(force || real!==!!isPlaying){
+      isPlaying = real; updatePlayIcons();
+      if('mediaSession' in navigator) navigator.mediaSession.playbackState = real?'playing':'paused';
+    }
+    if(force){ try{ nMS.stLast=''; nMS.state(real?'playing':'paused'); nMS.meta(); }catch(e){} }
+  }catch(e){}
+}
+let __syncBad = 0;
+setInterval(()=>{
+  if(document.hidden) return;
+  const real = !!(audio && !audio.paused && !audio.ended);
+  if(real!==!!isPlaying){ if(++__syncBad>=2){ __syncBad=0; syncPlayState(true); } } else __syncBad = 0;
+}, 1500);
+function onAppResumed(){ syncPlayState(true); setTimeout(()=>syncPlayState(false), 600); }
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) onAppResumed(); });
+window.addEventListener('focus', onAppResumed);
+window.addEventListener('pageshow', onAppResumed);
+(function(){ try{ const a = capPlug('App'); if(a && a.addListener) a.addListener('appStateChange', st=>{ if(st && st.isActive) onAppResumed(); }); }catch(e){} })();
 /* ============ STAGE: dos artistas, sus canciones intercaladas y un voto por ronda ============ */
 const STAGE_KEY = 'celestia:stages';
 function stageStore(){ return lsGet(STAGE_KEY, {}); }
