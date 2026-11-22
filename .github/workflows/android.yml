@@ -105,6 +105,20 @@ jobs:
                   try { if (autoplay && getBridge() != null) getBridge().triggerWindowJSEvent("celestiaAutoplay"); } catch (Throwable ignored) { }
               }
 
+              /* Con la app en segundo plano Android puede "dormir" la pantalla web y el botón play de la notificación no llegaba. Se mantiene despierta. */
+              private void keepAlive() {
+                  try {
+                      android.webkit.WebView wv = getBridge().getWebView();
+                      if (wv != null) { wv.onResume(); wv.resumeTimers(); }
+                  } catch (Throwable ignored) { }
+              }
+
+              @Override
+              public void onPause() { super.onPause(); keepAlive(); }
+
+              @Override
+              public void onStop() { super.onStop(); keepAlive(); }
+
               @Override
               public void onCreate(Bundle savedInstanceState) {
                   registerPlugin(PowerPlugin.class);
