@@ -1167,6 +1167,20 @@ nav.bottom button.active .jpn{color:rgba(255,255,255,.55);}
 .sp-back{margin:12px 0 0;}
 .sp-sticky::before{background:#1b1718;}
 .sp-sticky .sb-play{border-radius:13px;}
+
+/* barra superior del reproductor: aparece al bajar, tapa el área de la hora/batería y deja a mano título y play */
+#player .p-stick{position:sticky;top:calc(-16px - var(--sai-t,0px));z-index:30;height:calc(54px + var(--sai-t,0px));margin:calc(-16px - var(--sai-t,0px)) -18px -38px;padding:var(--sai-t,0px) 16px 0 20px;display:flex;align-items:center;gap:12px;pointer-events:none;flex-shrink:0;--p:0;}
+#player .p-stick::before{content:'';position:absolute;inset:0;background:#463f41;opacity:min(1,calc(var(--p) * 5));}
+#player .p-stick .ps-line{position:absolute;left:0;right:0;bottom:0;height:3px;background:rgba(255,255,255,.2);opacity:var(--p);}
+#player .p-stick .ps-line i{display:block;height:100%;width:0;background:#fff;}
+#player .p-stick>*{position:relative;}
+#player .p-stick .ps-meta{flex:1;min-width:0;opacity:var(--p);transform:translateY(calc((1 - var(--p)) * 8px));}
+#player .p-stick .ps-t{font-weight:700;font-size:15.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#player .p-stick .ps-s{font-size:12px;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;}
+#player .p-stick .ps-play{width:40px;height:40px;border-radius:13px;background:var(--text);color:#0A0A0B;border:none;display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0;opacity:var(--p);transform:scale(calc(.6 + .4 * var(--p)));}
+#player .p-stick.on{pointer-events:auto;}
+#player .p-stick.on .ps-play:active{transform:scale(.88);}
+@media (max-width:380px){#player .p-stick{top:calc(-14px - var(--sai-t,0px));margin:calc(-14px - var(--sai-t,0px)) -14px -40px;}}
 .srch-fake{background:var(--box-2);border:1px solid var(--box-line);color:var(--text-dim);border-radius:16px;height:50px;}
 .srch-fake svg{color:var(--text);}
 .search-box.pl-search,.search-box.srch-gray{background:var(--box-2);border:1px solid var(--box-line);border-radius:16px;}
@@ -1998,6 +2012,7 @@ body.luka-on #player .player-icons-row button[title="Fila"] svg{opacity:0;}
 
   <!-- FULL PLAYER -->
   <div id="player">
+    <div class="p-stick" id="pStick" onclick="document.getElementById('player').scrollTo({top:0,behavior:'smooth'})"><div class="ps-meta"><div class="ps-t" id="pStickT"></div><div class="ps-s" id="pStickS"></div></div><div class="ps-line"><i id="pStickBar"></i></div><button class="ps-play" id="pStickPlay" onclick="event.stopPropagation();togglePlay()" aria-label="Reproducir o pausar"></button></div>
     <div class="phead">
       <button onclick="closePlayer()">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -5871,7 +5886,7 @@ function renderAppSettings(main){
       <div class="app-settings-row tone-row" data-txt="${escapeHtml(artNorm('Apariencia tono de grises fondo'))}" style="cursor:default;">${ic('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>')}<div style="flex:1;min-width:0;"><div class="t">Apariencia</div><div class="s">Tono de grises de toda la app</div></div>
         <div class="tone-pick">${TONES.map(t=>`<button class="tone-sw ${toneNow()===t.id?'on':''}" onclick="setTone('${t.id}')"><i style="background:${t.sw}"></i><span>${t.name}</span></button>`).join('')}</div></div>
       ${NATIVE? row(ic('<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>'),'Buscar actualizaciones','Revisa si hay una versión nueva de Celestia para instalar',"checkUpdate(true)") : ''}
-      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.11.21-ag) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
+      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.11.22-ai) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
     </div>
   `;
 }
@@ -6196,6 +6211,7 @@ function onAudioTimeUpdate(e){
   if(!document.hidden){ // con la app en segundo plano no se toca la interfaz: menos trabajo = menos riesgo de que Android cierre la app
     const pct = (audio.duration && isFinite(audio.duration))? (audio.currentTime/audio.duration*100):0;
     document.getElementById('miniBar').style.width = pct+'%';
+    const psb = document.getElementById('pStickBar'); if(psb) psb.style.width = pct+'%';
     if(activeTab==='home') homeTick();
     document.getElementById('seek').value = pct;
     document.getElementById('seek').style.background = `linear-gradient(to right, #fff 0%, #fff ${pct}%, var(--line) ${pct}%, var(--line) 100%)`;
@@ -6617,6 +6633,7 @@ function updatePlayIcons(){
   const svgPlaySm = `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5l12 7-12 7V5z"/></svg>`;
   document.body.classList.toggle('is-playing', !!isPlaying); kickTicks();
   document.getElementById('bigPlayBtn').innerHTML = isPlaying? svgPause: svgPlay;
+  const psp = document.getElementById('pStickPlay'); if(psp) psp.innerHTML = isPlaying? svgPauseSm: svgPlaySm;
   document.getElementById('miniPlayBtn').innerHTML = isPlaying? svgPauseSm: svgPlaySm;
   const lyricsPlayBtn = document.getElementById('lyricsPlayBtn');
   if(lyricsPlayBtn) lyricsPlayBtn.innerHTML = isPlaying? svgPause: svgPlay;
@@ -6630,6 +6647,7 @@ function updatePlayerUI(){
   if(activeTab==='home') homeHeroRefresh();
   document.getElementById('playerTitle').textContent = currentTrack.title;
   document.getElementById('playerSub').textContent = currentTrack.artist;
+  document.getElementById('pStickT').textContent = currentTrack.title; document.getElementById('pStickS').textContent = currentTrack.artist;
   const pal = document.getElementById('playerAlbum'); pal.textContent = currentTrack.album || ''; pal.style.display = currentTrack.album ? '' : 'none';
   document.getElementById('playerArt').innerHTML = trackArt(currentTrack,300);
   document.getElementById('playerSourceKind').textContent = 'REPRODUCIENDO DESDE '+currentSource.kind.toUpperCase();
@@ -6991,7 +7009,13 @@ function tickLoop(now){
 }
 document.addEventListener('visibilitychange', ()=>{ document.body.classList.toggle('bg-hidden', document.hidden); kickTicks(); });
 if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', initTickFX); else initTickFX();
-function openPlayer(){ document.getElementById('player').classList.add('show'); startWave(); lastCardLrcIdx = -999; lyrLoopStart(); }
+function openPlayer(){ const _pl = document.getElementById('player'); _pl.scrollTop = 0; pStickUpdate(); _pl.classList.add('show'); startWave(); lastCardLrcIdx = -999; lyrLoopStart(); }
+function pStickUpdate(){
+  const pl = document.getElementById('player'), bar = document.getElementById('pStick'); if(!pl || !bar) return;
+  const p = Math.max(0, Math.min(1, (pl.scrollTop - 24) / 70));
+  bar.style.setProperty('--p', p.toFixed(3)); bar.classList.toggle('on', p > 0.6);
+}
+document.getElementById('player').addEventListener('scroll', pStickUpdate, {passive:true});
 /* ola de progreso: la parte reproducida ondula (solo mientras suena), el resto es una línea tenue; el marcador es una raya vertical */
 let waveRun = false, waveAmp = 0, wavePhase = 0, waveLast = 0;
 function startWave(){ if(waveRun) return; waveRun = true; waveLast = performance.now(); requestAnimationFrame(waveTick); }
