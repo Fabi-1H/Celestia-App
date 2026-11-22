@@ -5886,7 +5886,7 @@ function renderAppSettings(main){
       <div class="app-settings-row tone-row" data-txt="${escapeHtml(artNorm('Apariencia tono de grises fondo'))}" style="cursor:default;">${ic('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>')}<div style="flex:1;min-width:0;"><div class="t">Apariencia</div><div class="s">Tono de grises de toda la app</div></div>
         <div class="tone-pick">${TONES.map(t=>`<button class="tone-sw ${toneNow()===t.id?'on':''}" onclick="setTone('${t.id}')"><i style="background:${t.sw}"></i><span>${t.name}</span></button>`).join('')}</div></div>
       ${NATIVE? row(ic('<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>'),'Buscar actualizaciones','Revisa si hay una versión nueva de Celestia para instalar',"checkUpdate(true)") : ''}
-      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.11.22-ai) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
+      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.11.22-aj) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
     </div>
   `;
 }
@@ -7731,8 +7731,10 @@ function resumeAudioCtx(){
   // El navegador puede suspender el contexto de audio (al pasar la app a segundo plano, o antes
   // del primer gesto del usuario); si el sonido pasa por este grafo y sigue suspendido, no se oye
   // nada aunque el elemento <audio> esté "reproduciendo". Nos aseguramos de reactivarlo en cada play.
-  ensureEQGraph();
-  if(audioCtx && audioCtx.state==='suspended') audioCtx.resume().catch(()=>{});
+  // Solo se crea el grafo de Web Audio si de verdad se usa (ecualizador o crossfade). Crearlo por gusto desde la notificación,
+  // sin tocar la pantalla, lo dejaba suspendido y el audio pasaba por él: la notificación decía "sonando" pero no se oía nada.
+  if(eqState.enabled || crossfadeState.enabled) ensureEQGraph();
+  if(audioCtx && audioCtx.state!=='running') audioCtx.resume().catch(()=>{});
 }
 function applyEQGains(){
   [chainA, chainB].forEach(chain=>{
@@ -8915,7 +8917,22 @@ function remotePlay(){
     if(audio.error || audio.readyState===0 || !audio.src){ reloadCurrentAudio(true); return; }
     const p = audio.play();
     if(p && p.catch) p.catch(()=>{ reloadCurrentAudio(true); });
+    verifyRemotePlay(0, audio.currentTime, false);
   }catch(e){ reloadCurrentAudio(true); }
+}
+/* comprueba que de verdad suena (el tiempo avanza y el audio no está suspendido); si no, lo reintenta en vez de dejar la notificación mintiendo */
+function verifyRemotePlay(n, t0, reloaded){
+  setTimeout(()=>{
+    try{
+      if(audio.paused || !currentTrack) return;           // la pausaste tú otra vez
+      let ok = Math.abs(audio.currentTime - t0) > 0.12;
+      if(audioCtx && audioCtx.state!=='running'){ ok = false; audioCtx.resume().catch(()=>{}); }
+      if(ok){ syncPlayState(true); return; }
+      if(n>=4){ if(!reloaded){ reloadCurrentAudio(true); verifyRemotePlay(0, audio.currentTime, true); } return; }
+      if(audio.paused) safePlay(audio);
+      verifyRemotePlay(n+1, t0, reloaded);
+    }catch(e){}
+  }, 700);
 }
 function syncPlayState(force){
   try{
