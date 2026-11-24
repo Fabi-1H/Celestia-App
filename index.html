@@ -1170,7 +1170,7 @@ nav.bottom button.active .jpn{color:rgba(255,255,255,.55);}
 
 /* barra superior del reproductor: aparece al bajar, tapa el área de la hora/batería y deja a mano título y play */
 #player .p-stick{position:sticky;top:calc(-16px - var(--sai-t,0px));z-index:30;height:calc(54px + var(--sai-t,0px));margin:calc(-16px - var(--sai-t,0px)) -18px -38px;padding:var(--sai-t,0px) 16px 0 20px;display:flex;align-items:center;gap:12px;pointer-events:none;flex-shrink:0;--p:0;}
-#player .p-stick::before{content:'';position:absolute;inset:0;background:#463f41;opacity:min(1,calc(var(--p) * 5));}
+#player .p-stick::before{content:'';position:absolute;inset:0;background:var(--pA,#463f41);opacity:min(1,calc(var(--p) * 5));}
 #player .p-stick .ps-line{position:absolute;left:0;right:0;bottom:0;height:3px;background:rgba(255,255,255,.2);opacity:var(--p);}
 #player .p-stick .ps-line i{display:block;height:100%;width:0;background:#fff;}
 #player .p-stick>*{position:relative;}
@@ -1707,6 +1707,7 @@ html[data-tone="grafito"] #overlayLyrics .lyrics-bg,html[data-tone="ceniza"] #ov
 html[data-tone="grafito"] .picker::before,html[data-tone="ceniza"] .picker::before,html[data-tone="tinta"] .picker::before{background:linear-gradient(180deg,transparent,var(--tD) 70%);}
 html[data-tone="grafito"] nav.bottom,html[data-tone="ceniza"] nav.bottom,html[data-tone="tinta"] nav.bottom{background:var(--nav);}
 html[data-tone="grafito"] #mini,html[data-tone="ceniza"] #mini,html[data-tone="tinta"] #mini{background:var(--mini) !important;}
+html[data-tone="grafito"] .sp-sticky::before,html[data-tone="ceniza"] .sp-sticky::before,html[data-tone="tinta"] .sp-sticky::before{background:var(--tA);}
 .tone-row{flex-wrap:wrap;align-content:flex-start;row-gap:0;}
 .tone-pick{flex-basis:100%;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:12px 0 0 38px;}
 .tone-sw{display:flex;flex-direction:column;align-items:center;gap:6px;background:none;border:0;padding:0;color:var(--text-dim);font:inherit;font-size:11.5px;cursor:pointer;}
@@ -5886,7 +5887,7 @@ function renderAppSettings(main){
       <div class="app-settings-row tone-row" data-txt="${escapeHtml(artNorm('Apariencia tono de grises fondo'))}" style="cursor:default;">${ic('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>')}<div style="flex:1;min-width:0;"><div class="t">Apariencia</div><div class="s">Tono de grises de toda la app</div></div>
         <div class="tone-pick">${TONES.map(t=>`<button class="tone-sw ${toneNow()===t.id?'on':''}" onclick="setTone('${t.id}')"><i style="background:${t.sw}"></i><span>${t.name}</span></button>`).join('')}</div></div>
       ${NATIVE? row(ic('<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>'),'Buscar actualizaciones','Revisa si hay una versión nueva de Celestia para instalar',"checkUpdate(true)") : ''}
-      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.11.22-aj) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
+      ${row(ic('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),'Acerca de y asistencia','Celestia 1.0 (interfaz 2026.11.24-ak) — reproductor de música local. Toda tu música y estadísticas se guardan únicamente en este dispositivo. Si activas la búsqueda de imágenes o de letras, solo se consultan nombres de artistas, álbumes y canciones.',null)}
     </div>
   `;
 }
